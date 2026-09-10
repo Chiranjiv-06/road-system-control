@@ -1,6 +1,6 @@
 /* ==========================================================================
-   Road System Control — Phase 1 CSS Stylesheet
-   Modern, clean government/traffic-management dashboard styling
+   Road System Control — Phase 1 & 2 Stylesheet
+   Modern government/traffic-management dashboard styling
    ========================================================================== */
 
 :root {
@@ -53,6 +53,7 @@
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px -1px rgba(0, 0, 0, 0.07);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
 }
 
 /* ----------------- Reset & Base ----------------- */
@@ -645,7 +646,12 @@ body {
     border-bottom: none;
 }
 
-.data-table tbody tr:hover {
+.data-table tbody tr.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+}
+
+.data-table tbody tr.clickable-row:hover {
     background-color: #f8fafc;
 }
 
@@ -670,6 +676,10 @@ body {
 
 .issue-type-indicator.info {
     background-color: var(--info-base);
+}
+
+.issue-type-indicator.neutral {
+    background-color: #94a3b8;
 }
 
 /* ----------------- Traffic Status Panel ----------------- */
@@ -781,7 +791,7 @@ body {
     color: #475569;
 }
 
-/* ----------------- Empty State Panel (For in-progress views) ----------------- */
+/* ----------------- Empty State Panel ----------------- */
 .empty-state-panel {
     text-align: center;
     padding: 4rem 2rem;
@@ -807,14 +817,427 @@ body {
     margin: 0 auto 1.5rem auto;
 }
 
+/* ==========================================================================
+   PHASE 2: ROAD ISSUE REPORTING FORM & DETAILS MODAL STYLES
+   ========================================================================== */
+
+.report-form-container {
+    max-width: 880px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* Form Header Card */
+.form-header-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.form-main-heading {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.form-main-subheading {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+}
+
+/* Form Section Card */
+.form-section-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-card);
+}
+
+.form-section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.step-badge {
+    width: 26px;
+    height: 26px;
+    background-color: var(--info-soft);
+    color: var(--info-base);
+    font-weight: 700;
+    font-size: 0.78rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.form-section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-section-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.optional-tag {
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+/* Form Grid & Inputs */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+}
+
+.required-star {
+    color: var(--danger-base);
+    font-weight: 700;
+}
+
+.form-control {
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.75rem;
+    outline: none;
+    transition: all 0.15s ease;
+}
+
+.form-control:focus {
+    border-color: var(--info-base);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.form-control.is-invalid {
+    border-color: var(--danger-base);
+    background-color: #fffaf0;
+}
+
+.form-control.is-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.field-error-msg {
+    font-size: 0.75rem;
+    color: var(--danger-base);
+    margin-top: 0.35rem;
+    display: none;
+}
+
+.field-error-msg.visible {
+    display: block;
+}
+
+/* File Upload Box */
+.file-upload-box {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    text-align: center;
+    background-color: #f8fafc;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.file-upload-box:hover {
+    border-color: #94a3b8;
+    background-color: #f1f5f9;
+}
+
+.file-input-hidden {
+    display: none;
+}
+
+.file-upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    gap: 0.35rem;
+}
+
+.upload-icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.2rem;
+}
+
+.upload-text {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--info-base);
+}
+
+.upload-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Image Preview Card */
+.image-preview-card {
+    margin-top: 1rem;
+    background-color: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.preview-img-wrapper {
+    width: 72px;
+    height: 72px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-meta {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.preview-name {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    word-break: break-all;
+}
+
+/* Form Actions Card */
+.form-actions-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.form-actions-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* ----------------- Issue Details Modal ----------------- */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(15, 23, 42, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+    animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 580px;
+    box-shadow: var(--shadow-modal);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: 90vh;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.15rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: #fafbfc;
+}
+
+.modal-header-info {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.modal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.modal-close-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.6rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0.2rem;
+    transition: color 0.15s;
+}
+
+.modal-close-btn:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.detail-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+}
+
+.detail-value {
+    font-size: 0.88rem;
+    color: var(--text-primary);
+}
+
+.detail-description-box {
+    background-color: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 0.85rem;
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.modal-photo-wrapper {
+    margin-top: 0.35rem;
+    background-color: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-height: 220px;
+    overflow: hidden;
+}
+
+.modal-photo-img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 4px;
+    object-fit: contain;
+}
+
+.modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background-color: #fafbfc;
+}
+
 /* ----------------- Utility Classes ----------------- */
 .text-danger { color: var(--danger-base) !important; }
 .text-warning { color: var(--warning-base) !important; }
 .text-success { color: var(--success-base) !important; }
 .text-muted { color: var(--text-muted) !important; }
 .text-xs { font-size: 0.75rem !important; }
+.text-right { text-align: right !important; }
+.text-center { text-align: center !important; }
 .font-medium { font-weight: 500 !important; }
 .ml-auto { margin-left: auto !important; }
+.py-4 { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
 
 /* ----------------- Footer ----------------- */
 .app-footer {
@@ -864,7 +1287,7 @@ body {
     transform: translateY(12px);
     transition: all 0.2s ease;
     pointer-events: none;
-    z-index: 1000;
+    z-index: 2000;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -873,6 +1296,16 @@ body {
 .toast-notification.show {
     opacity: 1;
     transform: translateY(0);
+}
+
+.toast-notification.toast-error {
+    background-color: #991b1b;
+    color: #ffffff;
+}
+
+.toast-notification.toast-success {
+    background-color: #065f46;
+    color: #ffffff;
 }
 
 /* ----------------- Responsive Design ----------------- */
@@ -972,5 +1405,34 @@ body {
 
     .user-info {
         display: none;
+    }
+
+    /* Form responsive adjustments */
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-header-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .form-actions-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .form-actions-left {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .form-actions-card .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .details-grid {
+        grid-template-columns: 1fr;
     }
 }

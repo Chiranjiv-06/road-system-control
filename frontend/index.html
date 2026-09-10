@@ -27,11 +27,11 @@
 
             <nav class="sidebar-nav">
                 <span class="nav-category">Main Menu</span>
-                <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                <a href="#dashboard" class="nav-item active" data-section="dashboard" id="navDashboard">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                     <span>Dashboard</span>
                 </a>
-                <a href="#report-issue" class="nav-item" data-section="report-issue">
+                <a href="#report-issue" class="nav-item" data-section="report-issue" id="navReportIssue">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     <span>Report Issue</span>
                 </a>
@@ -42,7 +42,7 @@
                 <a href="#emergency-alerts" class="nav-item" data-section="emergency-alerts">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                     <span>Emergency Alerts</span>
-                    <span class="badge badge-danger-soft ml-auto">1</span>
+                    <span class="badge badge-danger-soft ml-auto" id="sidebarAlertCount">1</span>
                 </a>
                 <a href="#map" class="nav-item" data-section="map">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
@@ -59,7 +59,7 @@
             <div class="sidebar-footer">
                 <div class="system-meta">
                     <span class="meta-label">Node: Nagpur Central</span>
-                    <span class="meta-ver">v1.0.0 (Phase 1)</span>
+                    <span class="meta-ver">v1.1.0 (Phase 2 Active)</span>
                 </div>
             </div>
         </aside>
@@ -101,7 +101,9 @@
 
             <!-- MAIN BODY / SECTIONS -->
             <main class="content-body">
-                <!-- SECTION 1: DASHBOARD (DEFAULT ACTIVE) -->
+                <!-- ============================================== -->
+                <!-- SECTION 1: DASHBOARD (DEFAULT ACTIVE)          -->
+                <!-- ============================================== -->
                 <section class="view-section active" id="section-dashboard">
                     <!-- EMERGENCY ALERT PANEL -->
                     <div class="emergency-alert-card" role="alert">
@@ -122,8 +124,7 @@
                         </div>
                     </div>
 
-                    <!-- DASHBOARD OVERVIEW METRICS CARDS -->
-                    <!-- Note: Mock statistical indicators for Phase 1 -->
+                    <!-- DASHBOARD OVERVIEW METRICS CARDS (Dynamic from localStorage) -->
                     <div class="metrics-grid">
                         <div class="metric-card">
                             <div class="metric-header">
@@ -132,8 +133,8 @@
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                 </span>
                             </div>
-                            <div class="metric-value">142</div>
-                            <div class="metric-subtext"><span class="trend-up">↑ +12</span> reported today (Mock data)</div>
+                            <div class="metric-value" id="metricTotal">0</div>
+                            <div class="metric-subtext">Registered across city sectors</div>
                         </div>
 
                         <div class="metric-card">
@@ -143,7 +144,7 @@
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                                 </span>
                             </div>
-                            <div class="metric-value text-danger">7</div>
+                            <div class="metric-value text-danger" id="metricCritical">0</div>
                             <div class="metric-subtext text-danger font-medium">Requires immediate response</div>
                         </div>
 
@@ -154,8 +155,8 @@
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                                 </span>
                             </div>
-                            <div class="metric-value text-warning">3</div>
-                            <div class="metric-subtext">1 high-severity in progress</div>
+                            <div class="metric-value text-warning" id="metricActive">0</div>
+                            <div class="metric-subtext">Unresolved or pending issues</div>
                         </div>
 
                         <div class="metric-card">
@@ -165,8 +166,8 @@
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                                 </span>
                             </div>
-                            <div class="metric-value text-success">128</div>
-                            <div class="metric-subtext"><span class="trend-up">90.1%</span> resolution clearance rate</div>
+                            <div class="metric-value text-success" id="metricResolved">0</div>
+                            <div class="metric-subtext">Successfully fixed & cleared</div>
                         </div>
                     </div>
 
@@ -200,9 +201,9 @@
                             <div class="panel-header">
                                 <div class="panel-title-area">
                                     <h3 class="panel-title">Recent Road Issues</h3>
-                                    <span class="panel-badge">Live Mock Feed</span>
+                                    <span class="panel-badge" id="issuesStorageBadge">Local Store</span>
                                 </div>
-                                <span class="text-muted text-xs">Updated 2m ago</span>
+                                <span class="text-muted text-xs">Click row to view details</span>
                             </div>
 
                             <div class="table-container">
@@ -214,57 +215,11 @@
                                             <th>Severity</th>
                                             <th>Status</th>
                                             <th>Reported</th>
+                                            <th class="text-right">Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>
-                                                <div class="issue-name-cell">
-                                                    <span class="issue-type-indicator"></span>
-                                                    <strong>Pothole</strong>
-                                                </div>
-                                            </td>
-                                            <td>Wardha Road</td>
-                                            <td><span class="badge badge-warning">High</span></td>
-                                            <td><span class="badge badge-info">Reported</span></td>
-                                            <td class="text-muted">10 min ago</td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="issue-name-cell">
-                                                    <span class="issue-type-indicator danger"></span>
-                                                    <strong>Traffic Signal Failure</strong>
-                                                </div>
-                                            </td>
-                                            <td>Sitabuldi</td>
-                                            <td><span class="badge badge-danger">Critical</span></td>
-                                            <td><span class="badge badge-warning-soft">Under Review</span></td>
-                                            <td class="text-muted">25 min ago</td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="issue-name-cell">
-                                                    <span class="issue-type-indicator info"></span>
-                                                    <strong>Waterlogging</strong>
-                                                </div>
-                                            </td>
-                                            <td>Manish Nagar</td>
-                                            <td><span class="badge badge-neutral">Medium</span></td>
-                                            <td><span class="badge badge-success">Resolved</span></td>
-                                            <td class="text-muted">1 hr ago</td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="issue-name-cell">
-                                                    <span class="issue-type-indicator danger"></span>
-                                                    <strong>Road Debris / Branch</strong>
-                                                </div>
-                                            </td>
-                                            <td>Hingna Road</td>
-                                            <td><span class="badge badge-warning">High</span></td>
-                                            <td><span class="badge badge-purple">In Progress</span></td>
-                                            <td class="text-muted">2 hr ago</td>
-                                        </tr>
+                                    <tbody id="recentIssuesTableBody">
+                                        <!-- Dynamically populated from localStorage -->
                                     </tbody>
                                 </table>
                             </div>
@@ -329,16 +284,150 @@
                     </div>
                 </section>
 
-                <!-- PLACEHOLDER SECTIONS FOR MENU NAVIGATION (UI INTERACTION IN PHASE 1) -->
+                <!-- ============================================== -->
+                <!-- SECTION 2: REPORT ROAD ISSUE (PHASE 2)         -->
+                <!-- ============================================== -->
                 <section class="view-section" id="section-report-issue">
-                    <div class="panel-card empty-state-panel">
-                        <div class="empty-state-icon">📝</div>
-                        <h2>Report Road Issue</h2>
-                        <p class="text-muted">Issue submission form, geo-tagging, and photo upload will be connected in future phases.</p>
-                        <button class="btn btn-outline quick-action-btn" data-action="back-to-dashboard">Return to Dashboard</button>
+                    <div class="report-form-container">
+                        <!-- Form Header Banner -->
+                        <div class="form-header-card">
+                            <div class="form-header-text">
+                                <h2 class="form-main-heading">Report Road Hazard or Issue</h2>
+                                <p class="form-main-subheading">Submit road damage, signal malfunctions, or obstructions to municipal dispatch.</p>
+                            </div>
+                            <button type="button" class="btn btn-outline btn-sm quick-action-btn" data-action="back-to-dashboard">
+                                &larr; Return to Dashboard
+                            </button>
+                        </div>
+
+                        <!-- Report Issue Form -->
+                        <form id="reportIssueForm" class="report-issue-form" novalidate>
+                            <!-- Group 1: Issue Classification -->
+                            <div class="form-section-card">
+                                <div class="form-section-header">
+                                    <span class="step-badge">1</span>
+                                    <div>
+                                        <h3 class="form-section-title">Issue Information</h3>
+                                        <p class="form-section-desc">Classify the incident category and describe the road condition.</p>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="issueType" class="form-label">Issue Type <span class="required-star">*</span></label>
+                                        <select id="issueType" name="issueType" class="form-control" required>
+                                            <option value="" disabled selected>Select issue category...</option>
+                                            <option value="Pothole">Pothole</option>
+                                            <option value="Damaged Road">Damaged Road</option>
+                                            <option value="Traffic Signal Failure">Traffic Signal Failure</option>
+                                            <option value="Waterlogging">Waterlogging</option>
+                                            <option value="Accident">Accident</option>
+                                            <option value="Street Light">Street Light</option>
+                                            <option value="Road Obstruction">Road Obstruction</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                        <span class="field-error-msg" id="issueTypeError"></span>
+                                    </div>
+
+                                    <div class="form-group full-width">
+                                        <label for="issueDescription" class="form-label">Description <span class="required-star">*</span></label>
+                                        <textarea id="issueDescription" name="issueDescription" class="form-control" rows="3" placeholder="Explain the problem (e.g., deep pothole near intersection, causing vehicles to swerve)..." required></textarea>
+                                        <span class="field-error-msg" id="issueDescriptionError"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Group 2: Location & Severity -->
+                            <div class="form-section-card">
+                                <div class="form-section-header">
+                                    <span class="step-badge">2</span>
+                                    <div>
+                                        <h3 class="form-section-title">Location & Severity</h3>
+                                        <p class="form-section-desc">Specify geographic reference and impact urgency.</p>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="issueLocation" class="form-label">Location <span class="required-star">*</span></label>
+                                        <input type="text" id="issueLocation" name="issueLocation" class="form-control" placeholder="e.g. Near Sitabuldi Metro Station" required>
+                                        <span class="field-error-msg" id="issueLocationError"></span>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="issueSeverity" class="form-label">Severity Level <span class="required-star">*</span></label>
+                                        <select id="issueSeverity" name="issueSeverity" class="form-control" required>
+                                            <option value="" disabled selected>Select severity...</option>
+                                            <option value="Low">Low (Minor wear, low risk)</option>
+                                            <option value="Medium">Medium (Affects traffic speed)</option>
+                                            <option value="High">High (Dangerous condition, lane affected)</option>
+                                            <option value="Critical">Critical (Immediate danger / accident hazard)</option>
+                                        </select>
+                                        <span class="field-error-msg" id="issueSeverityError"></span>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="issueDateTime" class="form-label">Date & Time <span class="required-star">*</span></label>
+                                        <input type="datetime-local" id="issueDateTime" name="issueDateTime" class="form-control" required>
+                                        <span class="field-error-msg" id="issueDateTimeError"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Group 3: Image / Photo Evidence (Optional) -->
+                            <div class="form-section-card">
+                                <div class="form-section-header">
+                                    <span class="step-badge">3</span>
+                                    <div>
+                                        <h3 class="form-section-title">Photo Evidence <span class="optional-tag">(Frontend Preview Only)</span></h3>
+                                        <p class="form-section-desc">Select an image from your device to preview attached evidence.</p>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="file-upload-box" id="fileUploadBox">
+                                        <input type="file" id="issueImage" name="issueImage" accept="image/*" class="file-input-hidden">
+                                        <label for="issueImage" class="file-upload-label">
+                                            <span class="upload-icon">📷</span>
+                                            <span class="upload-text">Click to choose photo</span>
+                                            <span class="upload-hint">PNG, JPG, WEBP (No server upload in Phase 2)</span>
+                                        </label>
+                                    </div>
+                                    <span class="field-error-msg" id="issueImageError"></span>
+
+                                    <!-- Selected Image Preview -->
+                                    <div id="imagePreviewCard" class="image-preview-card" style="display: none;">
+                                        <div class="preview-img-wrapper">
+                                            <img id="imagePreviewImg" src="" alt="Selected Road Issue Preview" class="preview-img">
+                                        </div>
+                                        <div class="preview-meta">
+                                            <span class="preview-name" id="imagePreviewName">filename.jpg</span>
+                                            <button type="button" class="btn btn-sm btn-danger-outline" id="removeImageBtn">Remove Image</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Form Buttons -->
+                            <div class="form-actions-card">
+                                <div class="form-actions-left">
+                                    <button type="submit" class="btn btn-primary" id="submitIssueBtn">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        Submit Road Issue
+                                    </button>
+                                    <button type="button" class="btn btn-outline" id="clearFormBtn">
+                                        Clear Form
+                                    </button>
+                                </div>
+                                <button type="button" class="btn btn-outline" data-action="back-to-dashboard">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </section>
 
+                <!-- SECTION 3: TRAFFIC MONITORING (PLACEHOLDER) -->
                 <section class="view-section" id="section-traffic-monitoring">
                     <div class="panel-card empty-state-panel">
                         <div class="empty-state-icon">🚦</div>
@@ -348,6 +437,7 @@
                     </div>
                 </section>
 
+                <!-- SECTION 4: EMERGENCY ALERTS (PLACEHOLDER) -->
                 <section class="view-section" id="section-emergency-alerts">
                     <div class="panel-card empty-state-panel">
                         <div class="empty-state-icon">🚨</div>
@@ -357,6 +447,7 @@
                     </div>
                 </section>
 
+                <!-- SECTION 5: MAP (PLACEHOLDER) -->
                 <section class="view-section" id="section-map">
                     <div class="panel-card empty-state-panel">
                         <div class="empty-state-icon">🗺️</div>
@@ -366,6 +457,7 @@
                     </div>
                 </section>
 
+                <!-- SECTION 6: ADMIN (PLACEHOLDER) -->
                 <section class="view-section" id="section-admin">
                     <div class="panel-card empty-state-panel">
                         <div class="empty-state-icon">⚙️</div>
@@ -389,7 +481,57 @@
         </div>
     </div>
 
-    <!-- SIMPLE TOAST NOTIFICATION CONTAINER (FOR UI FEEDBACK) -->
+    <!-- ISSUE DETAILS MODAL (Phase 2 Simple Detail Viewer) -->
+    <div class="modal-backdrop" id="issueDetailsModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-header-info">
+                    <span class="badge badge-info" id="modalIssueId">ISS-000</span>
+                    <h3 class="modal-title" id="modalTitle">Road Issue Details</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeModalBtn" aria-label="Close details">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Issue Type</span>
+                        <span class="detail-value font-medium" id="modalIssueType">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Location</span>
+                        <span class="detail-value font-medium" id="modalLocation">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Severity</span>
+                        <div id="modalSeverityContainer">-</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Status</span>
+                        <div id="modalStatusContainer">-</div>
+                    </div>
+                    <div class="detail-item full-width">
+                        <span class="detail-label">Reported Timestamp</span>
+                        <span class="detail-value text-muted" id="modalReportedAt">-</span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <span class="detail-label">Description</span>
+                        <div class="detail-description-box" id="modalDescription">-</div>
+                    </div>
+                    <div class="detail-item full-width" id="modalPhotoSection" style="display: none;">
+                        <span class="detail-label">Attached Photo Preview</span>
+                        <div class="modal-photo-wrapper">
+                            <img id="modalPhotoImg" src="" alt="Incident evidence preview" class="modal-photo-img">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" id="closeModalFooterBtn">Close Details</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
     <div class="toast-notification" id="toastNotification" role="status" aria-live="polite"></div>
 
     <script src="script.js"></script>
