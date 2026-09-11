@@ -1,85 +1,79 @@
 """
 Issue Service Layer
 -------------------
-Handles storage and business logic for road issues.
-Temporary Phase 3 storage. This will be replaced by PostgreSQL in Phase 4.
+Handles PostgreSQL database operations and business logic for road issues
+using SQLAlchemy ORM sessions.
 """
+
 from typing import List, Optional
 from datetime import datetime, timezone
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from models.issue import Issue
 from schemas.issue import IssueCreate
-
-# In-memory storage list for Phase 3
-# Temporary Phase 3 storage. This will be replaced by PostgreSQL in Phase 4.
-_issues_db: List[dict] = [
-    {
-        "id": "ISS-0001",
-        "issueType": "Traffic Signal Failure",
-        "description": "Traffic signals stuck on red at Sitabuldi intersection causing heavy congestion.",
-        "location": "Sitabuldi Interchange",
-        "area": "Sitabuldi",
-        "severity": "Critical",
-        "reportedAt": "2026-09-10T14:30:00Z",
-        "status": "Reported"
-    },
-    {
-        "id": "ISS-0002",
-        "issueType": "Pothole",
-        "description": "Large deep pothole on right lane posing danger to two-wheelers.",
-        "location": "Wardha Road near Metro Pillar 42",
-        "area": "Wardha Road",
-        "severity": "High",
-        "reportedAt": "2026-09-10T14:45:00Z",
-        "status": "Reported"
-    },
-    {
-        "id": "ISS-0003",
-        "issueType": "Waterlogging",
-        "description": "Rainwater accumulation across two lanes near underpass.",
-        "location": "Manish Nagar Subway",
-        "area": "Manish Nagar",
-        "severity": "Medium",
-        "reportedAt": "2026-09-10T13:50:00Z",
-        "status": "Reported"
-    }
-]
-
-_next_id_counter = 4
 
 class IssueService:
     @staticmethod
-    def get_all_issues() -> List[dict]:
-        """Return all road issues, newest first."""
-        return list(reversed(_issues_db))
+    def generate_next_issue_id(db: Session) -> str:
+        """
+        Generate a human-readable sequential issue ID in the format: ISS-0001, ISS-0002, etc.
+        Safely scans existing IDs to avoid any duplicate keys.
+        """
+        all_ids = db.query(Issue.id).all()
+        max_num = 0
+        for (existing_id,) in all_ids:
+            if existing_id and existing_id.startswith("ISS-"):
+                try:
+                    num = int(existing_id.split("-")[1])
+                    if num > max_num:
+                        max_num = num
+                except (ValueError, IndexError):
+                    continue
+        return f"ISS-{max_num + 1:04d}"
 
     @staticmethod
-    def get_issue_by_id(issue_id: str) -> Optional[dict]:
-        """Find an issue by its unique ID."""
-        for issue in _issues_db:
-            if issue["id"].lower() == issue_id.lower():
-                return issue
-        return None
+    def get_all_issues(db: Session) -> List[Issue]:
+        """
+        Retrieve all road issues from PostgreSQL, ordered with newest issues first.
+        """
+        return db.query(Issue).order_by(Issue.created_at.desc(), Issue.id.desc()).all()
 
     @staticmethod
-    def create_issue(issue_in: IssueCreate) -> dict:
-        """Create and store a new road issue with backend-generated ID."""
-        global _next_id_counter
+    def get_issue_by_id(db: Session, issue_id: str) -> Optional[Issue]:
+        """
+        Retrieve a single road issue by its ID (case-insensitive).
+        """
+        return db.query(Issue).filter(func.lower(Issue.id) == issue_id.strip().lower()).first()
 
-        issue_id = f"ISS-{_next_id_counter:04d}"
-        _next_id_counter += 1
+    @staticmethod
+    def create_issue(db: Session, issue_in: IssueCreate) -> Issue:
+        """
+        Create and persist a new road issue to PostgreSQL:
+        1. Generates backend-controlled unique ID (e.g. ISS-0001)
+        2. Sets initial status to 'Reported'
+        3. Commits to PostgreSQL transaction and refreshes ORM instance
+        """
+        issue_id = IssueService.generate_next_issue_id(db)
 
-        # Use client timestamp or fallback to current UTC
+        # Fallback to current UTC timestamp if not provided by client
         reported_time = issue_in.reportedAt or datetime.now(timezone.utc).isoformat()
 
-        new_issue = {
-            "id": issue_id,
-            "issueType": issue_in.issueType,
-            "description": issue_in.description,
-            "location": issue_in.location,
-            "area": issue_in.area or issue_in.location,
-            "severity": issue_in.severity,
-            "reportedAt": reported_time,
-            "status": "Reported"
-        }
+        db_issue = Issue(
+            id=issue_id,
+            issue_type=issue_in.issueType,
+            description=issue_in.description,
+            location=issue_in.location,
+            area=issue_in.area or issue_in.location,
+            severity=issue_in.severity,
+            status="Reported",
+            reported_at=reported_time
+        )
 
-        _issues_db.append(new_issue)
-        return new_issue
+        try:
+            db.add(db_issue)
+            db.commit()
+            db.refresh(db_issue)
+            return db_issue
+        except Exception:
+            db.rollback()
+            raise

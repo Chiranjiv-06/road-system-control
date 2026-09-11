@@ -1,6 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from database import engine, Base
+import models.issue  # Ensure models are imported so Base knows about the 'issues' table
 from routes.issues import router as issues_router
+
+# Automatically create tables in PostgreSQL on application startup
+# (No Alembic required for Phase 4)
+Base.metadata.create_all(bind=engine)
 
 # Initialize FastAPI Application
 app = FastAPI(
@@ -19,7 +25,7 @@ origins = [
     "http://127.0.0.1:8000",
     "http://127.0.0.1:5500",
     "http://127.0.0.1:3000",
-    "null"  # Supports opening frontend directly via file:// in the browser
+    "null"  # Supports opening frontend directly via file:// in browser
 ]
 
 app.add_middleware(
