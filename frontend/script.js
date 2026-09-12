@@ -1,96 +1,25 @@
 /**
- * Road System Control — Phase 1 & 2 Frontend Logic
- * Vanilla JavaScript: Navigation, localStorage issue management, form validation, and detail modal
+ * Road System Control — Phase 5 Integrated Frontend Logic
+ * Vanilla JavaScript: FastAPI REST API integration, PostgreSQL data flow,
+ * real-time health indicator, client validation, and detail modal.
+ *
+ * NOTE: As of Phase 5, PostgreSQL/FastAPI is the authoritative SOURCE OF TRUTH.
+ * Issue persistence via localStorage has been completely removed.
  */
 
 // ==========================================================================
-// TEMPORARY PHASE 2 STORAGE
-// Temporary Phase 2 storage. This will be replaced by FastAPI/PostgreSQL in a later phase.
+// 1. BACKEND API CONFIGURATION
 // ==========================================================================
-const STORAGE_KEY = 'roadIssues';
+const API_BASE_URL = "http://127.0.0.1:8000/api";
 
-// In-memory cache for session image previews (prevents localStorage quota overflow)
+// In-memory cache for session image previews (client-side preview only; backend file upload in future phase)
 const sessionImageMap = new Map();
 
-/**
- * Seed initial mock issues if localStorage is empty
- */
-const initialSeedIssues = [
-    {
-        id: "ISS-1001",
-        issueType: "Traffic Signal Failure",
-        description: "Traffic signals stuck on red at Sitabuldi intersection causing bottleneck congestion across all 4 corridors.",
-        location: "Sitabuldi",
-        severity: "Critical",
-        reportedAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
-        status: "Under Review",
-        hasImage: false
-    },
-    {
-        id: "ISS-1002",
-        issueType: "Pothole",
-        description: "Large deep pothole on the right lane near metro pillar 42. Poses high risk to two-wheelers.",
-        location: "Wardha Road",
-        severity: "High",
-        reportedAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-        status: "Reported",
-        hasImage: false
-    },
-    {
-        id: "ISS-1003",
-        issueType: "Waterlogging",
-        description: "Monsoon runoff accumulated across two lanes due to clogged storm drains near subway entrance.",
-        location: "Manish Nagar",
-        severity: "Medium",
-        reportedAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-        status: "Resolved",
-        hasImage: false
-    },
-    {
-        id: "ISS-1004",
-        issueType: "Road Obstruction",
-        description: "Large fallen tree branches partially obstructing vehicular traffic on outer lane.",
-        location: "Hingna Road",
-        severity: "High",
-        reportedAt: new Date(Date.now() - 120 * 60 * 1000).toISOString(),
-        status: "In Progress",
-        hasImage: false
-    }
-];
-
-/**
- * Fetch issues from localStorage
- * @returns {Array} List of issue objects
- */
-function getStoredIssues() {
-    try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        if (!data) {
-            // Seed initial data on first launch
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(initialSeedIssues));
-            return [...initialSeedIssues];
-        }
-        return JSON.parse(data);
-    } catch (e) {
-        console.warn('Could not read from localStorage, using in-memory mock data:', e);
-        return [...initialSeedIssues];
-    }
-}
-
-/**
- * Save issues to localStorage
- * @param {Array} issues 
- */
-function saveIssuesToStorage(issues) {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(issues));
-    } catch (e) {
-        console.error('Failed to save issues to localStorage:', e);
-    }
-}
+// In-memory application state for road issues loaded from the API
+let issuesState = [];
 
 // ==========================================================================
-// MAIN DOM LOGIC
+// 2. MAIN DOM INITIALIZATION
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
     // --- Navigation & Core Elements ---
@@ -104,18 +33,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const toast = document.getElementById('toastNotification');
     const quickActionBtns = document.querySelectorAll('.quick-action-btn');
 
+    // --- Backend Health Elements ---
+    const systemStatusIndicator = document.getElementById('systemStatusIndicator');
+    const systemStatusText = document.getElementById('systemStatusText');
+
     // --- Metrics & Table Elements ---
     const metricTotal = document.getElementById('metricTotal');
     const metricCritical = document.getElementById('metricCritical');
     const metricActive = document.getElementById('metricActive');
     const metricResolved = document.getElementById('metricResolved');
     const recentIssuesTableBody = document.getElementById('recentIssuesTableBody');
+    const refreshIssuesBtn = document.getElementById('refreshIssuesBtn');
 
     // --- Report Issue Form Elements ---
     const reportIssueForm = document.getElementById('reportIssueForm');
     const issueTypeInput = document.getElementById('issueType');
     const issueDescriptionInput = document.getElementById('issueDescription');
     const issueLocationInput = document.getElementById('issueLocation');
+    const issueAreaInput = document.getElementById('issueArea');
     const issueSeverityInput = document.getElementById('issueSeverity');
     const issueDateTimeInput = document.getElementById('issueDateTime');
     const issueImageInput = document.getElementById('issueImage');
@@ -124,12 +59,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const imagePreviewName = document.getElementById('imagePreviewName');
     const removeImageBtn = document.getElementById('removeImageBtn');
     const clearFormBtn = document.getElementById('clearFormBtn');
+    const submitIssueBtn = document.getElementById('submitIssueBtn');
 
     // --- Issue Details Modal Elements ---
     const issueDetailsModal = document.getElementById('issueDetailsModal');
     const modalIssueId = document.getElementById('modalIssueId');
     const modalIssueType = document.getElementById('modalIssueType');
     const modalLocation = document.getElementById('modalLocation');
+    const modalArea = document.getElementById('modalArea');
     const modalSeverityContainer = document.getElementById('modalSeverityContainer');
     const modalStatusContainer = document.getElementById('modalStatusContainer');
     const modalReportedAt = document.getElementById('modalReportedAt');
@@ -139,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalBtn = document.getElementById('closeModalBtn');
     const closeModalFooterBtn = document.getElementById('closeModalFooterBtn');
 
-    // In-memory holder for selected image data URL in the current form
+    // In-memory holder for selected image in current form session
     let currentImageSessionDataUrl = null;
 
     // Section Titles Mapping
@@ -152,6 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
         'admin': 'Administration & Roles'
     };
 
+    // ==========================================================================
+    // 3. UTILITY FUNCTIONS
+    // ==========================================================================
+
     /**
      * Get current date-time string formatted for <input type="datetime-local">
      */
@@ -161,9 +102,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Format timestamp to friendly relative time string (e.g. "10 min ago")
+     * Format timestamp into friendly relative time string (e.g. "10 min ago")
      */
     function formatTimeAgo(dateString) {
+        if (!dateString) return 'Just now';
         const date = new Date(dateString);
         const now = new Date();
         const diffInSeconds = Math.floor((now - date) / 1000);
@@ -226,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Escape HTML helper to prevent XSS in table & modal
+     * Escape HTML helper to prevent XSS
      */
     function escapeHtml(str) {
         if (!str) return '';
@@ -236,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Display a toast notification
+     * Display toast notifications
      * @param {string} message 
      * @param {string} type 'default' | 'success' | 'error'
      */
@@ -255,12 +197,11 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(toastTimeout);
         toastTimeout = setTimeout(() => {
             toast.classList.remove('show');
-        }, 3200);
+        }, 3400);
     }
 
     /**
-     * Switch the visible section
-     * @param {string} sectionKey 
+     * Switch visible dashboard section
      */
     function switchSection(sectionKey) {
         navItems.forEach(item => {
@@ -283,10 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
             activeSectionTitle.textContent = titlesMap[sectionKey];
         }
 
-        // Window scroll to top of content
         window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        // Close mobile drawer if open
         closeMobileSidebar();
     }
 
@@ -308,23 +246,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================================================
-    // RECENT ISSUES TABLE & DASHBOARD METRICS
+    // 4. FASTAPI HEALTH CHECK
     // ==========================================================================
-    function renderDashboard() {
-        const issues = getStoredIssues();
+    async function checkBackendHealth() {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3500);
 
-        // 1. Calculate Metrics
-        const totalCount = issues.length;
-        const criticalCount = issues.filter(i => i.severity === 'Critical').length;
-        const activeCount = issues.filter(i => i.status !== 'Resolved').length;
-        const resolvedCount = issues.filter(i => i.status === 'Resolved').length;
+            const response = await fetch(`${API_BASE_URL}/health`, {
+                method: 'GET',
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
 
-        if (metricTotal) metricTotal.textContent = totalCount;
-        if (metricCritical) metricCritical.textContent = criticalCount;
-        if (metricActive) metricActive.textContent = activeCount;
-        if (metricResolved) metricResolved.textContent = resolvedCount;
+            if (response.ok) {
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    if (systemStatusIndicator) {
+                        systemStatusIndicator.classList.remove('offline');
+                        systemStatusIndicator.title = "Connected to FastAPI & PostgreSQL (Online)";
+                    }
+                    if (systemStatusText) {
+                        systemStatusText.textContent = "System Operational";
+                    }
+                    return true;
+                }
+            }
+            throw new Error(`Server returned status: ${response.status}`);
+        } catch (error) {
+            if (systemStatusIndicator) {
+                systemStatusIndicator.classList.add('offline');
+                systemStatusIndicator.title = "Cannot connect to FastAPI server at " + API_BASE_URL;
+            }
+            if (systemStatusText) {
+                systemStatusText.textContent = "Backend Offline";
+            }
+            return false;
+        }
+    }
 
-        // 2. Render Recent Issues Table
+    // ==========================================================================
+    // 5. FETCH & RENDER ISSUES FROM FASTAPI / POSTGRESQL
+    // ==========================================================================
+
+    /**
+     * Recalculate and update dashboard metrics cards from API data
+     */
+    function updateDashboardMetrics(issues) {
+        const total = issues.length;
+        const critical = issues.filter(i => i.severity === 'Critical').length;
+        const active = issues.filter(i => i.status !== 'Resolved').length;
+        const resolved = issues.filter(i => i.status === 'Resolved').length;
+
+        if (metricTotal) metricTotal.textContent = total;
+        if (metricCritical) metricCritical.textContent = critical;
+        if (metricActive) metricActive.textContent = active;
+        if (metricResolved) metricResolved.textContent = resolved;
+    }
+
+    /**
+     * Render issues into Recent Issues table
+     */
+    function renderIssuesTable(issues) {
         if (!recentIssuesTableBody) return;
         recentIssuesTableBody.innerHTML = '';
 
@@ -332,37 +315,43 @@ document.addEventListener('DOMContentLoaded', () => {
             const emptyRow = document.createElement('tr');
             emptyRow.innerHTML = `
                 <td colspan="6" class="text-center py-4 text-muted">
-                    No road issues recorded. Submit an issue using the button above to populate this feed.
+                    No road issues recorded in the database yet. Click <strong>Report Road Issue</strong> to submit the first incident.
                 </td>
             `;
             recentIssuesTableBody.appendChild(emptyRow);
             return;
         }
 
-        // Sort: newest first
-        const sortedIssues = [...issues].sort((a, b) => new Date(b.reportedAt) - new Date(a.reportedAt));
-
-        sortedIssues.forEach(issue => {
+        issues.forEach(issue => {
             const row = document.createElement('tr');
             row.className = 'clickable-row';
 
-            // Severity dot indicator
+            // Dot indicator based on severity
             let indicatorClass = '';
             if (issue.severity === 'Critical') indicatorClass = 'danger';
             else if (issue.severity === 'Low') indicatorClass = 'info';
 
+            // Location display with area tag if available
+            const areaDisplay = issue.area ? `<span class="text-xs text-muted">(${escapeHtml(issue.area)})</span>` : '';
+
+            // Check if photo preview was attached in session
+            const hasPhotoSession = sessionImageMap.has(issue.id);
+
             row.innerHTML = `
                 <td>
                     <div class="issue-name-cell">
+                        <span class="issue-id-tag">${escapeHtml(issue.id)}</span>
                         <span class="issue-type-indicator ${indicatorClass}"></span>
                         <strong>${escapeHtml(issue.issueType)}</strong>
-                        ${issue.hasImage ? '<span title="Photo evidence attached" style="font-size:0.75rem;">📷</span>' : ''}
+                        ${hasPhotoSession ? '<span title="Photo attached in this session" style="font-size:0.75rem;">📷</span>' : ''}
                     </div>
                 </td>
-                <td>${escapeHtml(issue.location)}</td>
+                <td>${escapeHtml(issue.location)} ${areaDisplay}</td>
                 <td>${getSeverityBadge(issue.severity)}</td>
                 <td>${getStatusBadge(issue.status)}</td>
-                <td class="text-muted" title="${new Date(issue.reportedAt).toLocaleString()}">${formatTimeAgo(issue.reportedAt)}</td>
+                <td class="text-muted" title="${new Date(issue.reportedAt).toLocaleString()}">
+                    ${formatTimeAgo(issue.reportedAt)}
+                </td>
                 <td class="text-right">
                     <button type="button" class="btn btn-outline btn-sm view-issue-btn" data-id="${issue.id}">
                         View
@@ -370,8 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
             `;
 
-            // Row click triggers detail viewer
-            row.addEventListener('click', (e) => {
+            row.addEventListener('click', () => {
                 openIssueDetails(issue);
             });
 
@@ -379,8 +367,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    /**
+     * Load issues via GET /api/issues from FastAPI backend
+     */
+    async function loadIssues(showLoadingSpinner = true) {
+        if (showLoadingSpinner && recentIssuesTableBody) {
+            recentIssuesTableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="table-loading-cell">
+                        <span class="spinner-inline"></span> Loading road issues from database...
+                    </td>
+                </tr>
+            `;
+        }
+
+        try {
+            const isOnline = await checkBackendHealth();
+            if (!isOnline) {
+                throw new Error("Backend connection offline");
+            }
+
+            const response = await fetch(`${API_BASE_URL}/issues`);
+            if (!response.ok) {
+                throw new Error(`Server returned error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            issuesState = Array.isArray(data) ? data : [];
+
+            updateDashboardMetrics(issuesState);
+            renderIssuesTable(issuesState);
+        } catch (error) {
+            console.error("Failed to load issues from FastAPI:", error);
+            if (recentIssuesTableBody) {
+                recentIssuesTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="table-loading-cell text-danger">
+                            ⚠️ Unable to connect to Road System Control server.<br>
+                            <span class="text-xs text-muted">Please check that FastAPI is running on <code>http://127.0.0.1:8000</code>.</span>
+                        </td>
+                    </tr>
+                `;
+            }
+            showToast("Unable to reach backend server. Please check FastAPI.", "error");
+        }
+    }
+
     // ==========================================================================
-    // ISSUE DETAILS MODAL
+    // 6. ISSUE DETAILS MODAL
     // ==========================================================================
     function openIssueDetails(issue) {
         if (!issueDetailsModal) return;
@@ -388,6 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (modalIssueId) modalIssueId.textContent = issue.id;
         if (modalIssueType) modalIssueType.textContent = issue.issueType;
         if (modalLocation) modalLocation.textContent = issue.location;
+        if (modalArea) modalArea.textContent = issue.area || 'Not specified';
         if (modalSeverityContainer) modalSeverityContainer.innerHTML = getSeverityBadge(issue.severity);
         if (modalStatusContainer) modalStatusContainer.innerHTML = getStatusBadge(issue.status);
         if (modalReportedAt) {
@@ -396,7 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (modalDescription) modalDescription.textContent = issue.description;
 
-        // Check if image preview exists in session
+        // Display photo if cached in current session preview, otherwise hide cleanly
         const sessionImage = sessionImageMap.get(issue.id);
         if (sessionImage && modalPhotoSection && modalPhotoImg) {
             modalPhotoImg.src = sessionImage;
@@ -419,13 +454,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeModalFooterBtn) closeModalFooterBtn.addEventListener('click', closeIssueDetails);
     if (issueDetailsModal) {
         issueDetailsModal.addEventListener('click', (e) => {
-            if (e.target === issueDetailsModal) {
-                closeIssueDetails();
-            }
+            if (e.target === issueDetailsModal) closeIssueDetails();
         });
     }
-
-    // Escape key closes modal
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && issueDetailsModal && issueDetailsModal.style.display === 'flex') {
             closeIssueDetails();
@@ -433,17 +464,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================================================
-    // REPORT ISSUE FORM HANDLING & VALIDATION
+    // 7. REPORT ISSUE FORM HANDLING & POST /api/issues
     // ==========================================================================
 
-    // Initialize datetime-local field with current timestamp
     if (issueDateTimeInput) {
         issueDateTimeInput.value = getLocalDateTimeString();
     }
 
-    /**
-     * Clear validation errors on inputs
-     */
     function clearFieldError(inputEl, errorElId) {
         if (inputEl) inputEl.classList.remove('is-invalid');
         const errorEl = document.getElementById(errorElId);
@@ -462,7 +489,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Attach input listeners to clear errors on change
     if (issueTypeInput) {
         issueTypeInput.addEventListener('change', () => clearFieldError(issueTypeInput, 'issueTypeError'));
     }
@@ -479,9 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
         issueDateTimeInput.addEventListener('input', () => clearFieldError(issueDateTimeInput, 'issueDateTimeError'));
     }
 
-    /**
-     * Image Selection & Preview (Frontend session only)
-     */
+    // Image file selection handler (session preview only)
     if (issueImageInput) {
         issueImageInput.addEventListener('change', (e) => {
             clearFieldError(issueImageInput, 'issueImageError');
@@ -492,7 +516,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Verify file is an image
             if (!file.type.startsWith('image/')) {
                 setFieldError(issueImageInput, 'issueImageError', 'Selected file must be an image (PNG, JPG, WEBP).');
                 issueImageInput.value = '';
@@ -500,7 +523,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Read image into session preview
             const reader = new FileReader();
             reader.onload = (event) => {
                 currentImageSessionDataUrl = event.target.result;
@@ -528,9 +550,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Clear Form Action
-     */
     function resetForm() {
         if (reportIssueForm) reportIssueForm.reset();
         if (issueDateTimeInput) issueDateTimeInput.value = getLocalDateTimeString();
@@ -553,10 +572,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Submit Road Issue Form Handler
+     * Submit Form: Send POST /api/issues to FastAPI
      */
     if (reportIssueForm) {
-        reportIssueForm.addEventListener('submit', (e) => {
+        reportIssueForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             let isValid = true;
@@ -614,43 +633,74 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Create New Issue Object
-            const newIssueId = `ISS-${Math.floor(1000 + Math.random() * 9000)}`;
-            const newIssue = {
-                id: newIssueId,
+            // Build request payload with ONLY fields accepted by backend
+            const areaVal = issueAreaInput && issueAreaInput.value.trim() ? issueAreaInput.value.trim() : null;
+            const payload = {
                 issueType: issueType,
                 description: description,
                 location: location,
+                area: areaVal,
                 severity: severity,
-                reportedAt: new Date(dateTimeVal).toISOString(),
-                status: 'Reported',
-                hasImage: Boolean(currentImageSessionDataUrl)
+                reportedAt: new Date(dateTimeVal).toISOString()
             };
 
-            // Cache session photo in memory (if selected)
-            if (currentImageSessionDataUrl) {
-                sessionImageMap.set(newIssueId, currentImageSessionDataUrl);
+            // Loading state on submit button (prevents double submission)
+            if (submitIssueBtn) {
+                submitIssueBtn.disabled = true;
+                submitIssueBtn.innerHTML = `<span class="spinner-inline"></span> Submitting to Database...`;
             }
 
-            // Persist to localStorage (Temporary Phase 2 storage)
-            const currentIssues = getStoredIssues();
-            currentIssues.unshift(newIssue); // Put newest issue first
-            saveIssuesToStorage(currentIssues);
+            try {
+                const response = await fetch(`${API_BASE_URL}/issues`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
 
-            // Reset Form
-            resetForm();
+                if (response.status === 201) {
+                    const createdIssue = await response.json();
 
-            // Refresh Dashboard Display
-            renderDashboard();
+                    // If photo was attached, cache in session for detail view
+                    if (currentImageSessionDataUrl) {
+                        sessionImageMap.set(createdIssue.id, currentImageSessionDataUrl);
+                    }
 
-            // Success feedback and navigate to dashboard
-            showToast(`Issue ${newIssueId} submitted successfully!`, 'success');
-            switchSection('dashboard');
+                    // Prepend to in-memory state
+                    issuesState.unshift(createdIssue);
+                    updateDashboardMetrics(issuesState);
+                    renderIssuesTable(issuesState);
+
+                    // Reset form & navigate to dashboard
+                    resetForm();
+                    showToast(`Issue ${createdIssue.id} saved to PostgreSQL successfully!`, 'success');
+                    switchSection('dashboard');
+                } else if (response.status === 422) {
+                    const errorDetail = await response.json();
+                    console.error("Validation error from backend:", errorDetail);
+                    showToast('Some issue details are invalid. Please check inputs.', 'error');
+                } else {
+                    throw new Error(`Server returned status: ${response.status}`);
+                }
+            } catch (error) {
+                console.error("Failed to submit issue to FastAPI:", error);
+                showToast('Unable to save issue. Please check that FastAPI backend is running.', 'error');
+            } finally {
+                // Restore button state
+                if (submitIssueBtn) {
+                    submitIssueBtn.disabled = false;
+                    submitIssueBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Submit Road Issue
+                    `;
+                }
+            }
         });
     }
 
     // ==========================================================================
-    // SIDEBAR & QUICK ACTION EVENTS
+    // 8. SIDEBAR, SYNC & QUICK ACTION EVENTS
     // ==========================================================================
     navItems.forEach(item => {
         item.addEventListener('click', (event) => {
@@ -666,10 +716,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeMobileSidebar);
     if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
 
+    // Refresh / Sync Button
+    if (refreshIssuesBtn) {
+        refreshIssuesBtn.addEventListener('click', () => {
+            showToast('Syncing with PostgreSQL database...', 'default');
+            loadIssues(true);
+        });
+    }
+
     quickActionBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const action = btn.dataset.action;
-
             switch (action) {
                 case 'nav-report':
                     switchSection('report-issue');
@@ -690,11 +747,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('Emergency Incident #EM-4091: Response units ETA 6 mins.');
                     break;
                 default:
-                    showToast('Action triggered (UI Preview)');
+                    showToast('Action triggered');
             }
         });
     });
 
-    // Initial render of dashboard table and metrics from localStorage
-    renderDashboard();
+    // ==========================================================================
+    // 9. INITIALIZATION
+    // ==========================================================================
+    // Initial health check and load issues from PostgreSQL
+    checkBackendHealth();
+    loadIssues(true);
+
+    // Periodic health check every 15 seconds to dynamically track backend connection
+    setInterval(checkBackendHealth, 15000);
 });
