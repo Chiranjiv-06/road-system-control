@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Road System Control — Phase 1 & 2 Stylesheet
+   Road System Control — Phase 1, 2 & 5 Integrated Stylesheet
    Modern government/traffic-management dashboard styling
    ========================================================================== */
 
@@ -49,7 +49,7 @@
     --radius-md: 10px;
     --radius-lg: 14px;
     
-    /* Subtle Box Shadows */
+    /* Box Shadows */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px -1px rgba(0, 0, 0, 0.07);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
@@ -267,7 +267,7 @@ body {
     gap: 1.5rem;
 }
 
-/* System Status Indicator */
+/* System Status Indicator (Live Health) */
 .status-indicator {
     display: flex;
     align-items: center;
@@ -276,6 +276,7 @@ body {
     padding: 0.35rem 0.8rem;
     border-radius: 9999px;
     border: 1px solid rgba(5, 150, 105, 0.2);
+    transition: all 0.2s ease;
 }
 
 .status-dot {
@@ -285,12 +286,28 @@ body {
     border-radius: 50%;
     box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
     display: inline-block;
+    transition: background-color 0.2s ease;
 }
 
 .status-text {
     font-size: 0.78rem;
     font-weight: 600;
     color: var(--success-text);
+}
+
+/* Offline state */
+.status-indicator.offline {
+    background-color: var(--danger-soft);
+    border-color: rgba(220, 38, 38, 0.25);
+}
+
+.status-indicator.offline .status-dot {
+    background-color: var(--danger-base);
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.25);
+}
+
+.status-indicator.offline .status-text {
+    color: var(--danger-text);
 }
 
 /* User Profile */
@@ -527,6 +544,12 @@ body {
     background: transparent;
 }
 
+.btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .btn-primary {
     background-color: var(--info-base);
     color: #ffffff;
@@ -611,6 +634,18 @@ body {
     text-transform: uppercase;
 }
 
+.panel-badge.badge-postgres {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.panel-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 /* Table styling */
 .table-container {
     overflow-x: auto;
@@ -662,6 +697,16 @@ body {
     color: var(--text-primary);
 }
 
+.issue-id-tag {
+    font-family: monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    background-color: #f1f5f9;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+}
+
 .issue-type-indicator {
     width: 8px;
     height: 8px;
@@ -680,6 +725,29 @@ body {
 
 .issue-type-indicator.neutral {
     background-color: #94a3b8;
+}
+
+/* Loading state in table */
+.table-loading-cell {
+    padding: 2.5rem 1rem !important;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.spinner-inline {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--info-base);
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+    vertical-align: middle;
+    margin-right: 0.4rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 /* ----------------- Traffic Status Panel ----------------- */
@@ -818,7 +886,7 @@ body {
 }
 
 /* ==========================================================================
-   PHASE 2: ROAD ISSUE REPORTING FORM & DETAILS MODAL STYLES
+   ROAD ISSUE REPORTING FORM & DETAILS MODAL STYLES
    ========================================================================== */
 
 .report-form-container {
