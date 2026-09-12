@@ -10,25 +10,24 @@ Current road management systems are mostly reactive. Authorities receive complai
 
 ## 🚀 Features
 
-- Road issue reporting
-- Traffic monitoring dashboard
-- Emergency alerts
-- Interactive map integration
+- Road issue reporting (Full-stack integrated with PostgreSQL)
+- Real-time traffic monitoring dashboard
+- Emergency alert dispatch
+- Interactive map integration (Upcoming)
 - AI-based issue prioritization (Future Scope)
-- Admin dashboard
+- Admin dashboard (Upcoming)
 
 ---
 
 ## 🛠 Tech Stack
 
 ### Frontend
-- HTML5
-- CSS3
-- JavaScript (Vanilla)
+- HTML5 & CSS3
+- Vanilla JavaScript (`fetch()` API, Zero external frameworks)
 
 ### Backend
-- Python
-- FastAPI
+- Python 3.13
+- FastAPI REST API
 - SQLAlchemy ORM
 
 ### Database
@@ -42,25 +41,25 @@ Current road management systems are mostly reactive. Authorities receive complai
 road-system-control/
 │
 ├── frontend/
-│   ├── index.html
-│   ├── style.css
-│   └── script.js
+│   ├── index.html       # Dynamic dashboard, modal & reporting form
+│   ├── style.css        # Responsive styling & status indicators
+│   └── script.js        # API integration, state management & validation
 │
 ├── backend/
-│   ├── main.py
-│   ├── database.py
-│   ├── requirements.txt
+│   ├── main.py          # FastAPI app, CORS & startup table creation
+│   ├── database.py      # SQLAlchemy engine & session dependency
+│   ├── requirements.txt # Minimal Python dependencies
 │   ├── models/
-│   │   └── issue.py
+│   │   └── issue.py     # SQLAlchemy Issue model ('issues' table)
 │   ├── routes/
-│   │   └── issues.py
+│   │   └── issues.py    # REST API endpoints (/api/issues)
 │   ├── schemas/
-│   │   └── issue.py
+│   │   └── issue.py     # Pydantic validation & response serialization
 │   └── services/
-│       └── issue_service.py
+│       └── issue_service.py # PostgreSQL persistence & sequential ID generator
 │
 ├── docs/
-├── .env.example
+├── .env.example         # Environment template
 ├── .gitignore
 └── README.md
 ```
@@ -69,62 +68,88 @@ road-system-control/
 
 ## 🔄 Project Development Roadmap
 
-- **Phase 1**: Frontend Foundation (UI, layout, mock data feed)
-- **Phase 2**: Road Issue Reporting (Frontend validation, form, localStorage)
-- **Phase 3**: FastAPI REST API Foundation (In-memory issue storage)
-- **Phase 4**: PostgreSQL Database Persistence (SQLAlchemy ORM + PostgreSQL)
-- **Phase 5**: Frontend ↔ FastAPI ↔ PostgreSQL Integration *(Upcoming)*
-
-> [!NOTE]
-> In Phase 4, backend persistence with PostgreSQL is complete. The frontend currently continues to use `localStorage` and will be connected to the FastAPI endpoints in Phase 5.
+- **Phase 1**: Frontend Foundation (UI, layout, responsive design) — *Completed*
+- **Phase 2**: Road Issue Reporting (Frontend validation, form, localStorage) — *Completed*
+- **Phase 3**: FastAPI REST API Foundation (In-memory issue storage) — *Completed*
+- **Phase 4**: PostgreSQL Database Persistence (SQLAlchemy ORM + PostgreSQL) — *Completed*
+- **Phase 5**: Frontend ↔ FastAPI ↔ PostgreSQL Integration — **Completed**
+- **Phase 6**: Next Planned Phase (e.g. Traffic Monitoring / Emergency Alerts / Maps) — *Upcoming*
 
 ---
 
-## ⚙️ Backend Setup & Database Guide
+## 🔗 Phase 5: Full-Stack Integration Architecture
 
-### 1. Database Prerequisites
-Make sure PostgreSQL is installed and running locally:
-- **Database Name**: `road_system_control`
-- **Table Name**: `issues` (auto-created on application startup by SQLAlchemy)
+PostgreSQL and FastAPI serve as the authoritative **SOURCE OF TRUTH** for road issue reporting:
 
-Create the database in PostgreSQL if not already present:
+```
+[ User in Browser ]
+        │
+        ▼ (HTML / CSS / JavaScript)
+[ Vanilla JS fetch() API ]
+        │
+        ▼ (HTTP JSON via API_BASE_URL = http://127.0.0.1:8000/api)
+[ FastAPI REST Endpoints ]
+        │
+        ▼ (Pydantic Validation & ID Generation)
+[ SQLAlchemy ORM Session ]
+        │
+        ▼ (psycopg2-binary SQL queries)
+[ PostgreSQL Database ('issues' table) ]
+        │
+        ▼ (Returned record with backend ID & status)
+[ Browser Dashboard & Recent Issues Table Updates ]
+```
+
+---
+
+## ⚙️ Running the Full Application Locally
+
+### 1. Database Setup
+Ensure PostgreSQL is running locally with the target database:
 ```sql
 CREATE DATABASE road_system_control;
 ```
 
-### 2. Environment Configuration
-Copy the template configuration file:
-```bash
-cp .env.example .env
-```
-Edit `.env` and provide your PostgreSQL credentials:
+Configure `.env` from `.env.example`:
 ```env
 DATABASE_URL=postgresql://postgres:your_password@localhost:5432/road_system_control
 ```
 
-### 3. Install Dependencies
+### 2. Start the FastAPI Backend (Terminal 1)
 ```bash
 cd backend
 pip install -r requirements.txt
+python -m uvicorn main:app --reload
 ```
+- Backend API: `http://127.0.0.1:8000`
+- Interactive Swagger UI: `http://127.0.0.1:8000/docs`
+- Redoc: `http://127.0.0.1:8000/redoc`
 
-### 4. Run the FastAPI Server
+### 3. Start the Frontend Web Server (Terminal 2)
 ```bash
-uvicorn main:app --reload
+cd frontend
+python -m http.server 5500
 ```
-The server will start at `http://127.0.0.1:8000`.
+Open your browser at:
+**`http://127.0.0.1:5500`**
 
-### 5. Interactive API Documentation (Swagger)
-Once the server is running, explore and test the endpoints:
-- Swagger UI: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- Redoc: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+---
 
-### 6. Verify Database Records
-You can verify saved issues directly via `psql`:
-```sql
-\c road_system_control
-SELECT id, issue_type, location, severity, status FROM issues;
-```
+## 📡 API Endpoints Used by Frontend
+
+| Method | Endpoint | Description | Frontend Consumer |
+|---|---|---|---|
+| `GET` | `/api/health` | Service health status check | `checkBackendHealth()` — updates header status indicator |
+| `GET` | `/api/issues` | Retrieve all issues (newest first) | `loadIssues()` — populates metrics & recent issues table |
+| `POST` | `/api/issues` | Create a new issue in PostgreSQL | `reportIssueForm` submit — generates `ISS-XXXX` & returns 201 |
+| `GET` | `/api/issues/{id}`| Fetch specific issue details | Available for detail viewing |
+
+---
+
+## 📌 Important Limitations & Scope Boundary
+- **No Backend Image Storage**: Photo selection currently operates as a client-side session preview. Binary file uploads to cloud/disk storage will be introduced in future phases.
+- **localStorage Removed**: `localStorage` is no longer used for road issue persistence; all records reside in PostgreSQL.
+- **Phase 6 Scope**: Traffic telemetry, map integration, and emergency broadcasts remain planned for upcoming phases.
 
 ---
 
@@ -136,4 +161,4 @@ SELECT id, issue_type, location, severity, status FROM issues;
 
 ## Status
 
-🚧 Under Development — Phase 4 Completed
+🚧 Under Development — Phase 5 Completed
