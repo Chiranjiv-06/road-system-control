@@ -798,6 +798,11 @@ body {
     color: var(--danger-text);
 }
 
+.pill-severe {
+    background-color: #7f1d1d;
+    color: #ffffff;
+}
+
 .pill-moderate {
     background-color: var(--warning-soft);
     color: var(--warning-text);
@@ -1374,6 +1379,74 @@ textarea.form-control {
 .toast-notification.toast-success {
     background-color: #065f46;
     color: #ffffff;
+}
+
+/* ----------------- Phase 6: Traffic Monitoring View ----------------- */
+.traffic-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.traffic-header-titles h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.2rem;
+}
+
+.traffic-header-titles p {
+    font-size: 0.84rem;
+    color: var(--text-muted);
+}
+
+.traffic-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.refresh-indicator {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    background-color: #f1f5f9;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.refresh-indicator::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--success-base);
+}
+
+.traffic-road-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.traffic-road-title {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.traffic-road-id {
+    font-family: monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
 }
 
 /* ----------------- Responsive Design ----------------- */

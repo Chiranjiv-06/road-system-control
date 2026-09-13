@@ -48,15 +48,23 @@ road-system-control/
 ├── backend/
 │   ├── main.py          # FastAPI app, CORS & startup table creation
 │   ├── database.py      # SQLAlchemy engine & session dependency
+│   ├── seed_traffic.py  # Manual demo seed script for traffic corridors
 │   ├── requirements.txt # Minimal Python dependencies
 │   ├── models/
-│   │   └── issue.py     # SQLAlchemy Issue model ('issues' table)
+│   │   ├── __init__.py  # Model exports (Issue, TrafficRecord)
+│   │   ├── issue.py     # SQLAlchemy Issue model ('issues' table)
+│   │   └── traffic.py   # SQLAlchemy TrafficRecord model ('traffic_records' table)
 │   ├── routes/
-│   │   └── issues.py    # REST API endpoints (/api/issues)
+│   │   ├── issues.py    # REST API endpoints (/api/issues)
+│   │   └── traffic.py   # REST API endpoints (/api/traffic)
 │   ├── schemas/
-│   │   └── issue.py     # Pydantic validation & response serialization
-│   └── services/
-│       └── issue_service.py # PostgreSQL persistence & sequential ID generator
+│   │   ├── issue.py     # Pydantic validation for issues
+│   │   └── traffic.py   # Pydantic validation for traffic records & summary
+│   ├── services/
+│   │   ├── issue_service.py   # Issue persistence & sequential ISS-XXXX ID generator
+│   │   └── traffic_service.py # Traffic persistence & sequential TRF-XXXX generator
+│   ├── test_phase4.py   # Automated tests for Phase 4 (issues persistence)
+│   └── test_phase6.py   # Automated tests for Phase 6 (traffic monitoring)
 │
 ├── docs/
 ├── .env.example         # Environment template
@@ -72,8 +80,9 @@ road-system-control/
 - **Phase 2**: Road Issue Reporting (Frontend validation, form, localStorage) — *Completed*
 - **Phase 3**: FastAPI REST API Foundation (In-memory issue storage) — *Completed*
 - **Phase 4**: PostgreSQL Database Persistence (SQLAlchemy ORM + PostgreSQL) — *Completed*
-- **Phase 5**: Frontend ↔ FastAPI ↔ PostgreSQL Integration — **Completed**
-- **Phase 6**: Next Planned Phase (e.g. Traffic Monitoring / Emergency Alerts / Maps) — *Upcoming*
+- **Phase 5**: Frontend ↔ FastAPI ↔ PostgreSQL Integration — *Completed*
+- **Phase 6**: Traffic Monitoring (Full-stack telemetry, PostgreSQL, summary API, polling) — **Completed**
+- **Phase 7**: Emergency Alerts / Map Integration — *Upcoming*
 
 ---
 
@@ -143,13 +152,53 @@ Open your browser at:
 | `GET` | `/api/issues` | Retrieve all issues (newest first) | `loadIssues()` — populates metrics & recent issues table |
 | `POST` | `/api/issues` | Create a new issue in PostgreSQL | `reportIssueForm` submit — generates `ISS-XXXX` & returns 201 |
 | `GET` | `/api/issues/{id}`| Fetch specific issue details | Available for detail viewing |
+| `GET` | `/api/traffic` | Retrieve all traffic records (newest first) | `loadTraffic()` — populates telemetry table & dashboard |
+| `GET` | `/api/traffic/summary` | Retrieve aggregate metrics (vehicles, avg speed, congestion) | `loadTraffic()` — updates 4 traffic summary cards |
+| `POST` | `/api/traffic` | Record traffic observation in PostgreSQL | Sensor ingestion endpoint — returns 201 with `TRF-XXXX` |
+| `GET` | `/api/traffic/{id}`| Fetch specific traffic observation | Returns individual traffic record or 404 |
+
+---
+
+## 🚦 Phase 6: Traffic Monitoring Documentation
+
+### 1. Database Table: `traffic_records`
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | String(20) | Primary Key, Index | Sequential identifier (`TRF-0001`, `TRF-0002`, ...) |
+| `road_name` | String(150) | Required, Index | Name of monitored corridor/highway |
+| `area` | String(100) | Required | City sector or neighborhood |
+| `vehicle_count` | Integer | Required, >= 0 | Estimated vehicle count |
+| `average_speed` | Float | Required, >= 0 | Flow speed in km/h |
+| `congestion_level` | String(30) | Required | `Low`, `Moderate`, `Heavy`, `Severe` |
+| `status` | String(30) | Required | `Clear`, `Moving`, `Congested`, `Blocked` |
+| `recorded_at` | String(50) | Required | ISO 8601 observation timestamp |
+| `created_at` | DateTime | Server default `now()` | Record creation timestamp |
+
+### 2. Seeding Demo Traffic Data
+To populate demo traffic corridor records (only runs if the table is empty):
+```bash
+cd backend
+python seed_traffic.py
+```
+
+### 3. Automated Verification Testing
+Run the comprehensive test suites:
+```bash
+cd backend
+# Phase 4 Regression Test (Issues persistence)
+python test_phase4.py
+
+# Phase 6 Verification Test (Traffic monitoring endpoints & validation)
+python test_phase6.py
+```
 
 ---
 
 ## 📌 Important Limitations & Scope Boundary
 - **No Backend Image Storage**: Photo selection currently operates as a client-side session preview. Binary file uploads to cloud/disk storage will be introduced in future phases.
-- **localStorage Removed**: `localStorage` is no longer used for road issue persistence; all records reside in PostgreSQL.
-- **Phase 6 Scope**: Traffic telemetry, map integration, and emergency broadcasts remain planned for upcoming phases.
+- **No Maps or AI Libraries**: Phase 6 strictly utilizes Vanilla HTML/CSS/JS without external mapping libraries (Leaflet/Google Maps) or AI prediction models.
+- **Guarded Polling**: Traffic telemetry auto-refreshes every 30 seconds via an active-request guard when viewing the Dashboard or Traffic Monitoring tabs.
 
 ---
 
@@ -161,4 +210,4 @@ Open your browser at:
 
 ## Status
 
-🚧 Under Development — Phase 5 Completed
+🚧 Under Development — Phase 6 Completed

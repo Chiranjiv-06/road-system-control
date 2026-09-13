@@ -18,6 +18,11 @@ const sessionImageMap = new Map();
 // In-memory application state for road issues loaded from the API
 let issuesState = [];
 
+// In-memory application state for traffic records loaded from the API (Phase 6)
+let trafficState = [];
+let currentActiveSection = 'dashboard';
+let isTrafficFetching = false;
+
 // ==========================================================================
 // 2. MAIN DOM INITIALIZATION
 // ==========================================================================
@@ -44,6 +49,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const metricResolved = document.getElementById('metricResolved');
     const recentIssuesTableBody = document.getElementById('recentIssuesTableBody');
     const refreshIssuesBtn = document.getElementById('refreshIssuesBtn');
+
+    // --- Phase 6 Traffic Monitoring Elements ---
+    const trafficTotalRecords = document.getElementById('trafficTotalRecords');
+    const trafficTotalVehicles = document.getElementById('trafficTotalVehicles');
+    const trafficAvgSpeed = document.getElementById('trafficAvgSpeed');
+    const trafficCongestedCount = document.getElementById('trafficCongestedCount');
+    const trafficTableBody = document.getElementById('trafficTableBody');
+    const trafficLastUpdated = document.getElementById('trafficLastUpdated');
+    const refreshTrafficBtn = document.getElementById('refreshTrafficBtn');
+    const dashboardTrafficList = document.getElementById('dashboardTrafficList');
+    const dashboardTrafficMeta = document.getElementById('dashboardTrafficMeta');
 
     // --- Report Issue Form Elements ---
     const reportIssueForm = document.getElementById('reportIssueForm');
@@ -168,6 +184,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
+     * Helper to render congestion level badge HTML
+     */
+    function getCongestionBadge(level) {
+        switch (level) {
+            case 'Severe':
+                return '<span class="traffic-pill pill-severe">Severe</span>';
+            case 'Heavy':
+                return '<span class="traffic-pill pill-heavy">Heavy</span>';
+            case 'Moderate':
+                return '<span class="traffic-pill pill-moderate">Moderate</span>';
+            case 'Low':
+                return '<span class="traffic-pill pill-low">Low</span>';
+            default:
+                return `<span class="traffic-pill pill-low">${escapeHtml(level)}</span>`;
+        }
+    }
+
+    /**
+     * Helper to render traffic status badge HTML
+     */
+    function getTrafficStatusBadge(status) {
+        switch (status) {
+            case 'Clear':
+                return '<span class="badge badge-success">Clear</span>';
+            case 'Moving':
+                return '<span class="badge badge-info">Moving</span>';
+            case 'Congested':
+                return '<span class="badge badge-warning">Congested</span>';
+            case 'Blocked':
+                return '<span class="badge badge-danger">Blocked</span>';
+            default:
+                return `<span class="badge badge-neutral">${escapeHtml(status)}</span>`;
+        }
+    }
+
+    /**
      * Escape HTML helper to prevent XSS
      */
     function escapeHtml(str) {
@@ -204,6 +256,8 @@ document.addEventListener('DOMContentLoaded', () => {
      * Switch visible dashboard section
      */
     function switchSection(sectionKey) {
+        currentActiveSection = sectionKey;
+
         navItems.forEach(item => {
             if (item.dataset.section === sectionKey) {
                 item.classList.add('active');
@@ -222,6 +276,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (activeSectionTitle && titlesMap[sectionKey]) {
             activeSectionTitle.textContent = titlesMap[sectionKey];
+        }
+
+        // When navigating to traffic monitoring or dashboard, ensure telemetry is loaded
+        if (sectionKey === 'traffic-monitoring' || sectionKey === 'dashboard') {
+            if (trafficState.length === 0 && !isTrafficFetching) {
+                loadTraffic(true);
+            }
         }
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -410,6 +471,208 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             }
             showToast("Unable to reach backend server. Please check FastAPI.", "error");
+        }
+    }
+
+    // ==========================================================================
+    // 5B. FETCH & RENDER TRAFFIC FROM FASTAPI / POSTGRESQL (PHASE 6)
+    // ==========================================================================
+
+    /**
+     * Populate traffic telemetry summary metric cards
+     */
+    function renderTrafficSummary(summary) {
+        if (!summary) return;
+        const totalRecs = summary.total_records ?? summary.totalRecords ?? 0;
+        const totalVehs = summary.total_vehicles ?? summary.totalVehicles ?? 0;
+        const avgSpd = summary.average_speed ?? summary.averageSpeed ?? 0;
+        const heavy = summary.heavy_count ?? summary.heavyCount ?? 0;
+        const severe = summary.severe_count ?? summary.severeCount ?? 0;
+
+        if (trafficTotalRecords) trafficTotalRecords.textContent = totalRecs;
+        if (trafficTotalVehicles) trafficTotalVehicles.textContent = totalVehs.toLocaleString();
+        if (trafficAvgSpeed) trafficAvgSpeed.textContent = `${avgSpd} km/h`;
+        if (trafficCongestedCount) trafficCongestedCount.textContent = (heavy + severe);
+    }
+
+    /**
+     * Render traffic records into the Traffic Monitoring table
+     */
+    function renderTrafficTable(records) {
+        if (!trafficTableBody) return;
+        trafficTableBody.innerHTML = '';
+
+        if (!records || records.length === 0) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.innerHTML = `
+                <td colspan="7" class="text-center py-4 text-muted">
+                    No traffic telemetry records found in PostgreSQL. Run <code>python seed_traffic.py</code> to load demo corridor data.
+                </td>
+            `;
+            trafficTableBody.appendChild(emptyRow);
+            return;
+        }
+
+        records.forEach(record => {
+            const row = document.createElement('tr');
+            const roadName = record.road_name || record.roadName || 'Unknown Road';
+            const vehicleCount = record.vehicle_count ?? record.vehicleCount ?? 0;
+            const avgSpeed = record.average_speed ?? record.averageSpeed ?? 0;
+            const congestion = record.congestion_level || record.congestionLevel || 'Low';
+            const status = record.status || 'Moving';
+            const recordedAt = record.recorded_at || record.recordedAt;
+
+            row.innerHTML = `
+                <td>
+                    <div class="traffic-road-cell">
+                        <span class="traffic-road-title">${escapeHtml(roadName)}</span>
+                        <span class="traffic-road-id">${escapeHtml(record.id)}</span>
+                    </div>
+                </td>
+                <td>${escapeHtml(record.area)}</td>
+                <td><strong>${vehicleCount.toLocaleString()}</strong></td>
+                <td>${avgSpeed} km/h</td>
+                <td>${getCongestionBadge(congestion)}</td>
+                <td>${getTrafficStatusBadge(status)}</td>
+                <td class="text-muted" title="${recordedAt ? new Date(recordedAt).toLocaleString() : ''}">
+                    ${formatTimeAgo(recordedAt)}
+                </td>
+            `;
+            trafficTableBody.appendChild(row);
+        });
+    }
+
+    /**
+     * Render live corridor items on main Dashboard Overview panel
+     */
+    function renderDashboardTraffic(records) {
+        if (!dashboardTrafficList) return;
+        dashboardTrafficList.innerHTML = '';
+
+        if (!records || records.length === 0) {
+            dashboardTrafficList.innerHTML = `
+                <div class="traffic-item text-center py-3 text-muted">
+                    No active traffic corridors found in database.
+                </div>
+            `;
+            if (dashboardTrafficMeta) dashboardTrafficMeta.textContent = '0 Corridors';
+            return;
+        }
+
+        // Show up to 5 corridors on dashboard panel
+        const displayRecords = records.slice(0, 5);
+        displayRecords.forEach(record => {
+            const item = document.createElement('div');
+            item.className = 'traffic-item';
+            const roadName = record.road_name || record.roadName || 'Unknown Corridor';
+            const vehicleCount = record.vehicle_count ?? record.vehicleCount ?? 0;
+            const avgSpeed = record.average_speed ?? record.averageSpeed ?? 0;
+            const congestion = record.congestion_level || record.congestionLevel || 'Low';
+            const status = record.status || 'Moving';
+
+            item.innerHTML = `
+                <div class="traffic-main">
+                    <div class="traffic-road-name">${escapeHtml(roadName)}</div>
+                    <div class="traffic-meta">Avg Speed: <strong>${avgSpeed} km/h</strong> • Vehicles: <strong>${vehicleCount.toLocaleString()}</strong></div>
+                </div>
+                <div class="traffic-condition">
+                    ${getCongestionBadge(congestion)}
+                    ${getTrafficStatusBadge(status)}
+                </div>
+            `;
+            dashboardTrafficList.appendChild(item);
+        });
+
+        if (dashboardTrafficMeta) {
+            dashboardTrafficMeta.textContent = `${records.length} Active Corridors`;
+        }
+    }
+
+    /**
+     * Render API error state for traffic telemetry
+     */
+    function renderTrafficError() {
+        if (trafficTableBody) {
+            trafficTableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="table-loading-cell text-danger">
+                        ⚠️ Unable to connect to Traffic Monitoring API.<br>
+                        <span class="text-xs text-muted">Please check that FastAPI is running on <code>http://127.0.0.1:8000</code>.</span>
+                    </td>
+                </tr>
+            `;
+        }
+        if (dashboardTrafficList) {
+            dashboardTrafficList.innerHTML = `
+                <div class="traffic-item text-center py-3 text-danger">
+                    ⚠️ Unable to load live traffic stream
+                </div>
+            `;
+        }
+        if (trafficTotalRecords) trafficTotalRecords.textContent = '--';
+        if (trafficTotalVehicles) trafficTotalVehicles.textContent = '--';
+        if (trafficAvgSpeed) trafficAvgSpeed.textContent = '--';
+        if (trafficCongestedCount) trafficCongestedCount.textContent = '--';
+    }
+
+    /**
+     * Fetch traffic records and summary concurrently from FastAPI backend
+     */
+    async function loadTraffic(showLoadingSpinner = true) {
+        if (isTrafficFetching) return;
+        isTrafficFetching = true;
+
+        if (showLoadingSpinner) {
+            if (trafficTableBody) {
+                trafficTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="table-loading-cell">
+                            <span class="spinner-inline"></span> Loading live traffic telemetry from PostgreSQL...
+                        </td>
+                    </tr>
+                `;
+            }
+            if (dashboardTrafficList) {
+                dashboardTrafficList.innerHTML = `
+                    <div class="traffic-item text-center py-3 text-muted">
+                        <span class="spinner-inline"></span> Loading live traffic corridors...
+                    </div>
+                `;
+            }
+        }
+
+        try {
+            const isOnline = await checkBackendHealth();
+            if (!isOnline) {
+                throw new Error("Backend connection offline");
+            }
+
+            const [recordsRes, summaryRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/traffic`),
+                fetch(`${API_BASE_URL}/traffic/summary`)
+            ]);
+
+            if (!recordsRes.ok || !summaryRes.ok) {
+                throw new Error(`Traffic API error: records status ${recordsRes.status}, summary status ${summaryRes.status}`);
+            }
+
+            const recordsData = await recordsRes.json();
+            const summaryData = await summaryRes.json();
+
+            trafficState = Array.isArray(recordsData) ? recordsData : [];
+            renderTrafficSummary(summaryData);
+            renderTrafficTable(trafficState);
+            renderDashboardTraffic(trafficState);
+
+            if (trafficLastUpdated) {
+                const now = new Date();
+                trafficLastUpdated.textContent = `Updated: ${now.toLocaleTimeString()}`;
+            }
+        } catch (error) {
+            console.error("Failed to load traffic telemetry from FastAPI:", error);
+            renderTrafficError();
+        } finally {
+            isTrafficFetching = false;
         }
     }
 
@@ -716,11 +979,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeMobileSidebar);
     if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
 
-    // Refresh / Sync Button
+    // Refresh / Sync Button (Issues)
     if (refreshIssuesBtn) {
         refreshIssuesBtn.addEventListener('click', () => {
             showToast('Syncing with PostgreSQL database...', 'default');
             loadIssues(true);
+        });
+    }
+
+    // Refresh / Sync Button (Traffic - Phase 6)
+    if (refreshTrafficBtn) {
+        refreshTrafficBtn.addEventListener('click', () => {
+            showToast('Syncing traffic telemetry from PostgreSQL...', 'default');
+            loadTraffic(true);
         });
     }
 
@@ -755,10 +1026,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================================================
     // 9. INITIALIZATION
     // ==========================================================================
-    // Initial health check and load issues from PostgreSQL
+    // Initial health check and load issues & traffic from PostgreSQL
     checkBackendHealth();
     loadIssues(true);
+    loadTraffic(true);
 
     // Periodic health check every 15 seconds to dynamically track backend connection
     setInterval(checkBackendHealth, 15000);
+
+    // Phase 6: Periodic traffic polling every 30 seconds (guarded against overlapping requests)
+    setInterval(() => {
+        if (isTrafficFetching) return;
+        if (currentActiveSection === 'dashboard' || currentActiveSection === 'traffic-monitoring') {
+            loadTraffic(false);
+        }
+    }, 30000);
 });

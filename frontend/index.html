@@ -234,59 +234,19 @@
                             </div>
                         </div>
 
-                        <!-- PANEL 2: TRAFFIC STATUS -->
+                        <!-- PANEL 2: TRAFFIC STATUS (Dynamic from FastAPI / PostgreSQL) -->
                         <div class="panel-card">
                             <div class="panel-header">
                                 <div class="panel-title-area">
                                     <h3 class="panel-title">Real-Time Traffic Status</h3>
-                                    <span class="panel-badge">Sensor Stream</span>
+                                    <span class="panel-badge badge-postgres" id="trafficStorageBadge">PostgreSQL Live</span>
                                 </div>
-                                <span class="text-muted text-xs">Active Corridors</span>
+                                <span class="text-muted text-xs" id="dashboardTrafficMeta">Active Corridors</span>
                             </div>
 
-                            <div class="traffic-list">
-                                <div class="traffic-item">
-                                    <div class="traffic-main">
-                                        <div class="traffic-road-name">Wardha Road</div>
-                                        <div class="traffic-meta">Avg Speed: <strong>18 km/h</strong></div>
-                                    </div>
-                                    <div class="traffic-condition">
-                                        <span class="traffic-pill pill-heavy">Heavy</span>
-                                        <span class="badge badge-danger">Congested</span>
-                                    </div>
-                                </div>
-
-                                <div class="traffic-item">
-                                    <div class="traffic-main">
-                                        <div class="traffic-road-name">Sitabuldi</div>
-                                        <div class="traffic-meta">Avg Speed: <strong>32 km/h</strong></div>
-                                    </div>
-                                    <div class="traffic-condition">
-                                        <span class="traffic-pill pill-moderate">Moderate</span>
-                                        <span class="badge badge-warning">Moving</span>
-                                    </div>
-                                </div>
-
-                                <div class="traffic-item">
-                                    <div class="traffic-main">
-                                        <div class="traffic-road-name">Manish Nagar</div>
-                                        <div class="traffic-meta">Avg Speed: <strong>45 km/h</strong></div>
-                                    </div>
-                                    <div class="traffic-condition">
-                                        <span class="traffic-pill pill-low">Low</span>
-                                        <span class="badge badge-success">Clear</span>
-                                    </div>
-                                </div>
-
-                                <div class="traffic-item">
-                                    <div class="traffic-main">
-                                        <div class="traffic-road-name">Amravati Bypass</div>
-                                        <div class="traffic-meta">Avg Speed: <strong>55 km/h</strong></div>
-                                    </div>
-                                    <div class="traffic-condition">
-                                        <span class="traffic-pill pill-low">Low</span>
-                                        <span class="badge badge-success">Clear</span>
-                                    </div>
+                            <div class="traffic-list" id="dashboardTrafficList">
+                                <div class="traffic-item text-center py-3 text-muted">
+                                    <span class="spinner-inline"></span> Loading live traffic corridors...
                                 </div>
                             </div>
                         </div>
@@ -442,13 +402,104 @@
                     </div>
                 </section>
 
-                <!-- SECTION 3: TRAFFIC MONITORING (PLACEHOLDER) -->
+                <!-- ============================================== -->
+                <!-- SECTION 3: TRAFFIC MONITORING (PHASE 6 LIVE)   -->
+                <!-- ============================================== -->
                 <section class="view-section" id="section-traffic-monitoring">
-                    <div class="panel-card empty-state-panel">
-                        <div class="empty-state-icon">🚦</div>
-                        <h2>Traffic Monitoring Center</h2>
-                        <p class="text-muted">Comprehensive lane density and speed telemetry visualization are scheduled for upcoming development phases.</p>
-                        <button class="btn btn-outline quick-action-btn" data-action="back-to-dashboard">Return to Dashboard</button>
+                    <!-- TRAFFIC HEADER & ACTIONS -->
+                    <div class="traffic-header-bar">
+                        <div class="traffic-header-titles">
+                            <h2>Traffic Telemetry & Corridor Monitoring</h2>
+                            <p>Real-time road flow, congestion status, and vehicle velocity streamed from PostgreSQL</p>
+                        </div>
+                        <div class="traffic-actions-group">
+                            <span class="refresh-indicator" id="trafficRefreshStatus">Auto-refresh (30s)</span>
+                            <button class="btn btn-outline btn-sm" id="refreshTrafficBtn" title="Fetch live traffic telemetry">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                Sync Traffic
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 1. TRAFFIC SUMMARY METRICS CARDS -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Total Traffic Records</span>
+                                <span class="metric-icon-box blue">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value" id="trafficTotalRecords">-</div>
+                            <div class="metric-subtext">Monitored Sensor Records</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Total Vehicles</span>
+                                <span class="metric-icon-box amber">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value" id="trafficTotalVehicles">-</div>
+                            <div class="metric-subtext">Cumulative Corridor Volume</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Average Speed</span>
+                                <span class="metric-icon-box emerald">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value" id="trafficAvgSpeed">-</div>
+                            <div class="metric-subtext">km/h Average Flow Speed</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Severe / Heavy Congestion</span>
+                                <span class="metric-icon-box red">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-danger" id="trafficCongestedCount">-</div>
+                            <div class="metric-subtext text-danger font-medium">Critical Congestion Points</div>
+                        </div>
+                    </div>
+
+                    <!-- 2. TRAFFIC CORRIDOR TELEMETRY TABLE -->
+                    <div class="panel-card table-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-area">
+                                <h3 class="panel-title">Corridor Traffic Observations</h3>
+                                <span class="panel-badge badge-postgres">PostgreSQL Live</span>
+                            </div>
+                            <span class="text-muted text-xs" id="trafficLastUpdated">Connecting to stream...</span>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Road</th>
+                                        <th>Area</th>
+                                        <th>Vehicles</th>
+                                        <th>Avg Speed</th>
+                                        <th>Congestion</th>
+                                        <th>Status</th>
+                                        <th>Recorded At</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trafficTableBody">
+                                    <tr>
+                                        <td colspan="7" class="table-loading-cell">
+                                            <span class="spinner-inline"></span> Loading live traffic telemetry from database...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </section>
 
