@@ -447,7 +447,7 @@ body {
 /* ----------------- Metrics Cards Grid ----------------- */
 .metrics-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     gap: 1.25rem;
     margin-bottom: 1.5rem;
 }
@@ -507,6 +507,15 @@ body {
 .metric-icon-box.emerald {
     background-color: var(--success-soft);
     color: var(--success-base);
+}
+
+.metric-icon-box.purple {
+    background-color: var(--purple-soft);
+    color: var(--purple-text);
+}
+
+.text-purple {
+    color: var(--purple-text);
 }
 
 .metric-value {
@@ -1006,6 +1015,12 @@ body {
 .form-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+}
+
+.form-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 1.25rem;
 }
 
