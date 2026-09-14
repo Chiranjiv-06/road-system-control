@@ -49,22 +49,28 @@ road-system-control/
 │   ├── main.py          # FastAPI app, CORS & startup table creation
 │   ├── database.py      # SQLAlchemy engine & session dependency
 │   ├── seed_traffic.py  # Manual demo seed script for traffic corridors
+│   ├── seed_emergency_alerts.py # Manual demo seed script for emergency alerts
 │   ├── requirements.txt # Minimal Python dependencies
 │   ├── models/
-│   │   ├── __init__.py  # Model exports (Issue, TrafficRecord)
+│   │   ├── __init__.py  # Model exports (Issue, TrafficRecord, EmergencyAlert)
 │   │   ├── issue.py     # SQLAlchemy Issue model ('issues' table)
-│   │   └── traffic.py   # SQLAlchemy TrafficRecord model ('traffic_records' table)
+│   │   ├── traffic.py   # SQLAlchemy TrafficRecord model ('traffic_records' table)
+│   │   └── emergency_alert.py # SQLAlchemy EmergencyAlert model ('emergency_alerts' table)
 │   ├── routes/
 │   │   ├── issues.py    # REST API endpoints (/api/issues)
-│   │   └── traffic.py   # REST API endpoints (/api/traffic)
+│   │   ├── traffic.py   # REST API endpoints (/api/traffic)
+│   │   └── emergency_alerts.py # REST API endpoints (/api/emergency-alerts)
 │   ├── schemas/
 │   │   ├── issue.py     # Pydantic validation for issues
-│   │   └── traffic.py   # Pydantic validation for traffic records & summary
+│   │   ├── traffic.py   # Pydantic validation for traffic records & summary
+│   │   └── emergency_alert.py # Pydantic validation for emergency alerts & status updates
 │   ├── services/
-│   │   ├── issue_service.py   # Issue persistence & sequential ISS-XXXX ID generator
-│   │   └── traffic_service.py # Traffic persistence & sequential TRF-XXXX generator
+│   │   ├── issue_service.py   # Issue persistence & sequential ISS-XXXX generator
+│   │   ├── traffic_service.py # Traffic persistence & sequential TRF-XXXX generator
+│   │   └── emergency_alert_service.py # Alert persistence & sequential EMG-XXXX generator
 │   ├── test_phase4.py   # Automated tests for Phase 4 (issues persistence)
-│   └── test_phase6.py   # Automated tests for Phase 6 (traffic monitoring)
+│   ├── test_phase6.py   # Automated tests for Phase 6 (traffic monitoring)
+│   └── test_phase7.py   # Automated tests for Phase 7 (emergency alert management)
 │
 ├── docs/
 ├── .env.example         # Environment template
@@ -81,8 +87,9 @@ road-system-control/
 - **Phase 3**: FastAPI REST API Foundation (In-memory issue storage) — *Completed*
 - **Phase 4**: PostgreSQL Database Persistence (SQLAlchemy ORM + PostgreSQL) — *Completed*
 - **Phase 5**: Frontend ↔ FastAPI ↔ PostgreSQL Integration — *Completed*
-- **Phase 6**: Traffic Monitoring (Full-stack telemetry, PostgreSQL, summary API, polling) — **Completed**
-- **Phase 7**: Emergency Alerts / Map Integration — *Upcoming*
+- **Phase 6**: Traffic Monitoring (Full-stack telemetry, PostgreSQL, summary API, polling) — *Completed*
+- **Phase 7**: Emergency Alert Management (Full-stack incident dispatch, PostgreSQL, lifecycle management) — **Completed**
+- **Phase 8**: Interactive Map Integration / Admin Roles — *Upcoming*
 
 ---
 
@@ -156,6 +163,11 @@ Open your browser at:
 | `GET` | `/api/traffic/summary` | Retrieve aggregate metrics (vehicles, avg speed, congestion) | `loadTraffic()` — updates 4 traffic summary cards |
 | `POST` | `/api/traffic` | Record traffic observation in PostgreSQL | Sensor ingestion endpoint — returns 201 with `TRF-XXXX` |
 | `GET` | `/api/traffic/{id}`| Fetch specific traffic observation | Returns individual traffic record or 404 |
+| `GET` | `/api/emergency-alerts` | Retrieve all emergency alerts (optional `?status=` filter) | `loadAlerts()` — populates incident table & dashboard banner |
+| `GET` | `/api/emergency-alerts/summary` | Retrieve aggregate alert metrics (total, active, critical, resolved) | `loadAlerts()` — updates 4 alert summary cards & badges |
+| `POST` | `/api/emergency-alerts` | Broadcast and persist a new emergency alert | `createAlertForm` submit — returns 201 with `EMG-XXXX` |
+| `GET` | `/api/emergency-alerts/{id}` | Fetch specific emergency alert details | Returns individual alert or 404 |
+| `PATCH` | `/api/emergency-alerts/{id}/status` | Update alert status (`Active`, `Investigating`, `Resolved`) | Table quick actions ("Investigate", "Resolve") |
 
 ---
 
@@ -176,29 +188,57 @@ Open your browser at:
 | `created_at` | DateTime | Server default `now()` | Record creation timestamp |
 
 ### 2. Seeding Demo Traffic Data
-To populate demo traffic corridor records (only runs if the table is empty):
 ```bash
 cd backend
 python seed_traffic.py
 ```
 
+---
+
+## 🚨 Phase 7: Emergency Alert Management Documentation
+
+### 1. Database Table: `emergency_alerts`
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | String(20) | Primary Key, Index | Sequential identifier (`EMG-0001`, `EMG-0002`, ...) |
+| `alert_type` | String(50) | Required, Index | `Accident`, `Road Blockage`, `Fire`, `Flooding`, `Medical Emergency`, `Traffic Emergency` |
+| `title` | String(200) | Required | Concise headline of emergency incident |
+| `description` | Text | Required | Full incident description and dispatch notes |
+| `location` | String(255) | Required | Specific road, ramp, or intersection |
+| `area` | String(100) | Required | Ward, sector, or district |
+| `severity` | String(20) | Required | `Low`, `Medium`, `High`, `Critical` |
+| `status` | String(30) | Required, Index | `Active`, `Investigating`, `Resolved` |
+| `issued_at` | String(50) | Required | ISO 8601 observation timestamp |
+| `created_at` | DateTime | Server default `now()` | Record creation timestamp |
+
+### 2. Seeding Demo Emergency Alerts Data
+To populate demo emergency incident alerts (only runs if the table is empty):
+```bash
+cd backend
+python seed_emergency_alerts.py
+```
+
 ### 3. Automated Verification Testing
-Run the comprehensive test suites:
+Run the test suites across all completed phases:
 ```bash
 cd backend
 # Phase 4 Regression Test (Issues persistence)
 python test_phase4.py
 
-# Phase 6 Verification Test (Traffic monitoring endpoints & validation)
+# Phase 6 Regression Test (Traffic monitoring endpoints & validation)
 python test_phase6.py
+
+# Phase 7 Verification Test (Emergency alert management endpoints & validation)
+python test_phase7.py
 ```
 
 ---
 
 ## 📌 Important Limitations & Scope Boundary
 - **No Backend Image Storage**: Photo selection currently operates as a client-side session preview. Binary file uploads to cloud/disk storage will be introduced in future phases.
-- **No Maps or AI Libraries**: Phase 6 strictly utilizes Vanilla HTML/CSS/JS without external mapping libraries (Leaflet/Google Maps) or AI prediction models.
-- **Guarded Polling**: Traffic telemetry auto-refreshes every 30 seconds via an active-request guard when viewing the Dashboard or Traffic Monitoring tabs.
+- **No Maps or AI Libraries**: Phase 7 strictly utilizes Vanilla HTML/CSS/JS without external mapping libraries (Leaflet/Google Maps) or AI prediction models.
+- **Guarded Polling**: Traffic telemetry and emergency broadcasts auto-refresh every 30 seconds via active-request guards (`isTrafficFetching`, `isAlertsFetching`) when viewing the Dashboard or respective monitoring tabs.
 
 ---
 
@@ -210,4 +250,4 @@ python test_phase6.py
 
 ## Status
 
-🚧 Under Development — Phase 6 Completed
+🚧 Under Development — Phase 7 Completed

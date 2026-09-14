@@ -105,22 +105,22 @@
                 <!-- SECTION 1: DASHBOARD (DEFAULT ACTIVE)          -->
                 <!-- ============================================== -->
                 <section class="view-section active" id="section-dashboard">
-                    <!-- EMERGENCY ALERT PANEL -->
-                    <div class="emergency-alert-card" role="alert">
-                        <div class="alert-icon-wrapper">
-                            <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    <!-- EMERGENCY ALERT PANEL (Dynamic from FastAPI / PostgreSQL) -->
+                    <div class="emergency-alert-card" id="dashboardEmergencyBanner" role="alert">
+                        <div class="alert-icon-wrapper" id="dashboardAlertIconWrapper">
+                            <svg class="alert-icon" id="dashboardAlertIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                         </div>
                         <div class="alert-content">
                             <div class="alert-header">
-                                <h3 class="alert-title">Critical Traffic Alert</h3>
-                                <span class="badge badge-danger">Live Emergency</span>
+                                <h3 class="alert-title" id="dashboardAlertTitle">Checking Emergency Status...</h3>
+                                <span class="badge badge-danger" id="dashboardAlertBadge">Live Status</span>
                             </div>
-                            <p class="alert-description">
-                                Major accident reported near <strong>Sitabuldi Interchange</strong>. Response teams dispatched. Two lanes blocked; expected delay ~35 minutes.
+                            <p class="alert-description" id="dashboardAlertDesc">
+                                Connecting to emergency broadcast stream from PostgreSQL...
                             </p>
                         </div>
-                        <div class="alert-actions">
-                            <button class="btn btn-danger-outline btn-sm quick-action-btn" data-action="emergency-details">View Details</button>
+                        <div class="alert-actions" id="dashboardAlertActions">
+                            <button class="btn btn-outline btn-sm quick-action-btn" data-action="nav-emergency">Dispatch Center</button>
                         </div>
                     </div>
 
@@ -156,7 +156,7 @@
                                 </span>
                             </div>
                             <div class="metric-value text-warning" id="metricActive">0</div>
-                            <div class="metric-subtext">Unresolved database issues</div>
+                            <div class="metric-subtext">Active Emergency Incidents</div>
                         </div>
 
                         <div class="metric-card">
@@ -503,13 +503,108 @@
                     </div>
                 </section>
 
-                <!-- SECTION 4: EMERGENCY ALERTS (PLACEHOLDER) -->
+                <!-- ============================================== -->
+                <!-- SECTION 4: EMERGENCY ALERT MANAGEMENT CENTER  -->
+                <!-- ============================================== -->
                 <section class="view-section" id="section-emergency-alerts">
-                    <div class="panel-card empty-state-panel">
-                        <div class="empty-state-icon">🚨</div>
-                        <h2>Emergency Alert Dispatch</h2>
-                        <p class="text-muted">Active emergency broadcasts and rapid incident response tools will be linked here.</p>
-                        <button class="btn btn-outline quick-action-btn" data-action="back-to-dashboard">Return to Dashboard</button>
+                    <!-- HEADER & ACTION BAR -->
+                    <div class="traffic-header-bar">
+                        <div class="traffic-header-titles">
+                            <h2>Emergency Alert Management Center</h2>
+                            <p>Real-time incident dispatch, critical hazard alerts, and active corridor emergency broadcasts</p>
+                        </div>
+                        <div class="traffic-actions-group">
+                            <span class="refresh-indicator" id="alertRefreshStatus">Auto-refresh (30s)</span>
+                            <button class="btn btn-primary btn-sm" id="openCreateAlertModalBtn">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Create Emergency Alert
+                            </button>
+                            <button class="btn btn-outline btn-sm" id="refreshAlertsBtn" title="Fetch live emergency broadcasts">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                Sync Alerts
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 1. ALERT SUMMARY METRICS CARDS -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Total Alerts</span>
+                                <span class="metric-icon-box blue">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value" id="alertTotalCount">-</div>
+                            <div class="metric-subtext">All Recorded Incidents</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Active Alerts</span>
+                                <span class="metric-icon-box red">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-danger" id="alertActiveCount">-</div>
+                            <div class="metric-subtext text-danger font-medium">Ongoing Incidents</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Critical Alerts</span>
+                                <span class="metric-icon-box amber">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-warning" id="alertCriticalCount">-</div>
+                            <div class="metric-subtext text-warning font-medium">High Hazard Severity</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Resolved Incidents</span>
+                                <span class="metric-icon-box emerald">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-success" id="alertResolvedCount">-</div>
+                            <div class="metric-subtext">Successfully Cleared</div>
+                        </div>
+                    </div>
+
+                    <!-- 2. EMERGENCY ALERTS TABLE PANEL -->
+                    <div class="panel-card table-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-area">
+                                <h3 class="panel-title">Active Emergency Incident Broadcasts</h3>
+                                <span class="panel-badge badge-postgres">PostgreSQL Live</span>
+                            </div>
+                            <span class="text-muted text-xs" id="alertLastUpdated">Connecting to stream...</span>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Alert ID / Type</th>
+                                        <th>Title & Description</th>
+                                        <th>Location / Area</th>
+                                        <th>Severity</th>
+                                        <th>Status</th>
+                                        <th>Issued At</th>
+                                        <th class="text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="emergencyAlertsTableBody">
+                                    <tr>
+                                        <td colspan="7" class="table-loading-cell">
+                                            <span class="spinner-inline"></span> Loading live emergency alerts from database...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </section>
 
@@ -598,6 +693,86 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" id="closeModalFooterBtn">Close Details</button>
             </div>
+        </div>
+    </div>
+
+    <!-- CREATE EMERGENCY ALERT MODAL (Phase 7) -->
+    <div class="modal-backdrop" id="createAlertModal" role="dialog" aria-modal="true" aria-labelledby="createAlertModalTitle" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-header-info">
+                    <span class="badge badge-danger">Broadcast</span>
+                    <h3 class="modal-title" id="createAlertModalTitle">Broadcast Emergency Alert</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeCreateAlertModalBtn" aria-label="Close form">&times;</button>
+            </div>
+            <form id="createAlertForm">
+                <div class="modal-body">
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label for="alertTypeInput" class="form-label">Alert Type <span class="required-star">*</span></label>
+                            <select id="alertTypeInput" class="form-control" required>
+                                <option value="" disabled selected>Select incident category...</option>
+                                <option value="Accident">Accident</option>
+                                <option value="Road Blockage">Road Blockage</option>
+                                <option value="Fire">Fire</option>
+                                <option value="Flooding">Flooding</option>
+                                <option value="Medical Emergency">Medical Emergency</option>
+                                <option value="Traffic Emergency">Traffic Emergency</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="alertSeverityInput" class="form-label">Severity Level <span class="required-star">*</span></label>
+                            <select id="alertSeverityInput" class="form-control" required>
+                                <option value="" disabled selected>Select severity...</option>
+                                <option value="Critical">Critical (Immediate Danger)</option>
+                                <option value="High">High (Major Disruption)</option>
+                                <option value="Medium">Medium (Caution Advised)</option>
+                                <option value="Low">Low (Informational)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alertTitleInput" class="form-label">Incident Headline / Title <span class="required-star">*</span></label>
+                        <input type="text" id="alertTitleInput" class="form-control" placeholder="e.g. Tanker Collision on Sitabuldi Ramp" required minlength="3" maxlength="200">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alertDescriptionInput" class="form-label">Detailed Incident Description <span class="required-star">*</span></label>
+                        <textarea id="alertDescriptionInput" class="form-control" rows="3" placeholder="Specify blocked lanes, response units dispatched, diverted routes..." required minlength="5"></textarea>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label for="alertLocationInput" class="form-label">Street / Intersection <span class="required-star">*</span></label>
+                            <input type="text" id="alertLocationInput" class="form-control" placeholder="e.g. Sitabuldi Flyover Ramp" required minlength="2">
+                        </div>
+                        <div class="form-group">
+                            <label for="alertAreaInput" class="form-label">Area / Ward <span class="required-star">*</span></label>
+                            <input type="text" id="alertAreaInput" class="form-control" placeholder="e.g. Sitabuldi" required minlength="2">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alertStatusInput" class="form-label">Initial Status <span class="required-star">*</span></label>
+                        <select id="alertStatusInput" class="form-control" required>
+                            <option value="Active" selected>Active</option>
+                            <option value="Investigating">Investigating</option>
+                            <option value="Resolved">Resolved</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" id="submitAlertBtn">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Broadcast Live Alert
+                    </button>
+                    <button type="button" class="btn btn-outline" id="cancelCreateAlertBtn">
+                        Cancel
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

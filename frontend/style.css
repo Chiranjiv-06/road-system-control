@@ -419,6 +419,31 @@ body {
     flex-shrink: 0;
 }
 
+.emergency-alert-card.clear-mode {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-left: 5px solid var(--success-base);
+}
+
+.emergency-alert-card.clear-mode .alert-icon-wrapper {
+    background-color: #dcfce7;
+    color: var(--success-base);
+}
+
+.emergency-alert-card.clear-mode .alert-title {
+    color: #14532d;
+}
+
+.emergency-alert-card.clear-mode .alert-description {
+    color: #166534;
+}
+
+.alert-action-btns {
+    display: inline-flex;
+    gap: 0.35rem;
+    justify-content: flex-end;
+}
+
 /* ----------------- Metrics Cards Grid ----------------- */
 .metrics-grid {
     display: grid;
