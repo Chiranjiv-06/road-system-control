@@ -14,6 +14,7 @@ Current road management systems are mostly reactive. Authorities receive complai
 - Real-time traffic monitoring dashboard
 - Emergency alert dispatch
 - Traffic violation and rule enforcement management
+- Cross-domain traffic analytics & intelligence center
 - Interactive map integration (Upcoming)
 - AI-based issue prioritization (Future Scope)
 - Admin dashboard (Upcoming)
@@ -63,21 +64,25 @@ road-system-control/
 │   │   ├── issues.py    # REST API endpoints (/api/issues)
 │   │   ├── traffic.py   # REST API endpoints (/api/traffic)
 │   │   ├── emergency_alerts.py # REST API endpoints (/api/emergency-alerts)
-│   │   └── traffic_violations.py # REST API endpoints (/api/traffic-violations)
+│   │   ├── traffic_violations.py # REST API endpoints (/api/traffic-violations)
+│   │   └── analytics.py # REST API endpoints (/api/analytics)
 │   ├── schemas/
 │   │   ├── issue.py     # Pydantic validation for issues
 │   │   ├── traffic.py   # Pydantic validation for traffic records & summary
 │   │   ├── emergency_alert.py # Pydantic validation for emergency alerts & status updates
-│   │   └── traffic_violation.py # Pydantic validation for traffic violations & status updates
+│   │   ├── traffic_violation.py # Pydantic validation for traffic violations & status updates
+│   │   └── analytics.py # Pydantic validation for analytics responses
 │   ├── services/
 │   │   ├── issue_service.py   # Issue persistence & sequential ISS-XXXX generator
 │   │   ├── traffic_service.py # Traffic persistence & sequential TRF-XXXX generator
 │   │   ├── emergency_alert_service.py # Alert persistence & sequential EMG-XXXX generator
-│   │   └── traffic_violation_service.py # Violation persistence & sequential VIO-XXXX generator
+│   │   ├── traffic_violation_service.py # Violation persistence & sequential VIO-XXXX generator
+│   │   └── analytics_service.py # Cross-domain analytics calculation engine
 │   ├── test_phase4.py   # Automated tests for Phase 4 (issues persistence)
 │   ├── test_phase6.py   # Automated tests for Phase 6 (traffic monitoring)
 │   ├── test_phase7.py   # Automated tests for Phase 7 (emergency alert management)
-│   └── test_phase8.py   # Automated tests for Phase 8 (traffic violation management)
+│   ├── test_phase8.py   # Automated tests for Phase 8 (traffic violation management)
+│   └── test_phase9.py   # Automated tests for Phase 9 (analytics & intelligence)
 │
 ├── docs/
 ├── .env.example         # Environment template
@@ -96,8 +101,9 @@ road-system-control/
 - **Phase 5**: Frontend ↔ FastAPI ↔ PostgreSQL Integration — *Completed*
 - **Phase 6**: Traffic Monitoring (Full-stack telemetry, PostgreSQL, summary API, polling) — *Completed*
 - **Phase 7**: Emergency Alert Management (Full-stack incident dispatch, PostgreSQL, lifecycle management) — *Completed*
-- **Phase 8**: Traffic Violation Management (Rule violations, automated radar tracking, penalties, PostgreSQL) — **Completed**
-- **Phase 9**: Interactive Map Integration / Admin Roles — *Upcoming*
+- **Phase 8**: Traffic Violation Management (Rule violations, automated radar tracking, penalties, PostgreSQL) — *Completed*
+- **Phase 9**: Traffic Analytics & Intelligence Dashboard (Cross-domain KPIs, trends, PostgreSQL analysis) — **Completed**
+- **Phase 10**: Interactive Map Integration / Admin Roles — *Upcoming*
 
 ---
 
@@ -277,16 +283,48 @@ python test_phase6.py
 # Phase 7 Regression Test (Emergency alert management endpoints & validation)
 python test_phase7.py
 
-# Phase 8 Verification Test (Traffic violation management endpoints & validation)
+# Phase 8 Regression Test (Traffic violation management endpoints & validation)
 python test_phase8.py
+
+# Phase 9 Verification Test (Analytics & intelligence endpoints & validation)
+python test_phase9.py
+```
+
+---
+
+## 📊 Phase 9: Traffic Analytics & Intelligence Documentation
+
+### 1. Analytics Architecture
+Phase 9 calculates real-time aggregated metrics across all four database tables (`issues`, `traffic_records`, `emergency_alerts`, `traffic_violations`) directly from PostgreSQL without artificial data generation.
+
+### 2. API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/analytics/overview` | High-level KPIs (total issues, traffic, alerts, violations, active emergencies, unresolved issues, total fines, speed averages) |
+| `GET` | `/api/analytics/traffic` | Traffic telemetry intelligence, congestion distribution, top volume corridors, and hotspot congestion rankings |
+| `GET` | `/api/analytics/issues` | Road hazard classification by severity, status, category, and most affected city sectors |
+| `GET` | `/api/analytics/emergencies` | Emergency alert spread, hazard category breakdown, severity distributions, and recent dispatch activity |
+| `GET` | `/api/analytics/violations` | Rule violation categories, automated radar logs, status progression, and total/average penalty fines |
+| `GET` | `/api/analytics/trends` | Daily chronological activity trends across issues, traffic, emergencies, and violations |
+
+All endpoints support optional query parameters:
+- `area`: Filter analytics to a specific city ward/neighborhood
+- `start_date`: ISO date `YYYY-MM-DD`
+- `end_date`: ISO date `YYYY-MM-DD`
+
+### 3. Automated Verification Testing
+```bash
+cd backend
+python test_phase9.py
 ```
 
 ---
 
 ## 📌 Important Limitations & Scope Boundary
 - **No Backend Image Storage**: Photo selection currently operates as a client-side session preview. Binary file uploads to cloud/disk storage will be introduced in future phases.
-- **No Maps or AI Libraries**: Phase 8 strictly utilizes Vanilla HTML/CSS/JS without external mapping libraries (Leaflet/Google Maps) or AI prediction models.
-- **Guarded Polling**: Traffic telemetry, emergency broadcasts, and violations auto-refresh every 30 seconds via active-request guards (`isTrafficFetching`, `isAlertsFetching`, `isViolationsFetching`) when viewing the Dashboard or respective monitoring tabs.
+- **No Maps or AI Libraries**: Phase 9 strictly utilizes Vanilla HTML/CSS/JS without external mapping libraries (Leaflet/Google Maps) or AI prediction models.
+- **Guarded Polling**: Telemetry, broadcasts, violations, and intelligence analytics auto-refresh every 30 seconds via active-request guards when viewing their respective tabs.
 
 ---
 
@@ -298,4 +336,4 @@ python test_phase8.py
 
 ## Status
 
-🚧 Under Development — Phase 8 Completed
+🚧 Under Development — Phase 9 Completed
