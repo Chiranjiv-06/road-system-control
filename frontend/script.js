@@ -20,8 +20,13 @@ let issuesState = [];
 
 // In-memory application state for traffic records loaded from the API (Phase 6)
 let trafficState = [];
+
+// In-memory application state for emergency alerts loaded from the API (Phase 7)
+let alertsState = [];
+
 let currentActiveSection = 'dashboard';
 let isTrafficFetching = false;
+let isAlertsFetching = false;
 
 // ==========================================================================
 // 2. MAIN DOM INITIALIZATION
@@ -37,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeSectionTitle = document.getElementById('activeSectionTitle');
     const toast = document.getElementById('toastNotification');
     const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+    const sidebarAlertCount = document.getElementById('sidebarAlertCount');
 
     // --- Backend Health Elements ---
     const systemStatusIndicator = document.getElementById('systemStatusIndicator');
@@ -50,6 +56,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const recentIssuesTableBody = document.getElementById('recentIssuesTableBody');
     const refreshIssuesBtn = document.getElementById('refreshIssuesBtn');
 
+    // --- Dashboard Emergency Alert Banner Elements (Phase 7) ---
+    const dashboardEmergencyBanner = document.getElementById('dashboardEmergencyBanner');
+    const dashboardAlertIconWrapper = document.getElementById('dashboardAlertIconWrapper');
+    const dashboardAlertTitle = document.getElementById('dashboardAlertTitle');
+    const dashboardAlertBadge = document.getElementById('dashboardAlertBadge');
+    const dashboardAlertDesc = document.getElementById('dashboardAlertDesc');
+
     // --- Phase 6 Traffic Monitoring Elements ---
     const trafficTotalRecords = document.getElementById('trafficTotalRecords');
     const trafficTotalVehicles = document.getElementById('trafficTotalVehicles');
@@ -60,6 +73,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshTrafficBtn = document.getElementById('refreshTrafficBtn');
     const dashboardTrafficList = document.getElementById('dashboardTrafficList');
     const dashboardTrafficMeta = document.getElementById('dashboardTrafficMeta');
+
+    // --- Phase 7 Emergency Alerts Center Elements ---
+    const alertTotalCount = document.getElementById('alertTotalCount');
+    const alertActiveCount = document.getElementById('alertActiveCount');
+    const alertCriticalCount = document.getElementById('alertCriticalCount');
+    const alertResolvedCount = document.getElementById('alertResolvedCount');
+    const emergencyAlertsTableBody = document.getElementById('emergencyAlertsTableBody');
+    const alertLastUpdated = document.getElementById('alertLastUpdated');
+    const refreshAlertsBtn = document.getElementById('refreshAlertsBtn');
+
+    // Create Emergency Alert Modal Elements
+    const openCreateAlertModalBtn = document.getElementById('openCreateAlertModalBtn');
+    const createAlertModal = document.getElementById('createAlertModal');
+    const closeCreateAlertModalBtn = document.getElementById('closeCreateAlertModalBtn');
+    const cancelCreateAlertBtn = document.getElementById('cancelCreateAlertBtn');
+    const createAlertForm = document.getElementById('createAlertForm');
+    const submitAlertBtn = document.getElementById('submitAlertBtn');
+    const alertTypeInput = document.getElementById('alertTypeInput');
+    const alertSeverityInput = document.getElementById('alertSeverityInput');
+    const alertTitleInput = document.getElementById('alertTitleInput');
+    const alertDescriptionInput = document.getElementById('alertDescriptionInput');
+    const alertLocationInput = document.getElementById('alertLocationInput');
+    const alertAreaInput = document.getElementById('alertAreaInput');
+    const alertStatusInput = document.getElementById('alertStatusInput');
 
     // --- Report Issue Form Elements ---
     const reportIssueForm = document.getElementById('reportIssueForm');
@@ -220,6 +257,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
+     * Helper to render emergency alert severity badge HTML (Phase 7)
+     */
+    function getAlertSeverityBadge(severity) {
+        switch (severity) {
+            case 'Critical':
+                return '<span class="badge badge-danger">Critical</span>';
+            case 'High':
+                return '<span class="badge badge-warning">High</span>';
+            case 'Medium':
+                return '<span class="badge badge-neutral">Medium</span>';
+            case 'Low':
+                return '<span class="badge badge-info">Low</span>';
+            default:
+                return `<span class="badge badge-neutral">${escapeHtml(severity)}</span>`;
+        }
+    }
+
+    /**
+     * Helper to render emergency alert status badge HTML (Phase 7)
+     */
+    function getAlertStatusBadge(status) {
+        switch (status) {
+            case 'Active':
+                return '<span class="badge badge-danger">Active</span>';
+            case 'Investigating':
+                return '<span class="badge badge-warning-soft">Investigating</span>';
+            case 'Resolved':
+                return '<span class="badge badge-success">Resolved</span>';
+            default:
+                return `<span class="badge badge-neutral">${escapeHtml(status)}</span>`;
+        }
+    }
+
+    /**
      * Escape HTML helper to prevent XSS
      */
     function escapeHtml(str) {
@@ -278,10 +349,15 @@ document.addEventListener('DOMContentLoaded', () => {
             activeSectionTitle.textContent = titlesMap[sectionKey];
         }
 
-        // When navigating to traffic monitoring or dashboard, ensure telemetry is loaded
+        // When navigating to traffic monitoring, emergency alerts, or dashboard, ensure data is loaded
         if (sectionKey === 'traffic-monitoring' || sectionKey === 'dashboard') {
             if (trafficState.length === 0 && !isTrafficFetching) {
                 loadTraffic(true);
+            }
+        }
+        if (sectionKey === 'emergency-alerts' || sectionKey === 'dashboard') {
+            if (alertsState.length === 0 && !isAlertsFetching) {
+                loadAlerts(true);
             }
         }
 
@@ -677,6 +753,389 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================================================
+    // 5C. FETCH & RENDER EMERGENCY ALERTS FROM FASTAPI / POSTGRESQL (PHASE 7)
+    // ==========================================================================
+
+    /**
+     * Populate emergency alerts summary metric cards and header badges
+     */
+    function renderAlertsSummary(summary) {
+        if (!summary) return;
+        const total = summary.total_alerts ?? summary.totalAlerts ?? 0;
+        const active = summary.active_alerts ?? summary.activeAlerts ?? 0;
+        const critical = summary.critical_alerts ?? summary.criticalAlerts ?? 0;
+        const resolved = summary.resolved_alerts ?? summary.resolvedAlerts ?? 0;
+
+        if (alertTotalCount) alertTotalCount.textContent = total;
+        if (alertActiveCount) alertActiveCount.textContent = active;
+        if (alertCriticalCount) alertCriticalCount.textContent = critical;
+        if (alertResolvedCount) alertResolvedCount.textContent = resolved;
+
+        // Update Dashboard Active Alerts metric card
+        if (metricActive) metricActive.textContent = active;
+
+        // Update Sidebar Badge
+        if (sidebarAlertCount) {
+            sidebarAlertCount.textContent = active;
+            sidebarAlertCount.style.display = active > 0 ? 'inline-block' : 'none';
+        }
+    }
+
+    /**
+     * Dynamically update the top Emergency Banner on the Dashboard
+     */
+    function renderEmergencyBanner(alerts) {
+        if (!dashboardEmergencyBanner) return;
+
+        const activeCrit = alerts.find(a => a.status === 'Active' && a.severity === 'Critical');
+        const activeAny = alerts.find(a => a.status === 'Active');
+
+        if (activeCrit) {
+            dashboardEmergencyBanner.className = 'emergency-alert-card';
+            if (dashboardAlertBadge) {
+                dashboardAlertBadge.className = 'badge badge-danger';
+                dashboardAlertBadge.textContent = 'Live Critical Emergency';
+            }
+            if (dashboardAlertTitle) {
+                dashboardAlertTitle.textContent = `${activeCrit.alert_type}: ${activeCrit.title}`;
+            }
+            if (dashboardAlertDesc) {
+                dashboardAlertDesc.innerHTML = `${escapeHtml(activeCrit.description)} — Location: <strong>${escapeHtml(activeCrit.location)} (${escapeHtml(activeCrit.area)})</strong>`;
+            }
+        } else if (activeAny) {
+            dashboardEmergencyBanner.className = 'emergency-alert-card';
+            if (dashboardAlertBadge) {
+                dashboardAlertBadge.className = 'badge badge-warning';
+                dashboardAlertBadge.textContent = 'Active Incident';
+            }
+            if (dashboardAlertTitle) {
+                dashboardAlertTitle.textContent = `${activeAny.alert_type}: ${activeAny.title}`;
+            }
+            if (dashboardAlertDesc) {
+                dashboardAlertDesc.innerHTML = `${escapeHtml(activeAny.description)} — Location: <strong>${escapeHtml(activeAny.location)} (${escapeHtml(activeAny.area)})</strong>`;
+            }
+        } else {
+            dashboardEmergencyBanner.className = 'emergency-alert-card clear-mode';
+            if (dashboardAlertBadge) {
+                dashboardAlertBadge.className = 'badge badge-success';
+                dashboardAlertBadge.textContent = 'All Corridors Clear';
+            }
+            if (dashboardAlertTitle) {
+                dashboardAlertTitle.textContent = 'All Corridors Clear';
+            }
+            if (dashboardAlertDesc) {
+                dashboardAlertDesc.textContent = 'No active emergency incidents or critical road hazards reported across the network.';
+            }
+        }
+    }
+
+    /**
+     * Render emergency alerts into the Emergency Alerts Center table
+     */
+    function renderEmergencyAlertsTable(alerts) {
+        if (!emergencyAlertsTableBody) return;
+        emergencyAlertsTableBody.innerHTML = '';
+
+        if (!alerts || alerts.length === 0) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.innerHTML = `
+                <td colspan="7" class="text-center py-4 text-muted">
+                    No emergency alert broadcasts found in database. Click <strong>Create Emergency Alert</strong> or run <code>python seed_emergency_alerts.py</code>.
+                </td>
+            `;
+            emergencyAlertsTableBody.appendChild(emptyRow);
+            return;
+        }
+
+        alerts.forEach(alert => {
+            const row = document.createElement('tr');
+            const alertId = alert.id;
+            const alertType = alert.alert_type || alert.alertType || 'Emergency';
+            const title = alert.title || 'Untitled Incident';
+            const desc = alert.description || '';
+            const location = alert.location || '';
+            const area = alert.area ? `(${escapeHtml(alert.area)})` : '';
+            const severity = alert.severity || 'Medium';
+            const status = alert.status || 'Active';
+            const issuedAt = alert.issued_at || alert.issuedAt;
+
+            // Action Buttons based on status
+            let actionsHtml = '';
+            if (status === 'Active') {
+                actionsHtml = `
+                    <div class="alert-action-btns">
+                        <button type="button" class="btn btn-outline btn-sm patch-status-btn" data-id="${escapeHtml(alertId)}" data-status="Investigating" title="Mark as investigating">
+                            Investigate
+                        </button>
+                        <button type="button" class="btn btn-danger-outline btn-sm patch-status-btn" data-id="${escapeHtml(alertId)}" data-status="Resolved" title="Mark as resolved">
+                            Resolve
+                        </button>
+                    </div>
+                `;
+            } else if (status === 'Investigating') {
+                actionsHtml = `
+                    <div class="alert-action-btns">
+                        <button type="button" class="btn btn-outline btn-sm patch-status-btn" data-id="${escapeHtml(alertId)}" data-status="Resolved" title="Mark as resolved">
+                            Resolve
+                        </button>
+                    </div>
+                `;
+            } else {
+                actionsHtml = `<span class="text-xs text-muted font-medium">Cleared</span>`;
+            }
+
+            row.innerHTML = `
+                <td>
+                    <div class="issue-name-cell">
+                        <span class="issue-id-tag">${escapeHtml(alertId)}</span>
+                        <strong>${escapeHtml(alertType)}</strong>
+                    </div>
+                </td>
+                <td>
+                    <div style="max-width: 320px;">
+                        <strong class="text-primary">${escapeHtml(title)}</strong>
+                        <div class="text-xs text-muted" style="margin-top: 2px;">${escapeHtml(desc)}</div>
+                    </div>
+                </td>
+                <td>
+                    <div>${escapeHtml(location)}</div>
+                    <span class="text-xs text-muted">${area}</span>
+                </td>
+                <td>${getAlertSeverityBadge(severity)}</td>
+                <td>${getAlertStatusBadge(status)}</td>
+                <td class="text-muted" title="${issuedAt ? new Date(issuedAt).toLocaleString() : ''}">
+                    ${formatTimeAgo(issuedAt)}
+                </td>
+                <td class="text-right">
+                    ${actionsHtml}
+                </td>
+            `;
+
+            emergencyAlertsTableBody.appendChild(row);
+        });
+
+        // Attach event listeners to status update buttons
+        emergencyAlertsTableBody.querySelectorAll('.patch-status-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const alertId = btn.dataset.id;
+                const newStatus = btn.dataset.status;
+                if (alertId && newStatus) {
+                    await updateAlertStatus(alertId, newStatus);
+                }
+            });
+        });
+    }
+
+    /**
+     * Render error state for emergency alerts
+     */
+    function renderAlertsError() {
+        if (emergencyAlertsTableBody) {
+            emergencyAlertsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="table-loading-cell text-danger">
+                        ⚠️ Unable to connect to Emergency Alerts API.<br>
+                        <span class="text-xs text-muted">Please check that FastAPI is running on <code>http://127.0.0.1:8000</code>.</span>
+                    </td>
+                </tr>
+            `;
+        }
+        if (alertTotalCount) alertTotalCount.textContent = '--';
+        if (alertActiveCount) alertActiveCount.textContent = '--';
+        if (alertCriticalCount) alertCriticalCount.textContent = '--';
+        if (alertResolvedCount) alertResolvedCount.textContent = '--';
+    }
+
+    /**
+     * Fetch emergency alerts and summary concurrently from FastAPI backend
+     */
+    async function loadAlerts(showLoadingSpinner = true) {
+        if (isAlertsFetching) return;
+        isAlertsFetching = true;
+
+        if (showLoadingSpinner) {
+            if (emergencyAlertsTableBody) {
+                emergencyAlertsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="table-loading-cell">
+                            <span class="spinner-inline"></span> Loading live emergency broadcasts from PostgreSQL...
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        try {
+            const isOnline = await checkBackendHealth();
+            if (!isOnline) {
+                throw new Error("Backend connection offline");
+            }
+
+            const [alertsRes, summaryRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/emergency-alerts`),
+                fetch(`${API_BASE_URL}/emergency-alerts/summary`)
+            ]);
+
+            if (!alertsRes.ok || !summaryRes.ok) {
+                throw new Error(`Alerts API error: alerts status ${alertsRes.status}, summary status ${summaryRes.status}`);
+            }
+
+            const alertsData = await alertsRes.json();
+            const summaryData = await summaryRes.json();
+
+            alertsState = Array.isArray(alertsData) ? alertsData : [];
+            renderAlertsSummary(summaryData);
+            renderEmergencyBanner(alertsState);
+            renderEmergencyAlertsTable(alertsState);
+
+            if (alertLastUpdated) {
+                const now = new Date();
+                alertLastUpdated.textContent = `Updated: ${now.toLocaleTimeString()}`;
+            }
+        } catch (error) {
+            console.error("Failed to load emergency alerts from FastAPI:", error);
+            renderAlertsError();
+        } finally {
+            isAlertsFetching = false;
+        }
+    }
+
+    /**
+     * Update an alert's status via PATCH /api/emergency-alerts/{id}/status
+     */
+    async function updateAlertStatus(alertId, newStatus) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/emergency-alerts/${encodeURIComponent(alertId)}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (!res.ok) {
+                throw new Error(`Failed to update status: ${res.status}`);
+            }
+
+            const updated = await res.json();
+            showToast(`Alert ${alertId} marked as ${newStatus}.`, 'success');
+
+            // Update in-memory state
+            const index = alertsState.findIndex(a => a.id === alertId);
+            if (index !== -1) {
+                alertsState[index] = updated;
+            }
+
+            // Re-fetch summary and re-render
+            const summaryRes = await fetch(`${API_BASE_URL}/emergency-alerts/summary`);
+            if (summaryRes.ok) {
+                const summaryData = await summaryRes.json();
+                renderAlertsSummary(summaryData);
+            }
+            renderEmergencyBanner(alertsState);
+            renderEmergencyAlertsTable(alertsState);
+        } catch (err) {
+            console.error("Failed to patch alert status:", err);
+            showToast("Failed to update alert status. Check server connection.", "error");
+        }
+    }
+
+    /**
+     * Modal Dialog Functions for Creating Emergency Alert
+     */
+    function openCreateAlertModal() {
+        if (!createAlertModal) return;
+        createAlertModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeCreateAlertModal() {
+        if (!createAlertModal) return;
+        createAlertModal.style.display = 'none';
+        document.body.style.overflow = '';
+        if (createAlertForm) createAlertForm.reset();
+    }
+
+    if (openCreateAlertModalBtn) openCreateAlertModalBtn.addEventListener('click', openCreateAlertModal);
+    if (closeCreateAlertModalBtn) closeCreateAlertModalBtn.addEventListener('click', closeCreateAlertModal);
+    if (cancelCreateAlertBtn) cancelCreateAlertBtn.addEventListener('click', closeCreateAlertModal);
+    if (createAlertModal) {
+        createAlertModal.addEventListener('click', (e) => {
+            if (e.target === createAlertModal) closeCreateAlertModal();
+        });
+    }
+
+    // Submit Create Alert Form
+    if (createAlertForm) {
+        createAlertForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const alertType = alertTypeInput ? alertTypeInput.value : '';
+            const severity = alertSeverityInput ? alertSeverityInput.value : '';
+            const title = alertTitleInput ? alertTitleInput.value.trim() : '';
+            const description = alertDescriptionInput ? alertDescriptionInput.value.trim() : '';
+            const location = alertLocationInput ? alertLocationInput.value.trim() : '';
+            const area = alertAreaInput ? alertAreaInput.value.trim() : '';
+            const status = alertStatusInput ? alertStatusInput.value : 'Active';
+
+            if (!alertType || !severity || !title || !description || !location || !area) {
+                showToast("Please fill in all required fields.", "error");
+                return;
+            }
+
+            const payload = {
+                alert_type: alertType,
+                title: title,
+                description: description,
+                location: location,
+                area: area,
+                severity: severity,
+                status: status,
+                issued_at: new Date().toISOString()
+            };
+
+            if (submitAlertBtn) {
+                submitAlertBtn.disabled = true;
+                submitAlertBtn.innerHTML = `<span class="spinner-inline"></span> Broadcasting Alert...`;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/emergency-alerts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.status === 201) {
+                    const createdAlert = await response.json();
+                    alertsState.unshift(createdAlert);
+                    closeCreateAlertModal();
+                    showToast(`Emergency Alert ${createdAlert.id} broadcast successfully!`, 'success');
+
+                    // Refresh summary and render
+                    loadAlerts(false);
+                } else if (response.status === 422) {
+                    const err = await response.json();
+                    console.error("Validation error broadcasting alert:", err);
+                    showToast("Some alert fields are invalid. Please check inputs.", "error");
+                } else {
+                    throw new Error(`Server returned status: ${response.status}`);
+                }
+            } catch (err) {
+                console.error("Failed to broadcast alert:", err);
+                showToast("Unable to save emergency alert. Please verify FastAPI backend.", "error");
+            } finally {
+                if (submitAlertBtn) {
+                    submitAlertBtn.disabled = false;
+                    submitAlertBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Broadcast Live Alert
+                    `;
+                }
+            }
+        });
+    }
+
+    // ==========================================================================
     // 6. ISSUE DETAILS MODAL
     // ==========================================================================
     function openIssueDetails(issue) {
@@ -995,6 +1454,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Refresh / Sync Button (Emergency Alerts - Phase 7)
+    if (refreshAlertsBtn) {
+        refreshAlertsBtn.addEventListener('click', () => {
+            showToast('Syncing emergency alerts from PostgreSQL...', 'default');
+            loadAlerts(true);
+        });
+    }
+
     quickActionBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const action = btn.dataset.action;
@@ -1009,13 +1476,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     switchSection('map');
                     break;
                 case 'nav-emergency':
+                case 'emergency-details':
                     switchSection('emergency-alerts');
                     break;
                 case 'back-to-dashboard':
                     switchSection('dashboard');
-                    break;
-                case 'emergency-details':
-                    showToast('Emergency Incident #EM-4091: Response units ETA 6 mins.');
                     break;
                 default:
                     showToast('Action triggered');
@@ -1026,19 +1491,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================================================
     // 9. INITIALIZATION
     // ==========================================================================
-    // Initial health check and load issues & traffic from PostgreSQL
+    // Initial health check and load issues, traffic & alerts from PostgreSQL
     checkBackendHealth();
     loadIssues(true);
     loadTraffic(true);
+    loadAlerts(true);
 
     // Periodic health check every 15 seconds to dynamically track backend connection
     setInterval(checkBackendHealth, 15000);
 
-    // Phase 6: Periodic traffic polling every 30 seconds (guarded against overlapping requests)
+    // Periodic polling every 30 seconds for traffic and emergency alerts (guarded against overlapping requests)
     setInterval(() => {
-        if (isTrafficFetching) return;
-        if (currentActiveSection === 'dashboard' || currentActiveSection === 'traffic-monitoring') {
+        if (!isTrafficFetching && (currentActiveSection === 'dashboard' || currentActiveSection === 'traffic-monitoring')) {
             loadTraffic(false);
+        }
+        if (!isAlertsFetching && (currentActiveSection === 'dashboard' || currentActiveSection === 'emergency-alerts')) {
+            loadAlerts(false);
         }
     }, 30000);
 });

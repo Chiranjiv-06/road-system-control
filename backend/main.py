@@ -3,8 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 import models.issue  # Ensure models are imported so Base knows about the 'issues' table
 import models.traffic  # Ensure models are imported so Base knows about the 'traffic_records' table
+import models.emergency_alert  # Ensure Base knows about 'emergency_alerts' table
 from routes.issues import router as issues_router
 from routes.traffic import router as traffic_router
+from routes.emergency_alerts import router as emergency_alerts_router
 
 # Automatically create tables in PostgreSQL on application startup
 # (No Alembic required for Phase 4)
@@ -38,9 +40,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include issue management and traffic monitoring routers
+# Include issue management, traffic monitoring, and emergency alert routers
 app.include_router(issues_router)
 app.include_router(traffic_router)
+app.include_router(emergency_alerts_router)
 
 @app.get(
     "/api/health",
