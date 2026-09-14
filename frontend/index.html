@@ -44,6 +44,16 @@
                     <span>Emergency Alerts</span>
                     <span class="badge badge-danger-soft ml-auto" id="sidebarAlertCount">1</span>
                 </a>
+                <a href="#traffic-violations" class="nav-item" data-section="traffic-violations" id="navTrafficViolations">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    <span>Traffic Violations</span>
+                    <span class="badge badge-warning-soft ml-auto" id="sidebarViolationsCount" style="display: none;">0</span>
+                </a>
+                <a href="#analytics" class="nav-item" data-section="analytics" id="navAnalytics">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    <span>Analytics</span>
+                    <span class="badge badge-info ml-auto">Live</span>
+                </a>
                 <a href="#map" class="nav-item" data-section="map">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
                     <span>Map</span>
@@ -169,6 +179,17 @@
                             <div class="metric-value text-success" id="metricResolved">0</div>
                             <div class="metric-subtext">Resolved records in DB</div>
                         </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Rule Violations</span>
+                                <span class="metric-icon-box purple">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-purple" id="metricViolations">-</div>
+                            <div class="metric-subtext" id="metricViolationsSubtext">Enforcement Records</div>
+                        </div>
                     </div>
 
                     <!-- QUICK ACTIONS PANEL -->
@@ -190,6 +211,14 @@
                             <button class="btn btn-outline quick-action-btn" data-action="nav-emergency">
                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg>
                                 Emergency Alerts
+                            </button>
+                            <button class="btn btn-outline quick-action-btn" data-action="nav-violations">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                Violations
+                            </button>
+                            <button class="btn btn-outline quick-action-btn" data-action="nav-analytics">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                                Analytics
                             </button>
                         </div>
                     </div>
@@ -608,7 +637,420 @@
                     </div>
                 </section>
 
-                <!-- SECTION 5: MAP (PLACEHOLDER) -->
+                <!-- ======================================================== -->
+                <!-- SECTION 5: TRAFFIC VIOLATIONS (PHASE 8)                  -->
+                <!-- ======================================================== -->
+                <section class="view-section" id="section-traffic-violations">
+                    <!-- HEADER & ACTION BAR -->
+                    <div class="traffic-header-bar">
+                        <div class="traffic-header-titles">
+                            <h2>Traffic Violation & Rule Enforcement Center</h2>
+                            <p>Automated radar detection, signal infringement tracking, and penalty fine management</p>
+                        </div>
+                        <div class="traffic-actions-group">
+                            <span class="refresh-indicator" id="violationRefreshStatus">Auto-refresh (30s)</span>
+                            <button class="btn btn-primary btn-sm" id="openCreateViolationModalBtn">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Log Rule Violation
+                            </button>
+                            <button class="btn btn-outline btn-sm" id="refreshViolationsBtn" title="Fetch live violations from database">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                Sync Violations
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 1. VIOLATION SUMMARY METRICS CARDS -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Total Violations</span>
+                                <span class="metric-icon-box purple">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value" id="violationTotalCount">-</div>
+                            <div class="metric-subtext">All Registered Infractions</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Detected / New</span>
+                                <span class="metric-icon-box red">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-danger" id="violationDetectedCount">-</div>
+                            <div class="metric-subtext text-danger font-medium">Awaiting Initial Review</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Under Review / Confirmed</span>
+                                <span class="metric-icon-box amber">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-warning" id="violationReviewConfirmedCount">-</div>
+                            <div class="metric-subtext text-warning font-medium">Enforcement In Progress</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Total Fines Assessed</span>
+                                <span class="metric-icon-box emerald">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-success" id="violationTotalFines">₹0</div>
+                            <div class="metric-subtext">Cumulative Fine Value</div>
+                        </div>
+                    </div>
+
+                    <!-- 2. VIOLATIONS TABLE PANEL -->
+                    <div class="panel-card table-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-area">
+                                <h3 class="panel-title">Logged Rule Violations</h3>
+                                <span class="panel-badge badge-postgres">PostgreSQL Live</span>
+                            </div>
+                            <span class="text-muted text-xs" id="violationLastUpdated">Connecting...</span>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Violation ID / Type</th>
+                                        <th>Vehicle Number</th>
+                                        <th>Location / Area</th>
+                                        <th>Severity</th>
+                                        <th>Fine Amount</th>
+                                        <th>Status</th>
+                                        <th>Detected At</th>
+                                        <th class="text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trafficViolationsTableBody">
+                                    <tr>
+                                        <td colspan="8" class="table-loading-cell">
+                                            <span class="spinner-inline"></span> Loading live violations from database...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ======================================================== -->
+                <!-- SECTION 6: ANALYTICS & INTELLIGENCE (PHASE 9)            -->
+                <!-- ======================================================== -->
+                <section class="view-section" id="section-analytics">
+                    <!-- HEADER & FILTER BAR -->
+                    <div class="traffic-header-bar">
+                        <div class="traffic-header-titles">
+                            <h2>Traffic Analytics & Intelligence Center</h2>
+                            <p>Real-time cross-domain telemetry aggregation, congestion hotspots, and multi-domain trends calculated from PostgreSQL</p>
+                        </div>
+                        <div class="traffic-actions-group">
+                            <span class="refresh-indicator" id="analyticsRefreshStatus">Auto-refresh (30s)</span>
+                            <button class="btn btn-outline btn-sm" id="refreshAnalyticsBtn" title="Sync live analytics from PostgreSQL">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                Sync Analytics
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- DYNAMIC QUERY FILTER BAR -->
+                    <div class="analytics-filter-bar">
+                        <div class="analytics-filter-controls">
+                            <div class="analytics-filter-group">
+                                <label for="analyticsAreaFilter">Area / Sector:</label>
+                                <select id="analyticsAreaFilter" class="form-control form-control-sm">
+                                    <option value="">All Areas (Nagpur)</option>
+                                    <option value="Sitabuldi">Sitabuldi</option>
+                                    <option value="Wardha Road">Wardha Road</option>
+                                    <option value="Dharampeth">Dharampeth</option>
+                                    <option value="Sadar">Sadar</option>
+                                    <option value="Gandhibagh">Gandhibagh</option>
+                                    <option value="Medical Square">Medical Square</option>
+                                    <option value="Civil Lines">Civil Lines</option>
+                                    <option value="Narendra Nagar">Narendra Nagar</option>
+                                </select>
+                            </div>
+                            <div class="analytics-filter-group">
+                                <label for="analyticsStartDate">From:</label>
+                                <input type="date" id="analyticsStartDate" class="form-control form-control-sm">
+                            </div>
+                            <div class="analytics-filter-group">
+                                <label for="analyticsEndDate">To:</label>
+                                <input type="date" id="analyticsEndDate" class="form-control form-control-sm">
+                            </div>
+                            <button class="btn btn-primary btn-sm" id="applyAnalyticsFilterBtn">Apply Filter</button>
+                            <button class="btn btn-outline btn-sm" id="resetAnalyticsFilterBtn">Reset</button>
+                        </div>
+                        <span class="text-muted text-xs" id="analyticsLastUpdated">Connecting to PostgreSQL...</span>
+                    </div>
+
+                    <!-- 1. OVERVIEW KPI CARDS -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Road Issues</span>
+                                <span class="metric-icon-box blue">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value" id="analyticsKpiIssues">-</div>
+                            <div class="metric-subtext" id="analyticsKpiIssuesSubtext">PostgreSQL Records</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Traffic Telemetry</span>
+                                <span class="metric-icon-box emerald">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value" id="analyticsKpiTraffic">-</div>
+                            <div class="metric-subtext" id="analyticsKpiTrafficSubtext">Corridor Snapshots</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Emergency Alerts</span>
+                                <span class="metric-icon-box red">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-danger" id="analyticsKpiAlerts">-</div>
+                            <div class="metric-subtext" id="analyticsKpiAlertsSubtext">Incident Broadcasts</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Rule Violations</span>
+                                <span class="metric-icon-box purple">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-purple" id="analyticsKpiViolations">-</div>
+                            <div class="metric-subtext" id="analyticsKpiViolationsSubtext">Enforcement Records</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Active Emergencies</span>
+                                <span class="metric-icon-box amber">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-warning" id="analyticsKpiActiveEmergencies">-</div>
+                            <div class="metric-subtext font-medium text-warning">Requires Response</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Fines Assessed</span>
+                                <span class="metric-icon-box emerald">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-success" id="analyticsKpiTotalFines">₹0</div>
+                            <div class="metric-subtext">Assessed Penalties</div>
+                        </div>
+                    </div>
+
+                    <!-- 2. FOUR-PANEL INTELLIGENCE GRID -->
+                    <div class="analytics-grid-2">
+                        <!-- PANEL 1: TRAFFIC FLOW & CONGESTION INTELLIGENCE -->
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <div>
+                                    <h3 class="chart-card-title">Traffic Telemetry & Congestion</h3>
+                                    <div class="chart-card-desc">Corridor flow velocity and congestion distribution</div>
+                                </div>
+                                <span class="badge badge-postgres">Live Telemetry</span>
+                            </div>
+                            <div class="mini-stat-pills">
+                                <div class="mini-stat-pill">
+                                    <span class="mini-stat-pill-label">Average Speed</span>
+                                    <span class="mini-stat-pill-val" id="analyticsTrafficAvgSpeed">-</span>
+                                </div>
+                                <div class="mini-stat-pill">
+                                    <span class="mini-stat-pill-label">Avg Vehicles / Road</span>
+                                    <span class="mini-stat-pill-val" id="analyticsTrafficAvgVehicles">-</span>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 0.5rem;">
+                                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem;">
+                                    Network Congestion Profile
+                                </div>
+                                <div class="stacked-bar-container" id="analyticsCongestionStackedBar">
+                                    <div class="stacked-bar-seg" style="width: 100%; background-color: var(--border-color);"></div>
+                                </div>
+                                <div class="stacked-legend" id="analyticsCongestionLegend">
+                                    <span class="text-xs text-muted">Loading distribution...</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                    Top Volume Corridors
+                                </div>
+                                <div id="analyticsTopVolumeRoadsList" class="bar-metric-list">
+                                    <div class="text-muted text-xs">Loading corridors...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PANEL 2: ROAD ISSUE ANALYTICS -->
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <div>
+                                    <h3 class="chart-card-title">Road Issue Severity & Hotspots</h3>
+                                    <div class="chart-card-desc">Hazard classification and geographic concentration</div>
+                                </div>
+                                <span class="badge badge-info">Issues</span>
+                            </div>
+                            <div class="mini-stat-pills">
+                                <div class="mini-stat-pill">
+                                    <span class="mini-stat-pill-label">Total Reported</span>
+                                    <span class="mini-stat-pill-val" id="analyticsIssuesTotal">-</span>
+                                </div>
+                                <div class="mini-stat-pill">
+                                    <span class="mini-stat-pill-label">Unresolved</span>
+                                    <span class="mini-stat-pill-val text-danger" id="analyticsIssuesUnresolved">-</span>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 0.75rem;">
+                                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                    Issues by Severity Level
+                                </div>
+                                <div id="analyticsIssueSeverityBars" class="bar-metric-list">
+                                    <div class="text-muted text-xs">Loading severity distribution...</div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                    Most Affected Areas / Wards
+                                </div>
+                                <div id="analyticsIssuesTopAreasList" class="bar-metric-list">
+                                    <div class="text-muted text-xs">Loading areas...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PANEL 3: EMERGENCY DISPATCH INTELLIGENCE -->
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <div>
+                                    <h3 class="chart-card-title">Emergency Incidents & Response</h3>
+                                    <div class="chart-card-desc">Active broadcasts, hazards, and response tracking</div>
+                                </div>
+                                <span class="badge badge-danger">Incidents</span>
+                            </div>
+                            <div class="mini-stat-pills">
+                                <div class="mini-stat-pill">
+                                    <span class="mini-stat-pill-label">Active Incidents</span>
+                                    <span class="mini-stat-pill-val text-danger" id="analyticsEmergenciesActive">-</span>
+                                </div>
+                                <div class="mini-stat-pill">
+                                    <span class="mini-stat-pill-label">Total Broadcasts</span>
+                                    <span class="mini-stat-pill-val" id="analyticsEmergenciesTotal">-</span>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 0.75rem;">
+                                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                    Alerts by Incident Type
+                                </div>
+                                <div id="analyticsEmergencyTypeBars" class="bar-metric-list">
+                                    <div class="text-muted text-xs">Loading incident categories...</div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                    Recent Incident Broadcasts
+                                </div>
+                                <div id="analyticsRecentEmergenciesList" class="bar-metric-list">
+                                    <div class="text-muted text-xs">Loading broadcasts...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PANEL 4: VIOLATIONS & RULE ENFORCEMENT -->
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <div>
+                                    <h3 class="chart-card-title">Rule Infraction & Penalty Breakdown</h3>
+                                    <div class="chart-card-desc">Violation types, automated radar logs, and fines</div>
+                                </div>
+                                <span class="badge badge-purple">Violations</span>
+                            </div>
+                            <div class="mini-stat-pills">
+                                <div class="mini-stat-pill">
+                                    <span class="mini-stat-pill-label">Total Fines</span>
+                                    <span class="mini-stat-pill-val text-success" id="analyticsViolationsTotalFines">₹0</span>
+                                </div>
+                                <div class="mini-stat-pill">
+                                    <span class="mini-stat-pill-label">Average Penalty</span>
+                                    <span class="mini-stat-pill-val text-success" id="analyticsViolationsAvgFine">₹0</span>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 0.75rem;">
+                                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                    Violations by Category
+                                </div>
+                                <div id="analyticsViolationTypeBars" class="bar-metric-list">
+                                    <div class="text-muted text-xs">Loading violation categories...</div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                    Top Infraction Corridors
+                                </div>
+                                <div id="analyticsViolationsTopAreasList" class="bar-metric-list">
+                                    <div class="text-muted text-xs">Loading violation areas...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. TEMPORAL ACTIVITY & SYSTEM TRENDS -->
+                    <div class="panel-card table-panel" style="margin-bottom: 2rem;">
+                        <div class="panel-header">
+                            <div class="panel-title-area">
+                                <h3 class="panel-title">Multi-Domain Activity Trends</h3>
+                                <span class="panel-badge badge-postgres">Daily PostgreSQL Aggregation</span>
+                            </div>
+                            <span class="text-muted text-xs" id="analyticsTrendsCount">Chronological History</span>
+                        </div>
+                        <div class="table-container">
+                            <table class="trends-table" id="analyticsTrendsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Road Issues</th>
+                                        <th>Traffic Snapshots</th>
+                                        <th>Avg Speed</th>
+                                        <th>Emergency Alerts</th>
+                                        <th>Violations</th>
+                                        <th>Daily Fines</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="analyticsTrendsTableBody">
+                                    <tr>
+                                        <td colspan="7" class="table-loading-cell">
+                                            <span class="spinner-inline"></span> Loading chronological trends from PostgreSQL...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 7: MAP (PLACEHOLDER) -->
                 <section class="view-section" id="section-map">
                     <div class="panel-card empty-state-panel">
                         <div class="empty-state-icon">🗺️</div>
@@ -769,6 +1211,92 @@
                         Broadcast Live Alert
                     </button>
                     <button type="button" class="btn btn-outline" id="cancelCreateAlertBtn">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CREATE TRAFFIC VIOLATION MODAL (Phase 8) -->
+    <div class="modal-backdrop" id="createViolationModal" role="dialog" aria-modal="true" aria-labelledby="createViolationModalTitle" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-header-info">
+                    <span class="badge badge-purple">Enforcement</span>
+                    <h3 class="modal-title" id="createViolationModalTitle">Log Traffic / Rule Violation</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeCreateViolationModalBtn" aria-label="Close form">&times;</button>
+            </div>
+            <form id="createViolationForm">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="violationTypeInput" class="form-label">Violation Type <span class="required-star">*</span></label>
+                            <select id="violationTypeInput" class="form-control" required>
+                                <option value="" disabled selected>Select violation type...</option>
+                                <option value="Speeding">Speeding</option>
+                                <option value="Red Light Violation">Red Light Violation</option>
+                                <option value="Wrong Lane">Wrong Lane Driving</option>
+                                <option value="Illegal Parking">Illegal Parking</option>
+                                <option value="No Helmet">No Helmet</option>
+                                <option value="Seatbelt Violation">Seatbelt Violation</option>
+                                <option value="Reckless Driving">Reckless Driving</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="violationVehicleNumberInput" class="form-label">Vehicle Registration <span class="required-star">*</span></label>
+                            <input type="text" id="violationVehicleNumberInput" class="form-control" placeholder="e.g. MH 31 AB 1234" required minlength="2" maxlength="30">
+                        </div>
+                    </div>
+
+                    <div class="form-grid" style="margin-top: 1rem;">
+                        <div class="form-group">
+                            <label for="violationLocationInput" class="form-label">Street / Junction <span class="required-star">*</span></label>
+                            <input type="text" id="violationLocationInput" class="form-control" placeholder="e.g. Wardha Road Junction" required minlength="2">
+                        </div>
+                        <div class="form-group">
+                            <label for="violationAreaInput" class="form-label">Area / Ward <span class="required-star">*</span></label>
+                            <input type="text" id="violationAreaInput" class="form-control" placeholder="e.g. Sitabuldi" required minlength="2">
+                        </div>
+                    </div>
+
+                    <div class="form-grid-3" style="margin-top: 1rem;">
+                        <div class="form-group">
+                            <label for="violationSeverityInput" class="form-label">Severity <span class="required-star">*</span></label>
+                            <select id="violationSeverityInput" class="form-control" required>
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                                <option value="Critical">Critical</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="violationFineAmountInput" class="form-label">Fine Amount (₹) <span class="required-star">*</span></label>
+                            <input type="number" id="violationFineAmountInput" class="form-control" placeholder="e.g. 1000" min="0" step="50" value="1000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="violationStatusInput" class="form-label">Initial Status <span class="required-star">*</span></label>
+                            <select id="violationStatusInput" class="form-control" required>
+                                <option value="Detected" selected>Detected</option>
+                                <option value="Under Review">Under Review</option>
+                                <option value="Confirmed">Confirmed</option>
+                                <option value="Resolved">Resolved</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label for="violationDescriptionInput" class="form-label">Incident & Camera Evidence Notes <span class="required-star">*</span></label>
+                        <textarea id="violationDescriptionInput" class="form-control" rows="3" placeholder="Camera capture notes, speed recorded, radar verification..." required minlength="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" id="submitViolationBtn">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Record Violation
+                    </button>
+                    <button type="button" class="btn btn-outline" id="cancelCreateViolationBtn">
                         Cancel
                     </button>
                 </div>

@@ -13,6 +13,8 @@ Current road management systems are mostly reactive. Authorities receive complai
 - Road issue reporting (Full-stack integrated with PostgreSQL)
 - Real-time traffic monitoring dashboard
 - Emergency alert dispatch
+- Traffic violation and rule enforcement management
+- Cross-domain traffic analytics & intelligence center
 - Interactive map integration (Upcoming)
 - AI-based issue prioritization (Future Scope)
 - Admin dashboard (Upcoming)
@@ -50,27 +52,37 @@ road-system-control/
 │   ├── database.py      # SQLAlchemy engine & session dependency
 │   ├── seed_traffic.py  # Manual demo seed script for traffic corridors
 │   ├── seed_emergency_alerts.py # Manual demo seed script for emergency alerts
+│   ├── seed_traffic_violations.py # Manual demo seed script for traffic violations
 │   ├── requirements.txt # Minimal Python dependencies
 │   ├── models/
-│   │   ├── __init__.py  # Model exports (Issue, TrafficRecord, EmergencyAlert)
+│   │   ├── __init__.py  # Model exports (Issue, TrafficRecord, EmergencyAlert, TrafficViolation)
 │   │   ├── issue.py     # SQLAlchemy Issue model ('issues' table)
 │   │   ├── traffic.py   # SQLAlchemy TrafficRecord model ('traffic_records' table)
-│   │   └── emergency_alert.py # SQLAlchemy EmergencyAlert model ('emergency_alerts' table)
+│   │   ├── emergency_alert.py # SQLAlchemy EmergencyAlert model ('emergency_alerts' table)
+│   │   └── traffic_violation.py # SQLAlchemy TrafficViolation model ('traffic_violations' table)
 │   ├── routes/
 │   │   ├── issues.py    # REST API endpoints (/api/issues)
 │   │   ├── traffic.py   # REST API endpoints (/api/traffic)
-│   │   └── emergency_alerts.py # REST API endpoints (/api/emergency-alerts)
+│   │   ├── emergency_alerts.py # REST API endpoints (/api/emergency-alerts)
+│   │   ├── traffic_violations.py # REST API endpoints (/api/traffic-violations)
+│   │   └── analytics.py # REST API endpoints (/api/analytics)
 │   ├── schemas/
 │   │   ├── issue.py     # Pydantic validation for issues
 │   │   ├── traffic.py   # Pydantic validation for traffic records & summary
-│   │   └── emergency_alert.py # Pydantic validation for emergency alerts & status updates
+│   │   ├── emergency_alert.py # Pydantic validation for emergency alerts & status updates
+│   │   ├── traffic_violation.py # Pydantic validation for traffic violations & status updates
+│   │   └── analytics.py # Pydantic validation for analytics responses
 │   ├── services/
 │   │   ├── issue_service.py   # Issue persistence & sequential ISS-XXXX generator
 │   │   ├── traffic_service.py # Traffic persistence & sequential TRF-XXXX generator
-│   │   └── emergency_alert_service.py # Alert persistence & sequential EMG-XXXX generator
+│   │   ├── emergency_alert_service.py # Alert persistence & sequential EMG-XXXX generator
+│   │   ├── traffic_violation_service.py # Violation persistence & sequential VIO-XXXX generator
+│   │   └── analytics_service.py # Cross-domain analytics calculation engine
 │   ├── test_phase4.py   # Automated tests for Phase 4 (issues persistence)
 │   ├── test_phase6.py   # Automated tests for Phase 6 (traffic monitoring)
-│   └── test_phase7.py   # Automated tests for Phase 7 (emergency alert management)
+│   ├── test_phase7.py   # Automated tests for Phase 7 (emergency alert management)
+│   ├── test_phase8.py   # Automated tests for Phase 8 (traffic violation management)
+│   └── test_phase9.py   # Automated tests for Phase 9 (analytics & intelligence)
 │
 ├── docs/
 ├── .env.example         # Environment template
@@ -88,8 +100,10 @@ road-system-control/
 - **Phase 4**: PostgreSQL Database Persistence (SQLAlchemy ORM + PostgreSQL) — *Completed*
 - **Phase 5**: Frontend ↔ FastAPI ↔ PostgreSQL Integration — *Completed*
 - **Phase 6**: Traffic Monitoring (Full-stack telemetry, PostgreSQL, summary API, polling) — *Completed*
-- **Phase 7**: Emergency Alert Management (Full-stack incident dispatch, PostgreSQL, lifecycle management) — **Completed**
-- **Phase 8**: Interactive Map Integration / Admin Roles — *Upcoming*
+- **Phase 7**: Emergency Alert Management (Full-stack incident dispatch, PostgreSQL, lifecycle management) — *Completed*
+- **Phase 8**: Traffic Violation Management (Rule violations, automated radar tracking, penalties, PostgreSQL) — *Completed*
+- **Phase 9**: Traffic Analytics & Intelligence Dashboard (Cross-domain KPIs, trends, PostgreSQL analysis) — **Completed**
+- **Phase 10**: Interactive Map Integration / Admin Roles — *Upcoming*
 
 ---
 
@@ -219,7 +233,44 @@ cd backend
 python seed_emergency_alerts.py
 ```
 
-### 3. Automated Verification Testing
+---
+
+## 🛑 Phase 8: Traffic Violation Management Documentation
+
+### 1. Database Table: `traffic_violations`
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | String(20) | Primary Key, Index | Sequential identifier (`VIO-0001`, `VIO-0002`, ...) |
+| `violation_type` | String(80) | Required, Index | Type of violation (`Speeding`, `Red Light Violation`, `Wrong Lane`, `Illegal Parking`, `No Helmet`, etc.) |
+| `vehicle_number` | String(30) | Required, Index | Vehicle registration / license plate (e.g. `MH 31 AB 1234`) |
+| `location` | String(255) | Required | Exact roadway, junction, or flyover |
+| `area` | String(100) | Required, Index | Ward or district in Nagpur |
+| `severity` | String(20) | Required | `Low`, `Medium`, `High`, `Critical` |
+| `status` | String(30) | Required, Index | `Detected`, `Under Review`, `Confirmed`, `Resolved` |
+| `fine_amount` | Float | Required, >= 0 | Penalty fine assessed in INR (₹) |
+| `description` | Text | Required | Evidence details, camera sensor notes, speed logs |
+| `detected_at` | String(50) | Required | ISO 8601 observation timestamp |
+| `created_at` | DateTime | Server default `now()` | Record creation timestamp |
+
+### 2. API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/traffic-violations/summary` | Aggregate dashboard statistics (total, detected, under review, confirmed, resolved, high/critical, total fines) |
+| `GET` | `/api/traffic-violations` | List all violations ordered newest first (optional filters: `status`, `severity`, `violation_type`, `area`) |
+| `GET` | `/api/traffic-violations/{id}` | Get single violation by ID (returns 404 if not found) |
+| `POST` | `/api/traffic-violations` | Create violation with sequential `VIO-XXXX` ID (returns 201) |
+| `PATCH` | `/api/traffic-violations/{id}/status` | Update processing status (`Detected`, `Under Review`, `Confirmed`, `Resolved`) |
+
+### 3. Seeding Demo Traffic Violations Data
+To populate sample Nagpur traffic violations (only runs if table is empty):
+```bash
+cd backend
+python seed_traffic_violations.py
+```
+
+### 4. Automated Verification Testing
 Run the test suites across all completed phases:
 ```bash
 cd backend
@@ -229,16 +280,51 @@ python test_phase4.py
 # Phase 6 Regression Test (Traffic monitoring endpoints & validation)
 python test_phase6.py
 
-# Phase 7 Verification Test (Emergency alert management endpoints & validation)
+# Phase 7 Regression Test (Emergency alert management endpoints & validation)
 python test_phase7.py
+
+# Phase 8 Regression Test (Traffic violation management endpoints & validation)
+python test_phase8.py
+
+# Phase 9 Verification Test (Analytics & intelligence endpoints & validation)
+python test_phase9.py
+```
+
+---
+
+## 📊 Phase 9: Traffic Analytics & Intelligence Documentation
+
+### 1. Analytics Architecture
+Phase 9 calculates real-time aggregated metrics across all four database tables (`issues`, `traffic_records`, `emergency_alerts`, `traffic_violations`) directly from PostgreSQL without artificial data generation.
+
+### 2. API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/analytics/overview` | High-level KPIs (total issues, traffic, alerts, violations, active emergencies, unresolved issues, total fines, speed averages) |
+| `GET` | `/api/analytics/traffic` | Traffic telemetry intelligence, congestion distribution, top volume corridors, and hotspot congestion rankings |
+| `GET` | `/api/analytics/issues` | Road hazard classification by severity, status, category, and most affected city sectors |
+| `GET` | `/api/analytics/emergencies` | Emergency alert spread, hazard category breakdown, severity distributions, and recent dispatch activity |
+| `GET` | `/api/analytics/violations` | Rule violation categories, automated radar logs, status progression, and total/average penalty fines |
+| `GET` | `/api/analytics/trends` | Daily chronological activity trends across issues, traffic, emergencies, and violations |
+
+All endpoints support optional query parameters:
+- `area`: Filter analytics to a specific city ward/neighborhood
+- `start_date`: ISO date `YYYY-MM-DD`
+- `end_date`: ISO date `YYYY-MM-DD`
+
+### 3. Automated Verification Testing
+```bash
+cd backend
+python test_phase9.py
 ```
 
 ---
 
 ## 📌 Important Limitations & Scope Boundary
 - **No Backend Image Storage**: Photo selection currently operates as a client-side session preview. Binary file uploads to cloud/disk storage will be introduced in future phases.
-- **No Maps or AI Libraries**: Phase 7 strictly utilizes Vanilla HTML/CSS/JS without external mapping libraries (Leaflet/Google Maps) or AI prediction models.
-- **Guarded Polling**: Traffic telemetry and emergency broadcasts auto-refresh every 30 seconds via active-request guards (`isTrafficFetching`, `isAlertsFetching`) when viewing the Dashboard or respective monitoring tabs.
+- **No Maps or AI Libraries**: Phase 9 strictly utilizes Vanilla HTML/CSS/JS without external mapping libraries (Leaflet/Google Maps) or AI prediction models.
+- **Guarded Polling**: Telemetry, broadcasts, violations, and intelligence analytics auto-refresh every 30 seconds via active-request guards when viewing their respective tabs.
 
 ---
 
@@ -250,4 +336,4 @@ python test_phase7.py
 
 ## Status
 
-🚧 Under Development — Phase 7 Completed
+🚧 Under Development — Phase 9 Completed

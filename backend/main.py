@@ -4,9 +4,12 @@ from database import engine, Base
 import models.issue  # Ensure models are imported so Base knows about the 'issues' table
 import models.traffic  # Ensure models are imported so Base knows about the 'traffic_records' table
 import models.emergency_alert  # Ensure Base knows about 'emergency_alerts' table
+import models.traffic_violation  # Ensure Base knows about 'traffic_violations' table
 from routes.issues import router as issues_router
 from routes.traffic import router as traffic_router
 from routes.emergency_alerts import router as emergency_alerts_router
+from routes.traffic_violations import router as traffic_violations_router
+from routes.analytics import router as analytics_router
 
 # Automatically create tables in PostgreSQL on application startup
 # (No Alembic required for Phase 4)
@@ -40,10 +43,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include issue management, traffic monitoring, and emergency alert routers
+# Include issue management, traffic monitoring, emergency alert, traffic violation, and analytics routers
 app.include_router(issues_router)
 app.include_router(traffic_router)
 app.include_router(emergency_alerts_router)
+app.include_router(traffic_violations_router)
+app.include_router(analytics_router)
 
 @app.get(
     "/api/health",
