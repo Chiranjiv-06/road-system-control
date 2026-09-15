@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <!-- Leaflet CSS (Phase 12 Operations Map) -->
+    <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 </head>
 <body>
     <div class="app-container">
@@ -59,9 +61,10 @@
                     <span>Risk Intelligence</span>
                     <span class="badge badge-warning-soft ml-auto" id="sidebarRiskBadge">AI</span>
                 </a>
-                <a href="#map" class="nav-item" data-section="map">
+                <a href="#map" class="nav-item" data-section="map" id="navOperationsMap">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
-                    <span>Map</span>
+                    <span>Operations Map</span>
+                    <span class="badge badge-info ml-auto" id="sidebarMapBadge">GIS</span>
                 </a>
 
                 <span class="nav-category">Administration</span>
@@ -1266,13 +1269,239 @@
                     </div>
                 </section>
 
-                <!-- SECTION 8: MAP (PLACEHOLDER) -->
+                <!-- SECTION 8: LIVE OPERATIONS MAP (PHASE 12 GIS COMMAND CENTER) -->
                 <section class="view-section" id="section-map">
-                    <div class="panel-card empty-state-panel">
-                        <div class="empty-state-icon">🗺️</div>
-                        <h2>Interactive Road Map</h2>
-                        <p class="text-muted">GIS layers, real-time vehicle movement, and road closure heatmaps will be integrated in future phases.</p>
-                        <button class="btn btn-outline quick-action-btn" data-action="back-to-dashboard">Return to Dashboard</button>
+                    <!-- SECTION HEADER -->
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">Live Operations Map</h2>
+                            <p class="section-subtitle">
+                                Spatial operational visualization across road hazards, traffic corridors, emergency broadcasts, radar violations, and risk intelligence.
+                            </p>
+                        </div>
+                        <div class="section-actions">
+                            <span class="map-provenance-indicator" title="Geospatial data foundation mapped to municipal civic and corridor reference anchors">
+                                <span class="provenance-dot"></span> Municipal GIS Anchors
+                            </span>
+                            <span class="text-xs text-muted" id="mapLastUpdated">Updated: Just now</span>
+                            <button class="btn btn-outline btn-sm" id="refreshMapBtn" title="Sync live spatial features from backend">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                Sync Map
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- GIS OVERVIEW KPI CARDS -->
+                    <div class="metrics-grid" style="margin-bottom: 1.25rem;">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Mapped Features</span>
+                                <span class="metric-icon-box blue">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value" id="mapKpiTotal">0</div>
+                            <div class="metric-subtext">Active Spatial Entities</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Emergency Incidents</span>
+                                <span class="metric-icon-box red">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-danger" id="mapKpiEmergencies">0</div>
+                            <div class="metric-subtext">Broadcast Dispatches</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Traffic Corridors</span>
+                                <span class="metric-icon-box blue">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value" id="mapKpiTraffic">0</div>
+                            <div class="metric-subtext">Monitored Corridors</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Road Hazards</span>
+                                <span class="metric-icon-box amber">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-warning" id="mapKpiIssues">0</div>
+                            <div class="metric-subtext">Reported Potholes / Defects</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">High Risk Sectors</span>
+                                <span class="metric-icon-box purple">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-purple" id="mapKpiRisk">0</div>
+                            <div class="metric-subtext">Phase 10 Evaluated Sectors</div>
+                        </div>
+                    </div>
+
+                    <!-- MAP FILTER & LAYER TOOLBAR -->
+                    <div class="map-toolbar-card">
+                        <div class="map-toolbar-left">
+                            <span class="map-toolbar-label">Domain Layers:</span>
+                            <div class="map-domain-pills" id="mapDomainFilters">
+                                <button type="button" class="domain-pill-btn active" data-domain="all">All Layers</button>
+                                <button type="button" class="domain-pill-btn pill-emergency" data-domain="emergency">🔴 Emergencies</button>
+                                <button type="button" class="domain-pill-btn pill-traffic" data-domain="traffic">🔵 Traffic Flow</button>
+                                <button type="button" class="domain-pill-btn pill-issue" data-domain="issue">🟠 Road Hazards</button>
+                                <button type="button" class="domain-pill-btn pill-violation" data-domain="violation">🟣 Violations</button>
+                                <button type="button" class="domain-pill-btn pill-risk" data-domain="risk">🟡 Risk Intelligence</button>
+                            </div>
+                        </div>
+
+                        <div class="map-toolbar-right">
+                            <div class="form-group-inline">
+                                <label for="mapAreaFilter">Sector / Area:</label>
+                                <select id="mapAreaFilter" class="form-control form-control-sm">
+                                    <option value="">All Sectors</option>
+                                    <option value="Sitabuldi">Sitabuldi</option>
+                                    <option value="Wardha Road">Wardha Road</option>
+                                    <option value="Civil Lines">Civil Lines</option>
+                                    <option value="Medical Square">Medical Square</option>
+                                    <option value="Dharampeth">Dharampeth</option>
+                                    <option value="Gandhibagh">Gandhibagh</option>
+                                    <option value="Narendra Nagar">Narendra Nagar</option>
+                                    <option value="Amravati Road">Amravati Road</option>
+                                    <option value="Airport Expressway">Airport Expressway</option>
+                                    <option value="Outer Ring Expressway">Outer Ring Expressway</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group-inline">
+                                <label for="mapSeverityFilter">Severity / Status:</label>
+                                <select id="mapSeverityFilter" class="form-control form-control-sm">
+                                    <option value="">All Severities</option>
+                                    <option value="Critical">Critical</option>
+                                    <option value="High">High</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                            </div>
+
+                            <button type="button" class="btn btn-outline btn-sm" id="resetMapFiltersBtn">Reset</button>
+                        </div>
+                    </div>
+
+                    <!-- MAP MAIN STAGE & TACTICAL DRAWER -->
+                    <div class="map-stage-wrapper">
+                        <!-- MAP CONTAINER -->
+                        <div class="map-viewport-box">
+                            <div id="operationsMapContainer"></div>
+
+                            <!-- FLOATING COMMAND LEGEND -->
+                            <div class="map-floating-legend" id="mapLegendBox">
+                                <div class="legend-header">
+                                    <span class="legend-title">GIS Layers</span>
+                                    <button class="legend-toggle-btn" id="legendToggleBtn" aria-label="Toggle legend">&minus;</button>
+                                </div>
+                                <div class="legend-body" id="legendBody">
+                                    <div class="legend-item"><span class="legend-pin pin-emergency"></span> Emergency Incident</div>
+                                    <div class="legend-item"><span class="legend-pin pin-traffic"></span> Traffic Telemetry</div>
+                                    <div class="legend-item"><span class="legend-pin pin-issue"></span> Road Hazard / Defect</div>
+                                    <div class="legend-item"><span class="legend-pin pin-violation"></span> Radar Infringement</div>
+                                    <div class="legend-item"><span class="legend-pin pin-risk"></span> Risk Sector Centroid</div>
+                                </div>
+                            </div>
+
+                            <!-- FLOATING DATA INTEGRITY CALLOUT -->
+                            <div class="map-integrity-pill">
+                                ℹ️ Spatial Foundation: Municipal Survey Anchors • Future GPS Ingestion Ready
+                            </div>
+
+                            <!-- MAP LOADING OVERLAY -->
+                            <div class="map-overlay-card" id="mapLoadingOverlay" style="display: none;">
+                                <div class="spinner-inline" style="width: 24px; height: 24px; border-width: 3px;"></div>
+                                <span>Loading spatial operational telemetry from PostgreSQL...</span>
+                            </div>
+
+                            <!-- MAP ERROR OVERLAY -->
+                            <div class="map-overlay-card overlay-error" id="mapErrorOverlay" style="display: none;">
+                                <span style="font-size: 1.5rem;">⚠️</span>
+                                <span id="mapErrorMessage">Unable to connect to GIS Map API. Verify FastAPI backend is running.</span>
+                                <button class="btn btn-primary btn-sm" id="retryMapBtn" style="margin-top: 0.5rem;">Retry Connection</button>
+                            </div>
+                        </div>
+
+                        <!-- TACTICAL DETAIL DRAWER -->
+                        <div class="map-tactical-drawer" id="mapTacticalDrawer">
+                            <div class="drawer-header">
+                                <span class="drawer-header-title">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                    Tactical Feature Inspector
+                                </span>
+                                <button class="drawer-close-btn" id="closeMapDrawerBtn" aria-label="Close details">&times;</button>
+                            </div>
+
+                            <div class="drawer-content" id="mapDrawerEmptyState">
+                                <div class="empty-state-icon" style="font-size: 2.2rem; margin-bottom: 0.5rem;">🎯</div>
+                                <h4 style="margin-bottom: 0.35rem;">No Feature Selected</h4>
+                                <p class="text-muted text-xs">
+                                    Click any operational marker or sector on the map to inspect live telemetry, risk contributions, and tactical recommendations.
+                                </p>
+                            </div>
+
+                            <div class="drawer-content" id="mapDrawerSelectedState" style="display: none;">
+                                <div class="drawer-badge-row">
+                                    <span class="badge badge-info" id="drawerDomainBadge">EMERGENCY</span>
+                                    <span class="badge badge-danger" id="drawerSeverityBadge">Critical</span>
+                                    <span class="badge badge-neutral" id="drawerStatusBadge">Active</span>
+                                </div>
+
+                                <h3 class="drawer-feature-title" id="drawerFeatureTitle">Feature Title</h3>
+                                <div class="drawer-meta-line" id="drawerFeatureId">#ISS-0001</div>
+
+                                <div class="drawer-info-grid">
+                                    <div class="drawer-info-item">
+                                        <span class="info-label">Sector / Area:</span>
+                                        <span class="info-value" id="drawerArea">Sitabuldi</span>
+                                    </div>
+                                    <div class="drawer-info-item">
+                                        <span class="info-label">Location:</span>
+                                        <span class="info-value" id="drawerLocation">Interchange Pillar 4</span>
+                                    </div>
+                                    <div class="drawer-info-item">
+                                        <span class="info-label">Coordinates:</span>
+                                        <span class="info-value" id="drawerCoords">21.1458° N, 79.0882° E</span>
+                                    </div>
+                                    <div class="drawer-info-item">
+                                        <span class="info-label">Coordinate Source:</span>
+                                        <span class="info-value" id="drawerSource">Configured Anchor</span>
+                                    </div>
+                                </div>
+
+                                <div class="drawer-metric-card" id="drawerMetricCard">
+                                    <span class="metric-label" id="drawerMetricTitle">Key Telemetry</span>
+                                    <span class="metric-val" id="drawerMetricVal">Critical Hazard Alert</span>
+                                </div>
+
+                                <div class="drawer-tactical-box" id="drawerTacticalBox">
+                                    <span class="tactical-heading">Tactical Response Directive:</span>
+                                    <p class="tactical-body" id="drawerTacticalText">
+                                        Dispatch field marshals immediately and initialize traffic diversions.
+                                    </p>
+                                </div>
+
+                                <div class="drawer-actions">
+                                    <button class="btn btn-outline btn-sm" id="drawerCenterBtn" style="flex: 1;">
+                                        Center in Map
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -1720,6 +1949,8 @@
     <!-- TOAST NOTIFICATION CONTAINER -->
     <div class="toast-notification" id="toastNotification" role="status" aria-live="polite"></div>
 
+    <!-- Leaflet JS (Phase 12 Operations Map) -->
+    <script src="vendor/leaflet/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

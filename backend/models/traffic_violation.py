@@ -29,6 +29,11 @@ class TrafficViolation(Base):
     fine_amount = Column(Float, nullable=False, default=0.0)
     description = Column(Text, nullable=False)
     detected_at = Column(String(50), nullable=False)  # ISO 8601 string or formatted timestamp
+
+    # Optional geospatial coordinates (Phase 12 GIS foundation)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):

@@ -45,7 +45,8 @@ road-system-control/
 ├── frontend/
 │   ├── index.html       # Dynamic dashboard, modal & reporting form
 │   ├── style.css        # Responsive styling & status indicators
-│   └── script.js        # API integration, state management & validation
+│   ├── script.js        # API integration, state management & validation
+│   └── vendor/leaflet/  # Offline Leaflet 1.9.4 GIS bundle (CSS, JS, images)
 │
 ├── backend/
 │   ├── main.py          # FastAPI app, CORS & startup table creation
@@ -53,40 +54,50 @@ road-system-control/
 │   ├── seed_traffic.py  # Manual demo seed script for traffic corridors
 │   ├── seed_emergency_alerts.py # Manual demo seed script for emergency alerts
 │   ├── seed_traffic_violations.py # Manual demo seed script for traffic violations
+│   ├── seed_users.py    # Manual demo seed script for operator accounts
 │   ├── requirements.txt # Minimal Python dependencies
 │   ├── models/
-│   │   ├── __init__.py  # Model exports (Issue, TrafficRecord, EmergencyAlert, TrafficViolation)
-│   │   ├── issue.py     # SQLAlchemy Issue model ('issues' table)
-│   │   ├── traffic.py   # SQLAlchemy TrafficRecord model ('traffic_records' table)
-│   │   ├── emergency_alert.py # SQLAlchemy EmergencyAlert model ('emergency_alerts' table)
-│   │   └── traffic_violation.py # SQLAlchemy TrafficViolation model ('traffic_violations' table)
+│   │   ├── __init__.py  # Model exports (Issue, TrafficRecord, EmergencyAlert, TrafficViolation, User)
+│   │   ├── issue.py     # SQLAlchemy Issue model (with latitude/longitude)
+│   │   ├── traffic.py   # SQLAlchemy TrafficRecord model (with latitude/longitude)
+│   │   ├── emergency_alert.py # SQLAlchemy EmergencyAlert model (with latitude/longitude)
+│   │   ├── traffic_violation.py # SQLAlchemy TrafficViolation model (with latitude/longitude)
+│   │   └── user.py      # SQLAlchemy User model ('users' table)
 │   ├── routes/
 │   │   ├── issues.py    # REST API endpoints (/api/issues)
 │   │   ├── traffic.py   # REST API endpoints (/api/traffic)
 │   │   ├── emergency_alerts.py # REST API endpoints (/api/emergency-alerts)
 │   │   ├── traffic_violations.py # REST API endpoints (/api/traffic-violations)
 │   │   ├── analytics.py # REST API endpoints (/api/analytics)
-│   │   └── risk.py      # REST API endpoints (/api/risk)
+│   │   ├── risk.py      # REST API endpoints (/api/risk)
+│   │   ├── auth.py      # REST API endpoints (/api/auth)
+│   │   └── map.py       # REST API endpoints (/api/map/overview)
 │   ├── schemas/
 │   │   ├── issue.py     # Pydantic validation for issues
 │   │   ├── traffic.py   # Pydantic validation for traffic records & summary
 │   │   ├── emergency_alert.py # Pydantic validation for emergency alerts & status updates
 │   │   ├── traffic_violation.py # Pydantic validation for traffic violations & status updates
 │   │   ├── analytics.py # Pydantic validation for analytics responses
-│   │   └── risk.py      # Pydantic validation for risk scores & explainability
+│   │   ├── risk.py      # Pydantic validation for risk scores & explainability
+│   │   ├── user.py      # Pydantic validation for authentication & users
+│   │   └── map.py       # Pydantic validation for GIS map features & overview
 │   ├── services/
 │   │   ├── issue_service.py   # Issue persistence & sequential ISS-XXXX generator
 │   │   ├── traffic_service.py # Traffic persistence & sequential TRF-XXXX generator
 │   │   ├── emergency_alert_service.py # Alert persistence & sequential EMG-XXXX generator
 │   │   ├── traffic_violation_service.py # Violation persistence & sequential VIO-XXXX generator
 │   │   ├── analytics_service.py # Cross-domain analytics calculation engine
-│   │   └── risk_service.py    # Explainable multi-domain risk evaluation engine
+│   │   ├── risk_service.py    # Explainable multi-domain risk evaluation engine
+│   │   ├── auth_service.py    # Authentication, password hashing, and JWT engine
+│   │   └── map_service.py     # Multi-domain GIS resolver & spatial provenance engine
 │   ├── test_phase4.py   # Automated tests for Phase 4 (issues persistence)
 │   ├── test_phase6.py   # Automated tests for Phase 6 (traffic monitoring)
 │   ├── test_phase7.py   # Automated tests for Phase 7 (emergency alert management)
 │   ├── test_phase8.py   # Automated tests for Phase 8 (traffic violation management)
 │   ├── test_phase9.py   # Automated tests for Phase 9 (analytics & intelligence)
-│   └── test_phase10.py  # Automated tests for Phase 10 (risk intelligence & scoring)
+│   ├── test_phase10.py  # Automated tests for Phase 10 (risk intelligence & scoring)
+│   ├── test_phase11.py  # Automated tests for Phase 11 (authentication & RBAC)
+│   └── test_phase12.py  # Automated tests for Phase 12 (interactive GIS map)
 │
 ├── docs/
 ├── .env.example         # Environment template
@@ -108,8 +119,8 @@ road-system-control/
 - **Phase 8**: Traffic Violation Management (Rule violations, automated radar tracking, penalties, PostgreSQL) — *Completed*
 - **Phase 9**: Traffic Analytics & Intelligence Dashboard (Cross-domain KPIs, trends, PostgreSQL analysis) — *Completed*
 - **Phase 10**: AI Risk & Incident Intelligence (0–100 explainable risk scoring, multi-domain hazard synthesis, tactical directives) — *Completed*
-- **Phase 11**: Authentication & Role-Based Access Control (Operator accounts, bcrypt hashing, JWT Bearer tokens, Admin management) — **Completed**
-- **Phase 12**: Interactive GIS Map Integration — *Upcoming*
+- **Phase 11**: Authentication & Role-Based Access Control (Operator accounts, bcrypt hashing, JWT Bearer tokens, Admin management) — *Completed*
+- **Phase 12**: Interactive GIS / Live Operations Map (Offline-first Leaflet GIS, 5 cross-domain spatial layers, honest coordinate provenance, tactical drawer) — **Completed**
 
 ---
 
@@ -473,10 +484,117 @@ python test_phase4.py; python test_phase6.py; python test_phase7.py; python test
 
 ---
 
+## 🗺️ Phase 12: Interactive GIS / Live Operations Map
+
+Phase 12 introduces a real-time, cross-domain geospatial command center for monitoring road issues, traffic flow telemetry, emergency broadcasts, radar violations, and explainable AI risk intelligence on an interactive spatial canvas.
+
+### 1. Geospatial Architecture & Offline-First Design
+
+```
+[ PostgreSQL Database (issues, traffic, emergencies, violations, users) ]
+                              │
+                              ▼ (SQLAlchemy ORM + Dynamic Spatial Migration)
+[ MapService (Municipal GIS Registry + Deterministic Jitter + Provenance Tagging) ]
+                              │
+                              ▼ (Consolidated JSON via GET /api/map/overview)
+[ FastAPI REST Router (/api/map) ]
+                              │
+                              ▼ (Vanilla JS fetch() + active section polling)
+[ Offline Leaflet 1.9.4 Engine (OpenStreetMap Carto Tiles + SVG Markers + Tactical Drawer) ]
+```
+
+- **Zero External CDN Dependencies**: All Leaflet 1.9.4 CSS, JavaScript, and image marker assets are vendored locally in `frontend/vendor/leaflet/` to guarantee 100% offline availability in isolated control-room intranet environments.
+- **Cartographic Base Map**: Uses OpenStreetMap standard cartographic raster tiles cached and rendered seamlessly inside an adaptive high-DPI Leaflet container.
+
+### 2. Spatial Provenance Model (Honest Coordinate Resolution)
+
+To maintain strict operational integrity, the system **never** fabricates real-time sensor GPS:
+
+| Coordinate Source | Classification | Description |
+|---|---|---|
+| `exact_gps` | Ground Truth Hardware | Real-time GPS coordinate received directly from an onboard GPS unit or mobile inspector device with satellite fix. |
+| `configured_reference` | Civic Landmark Anchor | High-precision reference coordinates for recognized municipal junctions and landmarks (e.g., Sitabuldi Interchange, Zero Mile, Variety Square) with deterministic micro-jittering to prevent visual marker stacking. |
+| `configured_corridor` | Corridor Midpoint/Polyline | Pre-mapped midpoint coordinates representing major arterial corridors (e.g., Wardha Road, Central Avenue, Amravati Road). |
+| `area_centroid` | Municipal Ward Centroid | Geographic centroid coordinate of a recognized municipal administrative ward or zone. |
+| `unmapped` | Missing Spatial Data | Records without valid coordinates are safely handled, tracked in the integrity summary pill, and excluded from canvas rendering without application crashes. |
+
+### 3. Five Cross-Domain Operational Map Layers
+
+Each domain is rendered with custom, highly distinctive vector SVG marker pins:
+
+1. **🚨 Emergency Alerts (Red Pulse)**: Active and investigating emergency incidents (accidents, waterlogging, structural collapse) with pulsating radar halos for rapid operator triage.
+2. **🚗 Traffic Telemetry (Blue Flow)**: Monitored corridors reporting vehicle counts, average speeds, and congestion ratings.
+3. **⚠️ Road Issues (Amber Hazard)**: Potholes, damaged signage, signal malfunctions, and surface hazards.
+4. **📸 Traffic Violations (Purple Radar)**: Camera-detected infractions (overspeeding, red light jumping, wrong-side driving) with fine amounts and penalty tracking.
+5. **🛡️ AI Risk Intelligence (Dynamic Risk Polygons/Centroids)**: Phase 10 explainable risk scores (0–100) rendered as color-coded sector pins (Green/Yellow/Orange/Red) with primary hazard drivers and tactical recommendations.
+
+### 4. Interactive Command-Center Features
+
+- **Domain Pill Quick-Filtering**: Seamlessly toggle between `All Domains`, `Road Issues`, `Traffic Flow`, `Emergency Alerts`, `Traffic Violations`, and `Risk Zones`.
+- **Area & Severity Selectors**: Narrow down spatial features by municipal area (e.g., `Sitabuldi`, `Dharampeth`) or minimum severity level (`Critical`, `High`, `Medium`, `Low`).
+- **Tactical Inspector Drawer**: Selecting any map pin or table row opens a slide-over tactical detail drawer displaying domain badges, coordinate provenance chips, coordinates, metric highlights, contextual details, and direct navigation actions.
+- **Center on Feature**: Instantly fly the map camera to focus and zoom in on any selected incident (`map.flyTo()`).
+- **Guarded 30-Second Polling**: Map layers auto-refresh every 30 seconds without screen flicker while the Operations Map tab is active.
+
+### 5. API Reference
+
+#### `GET /api/map/overview`
+Retrieves consolidated spatial features across all 5 operational domains.
+
+- **Query Parameters**:
+  - `area` *(string, optional)*: Filter by municipal area name (case-insensitive substring match).
+  - `data_type` *(string, optional)*: Filter by domain (`all`, `issue`, `issues`, `traffic`, `emergency`, `emergencies`, `violation`, `violations`, `risk`).
+  - `risk_level` *(string, optional)*: Filter by severity rating (`Low`, `Medium`, `High`, `Critical`).
+  - `status` *(string, optional)*: Filter by operational lifecycle status.
+
+- **Response Schema (`MapOverviewResponse`)**:
+  - `summary`: Object containing counts for `total_features`, `mapped_count`, `issues_count`, `traffic_count`, `emergencies_count`, `violations_count`, `risk_areas_count`, and `unmapped_count`.
+  - `center`: Object with `latitude`, `longitude`, `zoom`, and `city`.
+  - `issues`: Array of `MapFeatureRecord` items.
+  - `traffic`: Array of `MapFeatureRecord` items.
+  - `emergencies`: Array of `MapFeatureRecord` items.
+  - `violations`: Array of `MapFeatureRecord` items.
+  - `risk`: Array of `MapFeatureRecord` items.
+
+### 6. Production PostGIS Migration Roadmap
+
+The current architecture stores coordinates as native floating-point columns (`latitude DOUBLE PRECISION`, `longitude DOUBLE PRECISION`). For city-scale deployments exceeding 100,000 active features, a smooth migration to PostGIS is planned:
+
+```sql
+-- Step 1: Enable PostGIS extension
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+-- Step 2: Add Geometry columns
+ALTER TABLE issues ADD COLUMN geom geometry(Point, 4326);
+ALTER TABLE traffic_records ADD COLUMN geom geometry(Point, 4326);
+ALTER TABLE emergency_alerts ADD COLUMN geom geometry(Point, 4326);
+ALTER TABLE traffic_violations ADD COLUMN geom geometry(Point, 4326);
+
+-- Step 3: Populate Geometry from existing columns
+UPDATE issues SET geom = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326) WHERE latitude IS NOT NULL;
+
+-- Step 4: Add Spatial GIST Indexes
+CREATE INDEX idx_issues_geom ON issues USING GIST (geom);
+```
+
+### 7. Automated Verification Testing
+Run the dedicated Phase 12 GIS test suite covering 17 end-to-end checks:
+```bash
+cd backend
+python test_phase12.py
+```
+Run the full 92-test regression suite across all implemented phases:
+```bash
+python test_phase4.py; python test_phase6.py; python test_phase7.py; python test_phase8.py; python test_phase9.py; python test_phase10.py; python test_phase11.py; python test_phase12.py
+```
+
+---
+
 ## 📌 Important Limitations & Scope Boundary
 - **No Backend Image Storage**: Photo selection currently operates as a client-side session preview. Binary file uploads to cloud/disk storage will be introduced in future phases.
 - **Explainable Rules-Based Model**: Phase 10 deliberately uses a transparent mathematical scoring model rather than black-box ML to guarantee zero hallucinated predictions on small datasets.
-- **Guarded Polling**: Telemetry, broadcasts, violations, intelligence analytics, and risk assessments auto-refresh every 30 seconds via active-request guards when viewing their respective tabs.
+- **Guarded Polling**: Telemetry, broadcasts, violations, intelligence analytics, risk assessments, and GIS map layers auto-refresh every 30 seconds via active-request guards when viewing their respective tabs.
+- **Honest Spatial Coordinates**: Features without live onboard GPS use deterministic municipal reference coordinates tagged explicitly with their provenance source.
 
 ---
 
@@ -488,4 +606,4 @@ python test_phase4.py; python test_phase6.py; python test_phase7.py; python test
 
 ## Status
 
-🚧 Under Development — Phase 11 Completed
+🚧 Under Development — Phase 12 Completed

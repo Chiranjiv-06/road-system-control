@@ -4,7 +4,7 @@ Road Issue SQLAlchemy ORM Model
 Represents the 'issues' table in PostgreSQL.
 """
 
-from sqlalchemy import Column, String, Text, DateTime, func
+from sqlalchemy import Column, String, Text, Float, DateTime, func
 from database import Base
 
 class Issue(Base):
@@ -21,6 +21,10 @@ class Issue(Base):
     status = Column(String(50), nullable=False, default="Reported")
     reported_at = Column(String(50), nullable=False)
     
+    # Optional geospatial coordinates (Phase 12 GIS foundation)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):

@@ -262,6 +262,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const newOpPasswordInput = document.getElementById('newOpPasswordInput');
     const submitCreateOpBtn = document.getElementById('submitCreateOpBtn');
 
+    // --- Phase 12 Live Operations Map Elements ---
+    const refreshMapBtn = document.getElementById('refreshMapBtn');
+    const mapLastUpdated = document.getElementById('mapLastUpdated');
+    const mapKpiTotal = document.getElementById('mapKpiTotal');
+    const mapKpiEmergencies = document.getElementById('mapKpiEmergencies');
+    const mapKpiTraffic = document.getElementById('mapKpiTraffic');
+    const mapKpiIssues = document.getElementById('mapKpiIssues');
+    const mapKpiViolations = document.getElementById('mapKpiViolations');
+    const mapKpiRisk = document.getElementById('mapKpiRisk');
+    const mapAreaFilter = document.getElementById('mapAreaFilter');
+    const mapSeverityFilter = document.getElementById('mapSeverityFilter');
+    const resetMapFiltersBtn = document.getElementById('resetMapFiltersBtn');
+    const legendToggleBtn = document.getElementById('legendToggleBtn');
+    const legendBody = document.getElementById('legendBody');
+    const mapLoadingOverlay = document.getElementById('mapLoadingOverlay');
+    const mapErrorOverlay = document.getElementById('mapErrorOverlay');
+    const retryMapBtn = document.getElementById('retryMapBtn');
+    const mapErrorMessage = document.getElementById('mapErrorMessage');
+
+    const mapTacticalDrawer = document.getElementById('mapTacticalDrawer');
+    const closeMapDrawerBtn = document.getElementById('closeMapDrawerBtn');
+    const mapDrawerEmptyState = document.getElementById('mapDrawerEmptyState');
+    const mapDrawerSelectedState = document.getElementById('mapDrawerSelectedState');
+    const drawerDomainBadge = document.getElementById('drawerDomainBadge');
+    const drawerSeverityBadge = document.getElementById('drawerSeverityBadge');
+    const drawerStatusBadge = document.getElementById('drawerStatusBadge');
+    const drawerFeatureTitle = document.getElementById('drawerFeatureTitle');
+    const drawerFeatureId = document.getElementById('drawerFeatureId');
+    const drawerArea = document.getElementById('drawerArea');
+    const drawerLocation = document.getElementById('drawerLocation');
+    const drawerCoords = document.getElementById('drawerCoords');
+    const drawerSource = document.getElementById('drawerSource');
+    const drawerMetricTitle = document.getElementById('drawerMetricTitle');
+    const drawerMetricVal = document.getElementById('drawerMetricVal');
+    const drawerTacticalText = document.getElementById('drawerTacticalText');
+    const drawerCenterBtn = document.getElementById('drawerCenterBtn');
+
     // In-memory holder for selected image in current form session
     let currentImageSessionDataUrl = null;
 
@@ -274,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'traffic-violations': 'Traffic Violation & Rule Enforcement Center',
         'analytics': 'Traffic Analytics & Intelligence Center',
         'risk': 'AI Risk & Incident Intelligence Center',
-        'map': 'Interactive Road Map',
+        'map': 'Live Operations Map',
         'admin': 'Administration & Roles'
     };
 
@@ -509,6 +546,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (sectionKey === 'admin') {
             checkAdminSectionAccess();
+        }
+        if (sectionKey === 'map') {
+            initOperationsMap();
+            loadMapData(false);
+            setTimeout(() => {
+                if (operationsMap) operationsMap.invalidateSize();
+            }, 250);
         }
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2709,6 +2753,438 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================================================
+    // 5G. LIVE OPERATIONS MAP (PHASE 12 GIS COMMAND CENTER)
+    // ==========================================================================
+    let operationsMap = null;
+    let isMapFetching = false;
+    let activeMapDomain = 'all';
+    let mapLayers = {
+        emergency: null,
+        traffic: null,
+        issue: null,
+        violation: null,
+        risk: null
+    };
+    let selectedMapFeature = null;
+    let mapFeaturesCache = [];
+
+    function initOperationsMap() {
+        if (operationsMap) return;
+        const container = document.getElementById('operationsMapContainer');
+        if (!container) return;
+
+        if (typeof L === 'undefined') {
+            console.error("Leaflet library not loaded.");
+            if (mapErrorOverlay) {
+                mapErrorOverlay.style.display = 'flex';
+                if (mapErrorMessage) mapErrorMessage.textContent = "Leaflet GIS library failed to load. Check vendor/leaflet assets.";
+            }
+            return;
+        }
+
+        // Initialize Leaflet map centered at Nagpur command center
+        operationsMap = L.map('operationsMapContainer', {
+            zoomControl: true,
+            attributionControl: true
+        }).setView([21.1458, 79.0882], 12);
+
+        // Standard OpenStreetMap / CartoDB tile layer with high-contrast command theme
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(operationsMap);
+
+        // Initialize separate layer groups for layer filtering
+        mapLayers.emergency = L.layerGroup().addTo(operationsMap);
+        mapLayers.traffic = L.layerGroup().addTo(operationsMap);
+        mapLayers.issue = L.layerGroup().addTo(operationsMap);
+        mapLayers.violation = L.layerGroup().addTo(operationsMap);
+        mapLayers.risk = L.layerGroup().addTo(operationsMap);
+
+        // Legend collapse/expand toggle
+        if (legendToggleBtn && legendBody) {
+            legendToggleBtn.addEventListener('click', () => {
+                if (legendBody.style.display === 'none') {
+                    legendBody.style.display = 'flex';
+                    legendToggleBtn.innerHTML = '&minus;';
+                } else {
+                    legendBody.style.display = 'none';
+                    legendToggleBtn.innerHTML = '+';
+                }
+            });
+        }
+    }
+
+    function createCustomMarkerIcon(domain, severity) {
+        let pinClass = 'marker-issue';
+        let iconHtml = '⚠️';
+
+        switch (domain) {
+            case 'emergency':
+                pinClass = 'marker-emergency';
+                iconHtml = '🚨';
+                break;
+            case 'traffic':
+                pinClass = 'marker-traffic';
+                iconHtml = '🚗';
+                break;
+            case 'issue':
+                pinClass = 'marker-issue';
+                iconHtml = '⚠️';
+                break;
+            case 'violation':
+                pinClass = 'marker-violation';
+                iconHtml = '📹';
+                break;
+            case 'risk':
+                pinClass = 'marker-risk';
+                iconHtml = '🛡️';
+                break;
+        }
+
+        const isPulse = (domain === 'emergency' && severity === 'Critical');
+
+        const html = `
+            <div class="custom-marker-pin ${pinClass}">
+                ${isPulse ? '<div class="marker-pulse"></div>' : ''}
+                <span>${iconHtml}</span>
+            </div>
+        `;
+
+        return L.divIcon({
+            className: 'custom-leaflet-marker',
+            html: html,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+            popupAnchor: [0, -18]
+        });
+    }
+
+    function buildPopupHtml(feature) {
+        const domainUpper = (feature.domain || 'INCIDENT').toUpperCase();
+        const headerClass = `header-${feature.domain}`;
+        const sev = feature.severity || feature.risk_level || 'Normal';
+        const metric = feature.metric_label || '';
+        const sourceLabel = feature.coordinate_source === 'exact_gps'
+            ? 'Live GPS'
+            : (feature.coordinate_source === 'area_centroid' ? 'Area Centroid' : 'Configured Reference');
+
+        return `
+            <div class="map-popup-card">
+                <div class="map-popup-header ${headerClass}">
+                    <span>${escapeHtml(domainUpper)}</span>
+                    <span>${escapeHtml(sev)}</span>
+                </div>
+                <div class="map-popup-body">
+                    <div class="map-popup-title">${escapeHtml(feature.title)}</div>
+                    <div class="text-xs text-muted"><strong>Location:</strong> ${escapeHtml(feature.location)}</div>
+                    ${metric ? `<div class="map-popup-metric">${escapeHtml(metric)}</div>` : ''}
+                    <div class="map-popup-footer">
+                        <span>📍 ${sourceLabel}</span>
+                        <span>${escapeHtml(feature.id)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function selectMapFeature(feature) {
+        selectedMapFeature = feature;
+        if (!mapDrawerSelectedState || !mapDrawerEmptyState) return;
+
+        mapDrawerEmptyState.style.display = 'none';
+        mapDrawerSelectedState.style.display = 'flex';
+
+        if (drawerDomainBadge) {
+            drawerDomainBadge.textContent = (feature.domain || '').toUpperCase();
+            drawerDomainBadge.className = `badge ${feature.domain === 'emergency' ? 'badge-danger' : (feature.domain === 'traffic' ? 'badge-info' : (feature.domain === 'violation' ? 'badge-purple' : 'badge-warning'))}`;
+        }
+
+        const sev = feature.severity || feature.risk_level || 'Normal';
+        if (drawerSeverityBadge) {
+            drawerSeverityBadge.textContent = sev;
+            drawerSeverityBadge.className = `badge ${sev === 'Critical' ? 'badge-danger' : (sev === 'High' ? 'badge-warning' : 'badge-neutral')}`;
+        }
+
+        if (drawerStatusBadge) {
+            drawerStatusBadge.textContent = feature.status || 'Active';
+        }
+
+        if (drawerFeatureTitle) drawerFeatureTitle.textContent = feature.title;
+        if (drawerFeatureId) drawerFeatureId.textContent = `#${feature.id}`;
+        if (drawerArea) drawerArea.textContent = feature.area || 'Metro Sector';
+        if (drawerLocation) drawerLocation.textContent = feature.location || '-';
+
+        if (drawerCoords) {
+            drawerCoords.textContent = (feature.latitude && feature.longitude)
+                ? `${Number(feature.latitude).toFixed(4)}° N, ${Number(feature.longitude).toFixed(4)}° E`
+                : 'No geographic coordinates';
+        }
+
+        if (drawerSource) {
+            const src = feature.coordinate_source || 'unmapped';
+            drawerSource.textContent = src === 'exact_gps' ? 'Live Sensor GPS' : (src === 'area_centroid' ? 'Area Centroid Anchor' : 'Municipal Corridor Anchor');
+        }
+
+        if (drawerMetricTitle && drawerMetricVal) {
+            if (feature.domain === 'traffic') {
+                drawerMetricTitle.textContent = 'Traffic Velocity & Volume';
+                drawerMetricVal.textContent = feature.metric_label || 'Telemetry Active';
+            } else if (feature.domain === 'violation') {
+                drawerMetricTitle.textContent = 'Radar Violation Fine';
+                drawerMetricVal.textContent = feature.metric_label || 'Fine Recorded';
+            } else if (feature.domain === 'risk') {
+                drawerMetricTitle.textContent = 'AI Risk Intelligence Score';
+                drawerMetricVal.textContent = feature.metric_label || 'Evaluated';
+            } else {
+                drawerMetricTitle.textContent = 'Operational Metric';
+                drawerMetricVal.textContent = feature.metric_label || 'Incident Active';
+            }
+        }
+
+        if (drawerTacticalText) {
+            const meta = feature.metadata || {};
+            if (meta.recommended_action) {
+                drawerTacticalText.textContent = meta.recommended_action;
+            } else if (feature.domain === 'emergency') {
+                drawerTacticalText.textContent = `Immediate emergency dispatch advised for ${feature.title} at ${feature.location}. Maintain clear access lanes.`;
+            } else if (feature.domain === 'traffic') {
+                drawerTacticalText.textContent = (meta.congestion_level === 'Severe' || meta.congestion_level === 'Heavy')
+                    ? 'Deploy traffic marshals to clear bottleneck and adjust adaptive signal timings.'
+                    : 'Traffic moving within acceptable threshold. Continue sensor polling.';
+            } else if (feature.domain === 'violation') {
+                drawerTacticalText.textContent = `Automated radar logged ${meta.violation_type || 'infringement'}. Proceed with notice adjudication.`;
+            } else {
+                drawerTacticalText.textContent = 'Verify road hazard severity during municipal field maintenance shift.';
+            }
+        }
+    }
+
+    function clearMapLayers() {
+        Object.values(mapLayers).forEach(layerGroup => {
+            if (layerGroup) layerGroup.clearLayers();
+        });
+    }
+
+    function renderMapData(data) {
+        if (!operationsMap) return;
+        clearMapLayers();
+
+        mapFeaturesCache = [];
+        const summary = data.summary || {};
+
+        // Update KPI counters
+        if (mapKpiTotal) mapKpiTotal.textContent = summary.mapped_count ?? 0;
+        if (mapKpiEmergencies) mapKpiEmergencies.textContent = summary.emergencies_count ?? 0;
+        if (mapKpiTraffic) mapKpiTraffic.textContent = summary.traffic_count ?? 0;
+        if (mapKpiIssues) mapKpiIssues.textContent = summary.issues_count ?? 0;
+        if (mapKpiViolations) mapKpiViolations.textContent = summary.violations_count ?? 0;
+        if (mapKpiRisk) mapKpiRisk.textContent = summary.risk_areas_count ?? 0;
+
+        const bounds = [];
+
+        // Helper to add feature marker
+        const addFeatureMarker = (feature, layerGroup) => {
+            if (feature.latitude === null || feature.latitude === undefined ||
+                feature.longitude === null || feature.longitude === undefined) {
+                return;
+            }
+
+            const lat = Number(feature.latitude);
+            const lon = Number(feature.longitude);
+            if (isNaN(lat) || isNaN(lon)) return;
+
+            mapFeaturesCache.push(feature);
+            bounds.push([lat, lon]);
+
+            const marker = L.marker([lat, lon], {
+                icon: createCustomMarkerIcon(feature.domain, feature.severity)
+            });
+
+            marker.bindPopup(buildPopupHtml(feature));
+            marker.on('click', () => selectMapFeature(feature));
+            marker.addTo(layerGroup);
+        };
+
+        // 1. Render Risk Sector Circles
+        if (data.risk && (activeMapDomain === 'all' || activeMapDomain === 'risk')) {
+            data.risk.forEach(riskArea => {
+                if (riskArea.latitude !== null && riskArea.longitude !== null) {
+                    const lat = Number(riskArea.latitude);
+                    const lon = Number(riskArea.longitude);
+                    if (!isNaN(lat) && !isNaN(lon)) {
+                        bounds.push([lat, lon]);
+                        mapFeaturesCache.push(riskArea);
+
+                        const isCritical = riskArea.risk_level === 'Critical';
+                        const isHigh = riskArea.risk_level === 'High';
+                        const color = isCritical ? '#dc2626' : (isHigh ? '#ea580c' : (riskArea.risk_level === 'Medium' ? '#d97706' : '#10b981'));
+
+                        // Soft sector bubble
+                        const circle = L.circle([lat, lon], {
+                            radius: isCritical ? 950 : 750,
+                            color: color,
+                            fillColor: color,
+                            fillOpacity: 0.14,
+                            weight: 2,
+                            dashArray: '4, 6'
+                        });
+
+                        circle.bindPopup(buildPopupHtml(riskArea));
+                        circle.on('click', () => selectMapFeature(riskArea));
+                        circle.addTo(mapLayers.risk);
+
+                        // Center pin
+                        const centerMarker = L.marker([lat, lon], {
+                            icon: createCustomMarkerIcon('risk', riskArea.risk_level)
+                        });
+                        centerMarker.bindPopup(buildPopupHtml(riskArea));
+                        centerMarker.on('click', () => selectMapFeature(riskArea));
+                        centerMarker.addTo(mapLayers.risk);
+                    }
+                }
+            });
+        }
+
+        // 2. Render Emergencies
+        if (data.emergencies && (activeMapDomain === 'all' || activeMapDomain === 'emergency')) {
+            data.emergencies.forEach(f => addFeatureMarker(f, mapLayers.emergency));
+        }
+
+        // 3. Render Traffic Corridors
+        if (data.traffic && (activeMapDomain === 'all' || activeMapDomain === 'traffic')) {
+            data.traffic.forEach(f => addFeatureMarker(f, mapLayers.traffic));
+        }
+
+        // 4. Render Road Issues
+        if (data.issues && (activeMapDomain === 'all' || activeMapDomain === 'issue')) {
+            data.issues.forEach(f => addFeatureMarker(f, mapLayers.issue));
+        }
+
+        // 5. Render Traffic Violations
+        if (data.violations && (activeMapDomain === 'all' || activeMapDomain === 'violation')) {
+            data.violations.forEach(f => addFeatureMarker(f, mapLayers.violation));
+        }
+
+        if (mapLastUpdated) {
+            mapLastUpdated.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+        }
+    }
+
+    async function loadMapData(showLoadingSpinner = false) {
+        if (isMapFetching) return;
+        isMapFetching = true;
+
+        if (showLoadingSpinner && mapLoadingOverlay) {
+            mapLoadingOverlay.style.display = 'flex';
+        }
+        if (mapErrorOverlay) mapErrorOverlay.style.display = 'none';
+
+        const params = new URLSearchParams();
+        if (activeMapDomain && activeMapDomain !== 'all') {
+            params.append('data_type', activeMapDomain);
+        }
+        if (mapAreaFilter && mapAreaFilter.value) {
+            params.append('area', mapAreaFilter.value);
+        }
+        if (mapSeverityFilter && mapSeverityFilter.value) {
+            params.append('risk_level', mapSeverityFilter.value);
+        }
+
+        const qs = params.toString() ? `?${params.toString()}` : '';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/map/overview${qs}`, {
+                headers: getAuthHeaders()
+            });
+
+            if (!res.ok) {
+                throw new Error(`Map overview returned HTTP ${res.status}`);
+            }
+
+            const data = await res.json();
+            renderMapData(data);
+        } catch (err) {
+            console.error("Failed to load map overview:", err);
+            if (mapErrorOverlay) {
+                mapErrorOverlay.style.display = 'flex';
+                if (mapErrorMessage) mapErrorMessage.textContent = "Failed to load spatial operations data from FastAPI backend.";
+            }
+        } finally {
+            if (mapLoadingOverlay) mapLoadingOverlay.style.display = 'none';
+            isMapFetching = false;
+        }
+    }
+
+    // Map Event Listeners
+    if (refreshMapBtn) {
+        refreshMapBtn.addEventListener('click', () => {
+            showToast("Syncing spatial operations data from PostgreSQL...", "default");
+            loadMapData(true);
+        });
+    }
+
+    if (retryMapBtn) {
+        retryMapBtn.addEventListener('click', () => {
+            loadMapData(true);
+        });
+    }
+
+    // Domain Pill Filters
+    const domainPillBtns = document.querySelectorAll('.domain-pill-btn');
+    domainPillBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            domainPillBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeMapDomain = btn.dataset.domain || 'all';
+            loadMapData(false);
+        });
+    });
+
+    if (mapAreaFilter) {
+        mapAreaFilter.addEventListener('change', () => {
+            loadMapData(false);
+        });
+    }
+
+    if (mapSeverityFilter) {
+        mapSeverityFilter.addEventListener('change', () => {
+            loadMapData(false);
+        });
+    }
+
+    if (resetMapFiltersBtn) {
+        resetMapFiltersBtn.addEventListener('click', () => {
+            activeMapDomain = 'all';
+            domainPillBtns.forEach(b => {
+                if (b.dataset.domain === 'all') b.classList.add('active');
+                else b.classList.remove('active');
+            });
+            if (mapAreaFilter) mapAreaFilter.value = '';
+            if (mapSeverityFilter) mapSeverityFilter.value = '';
+            showToast("Map filters reset.", "default");
+            loadMapData(false);
+        });
+    }
+
+    if (closeMapDrawerBtn) {
+        closeMapDrawerBtn.addEventListener('click', () => {
+            if (mapDrawerSelectedState) mapDrawerSelectedState.style.display = 'none';
+            if (mapDrawerEmptyState) mapDrawerEmptyState.style.display = 'block';
+            selectedMapFeature = null;
+        });
+    }
+
+    if (drawerCenterBtn) {
+        drawerCenterBtn.addEventListener('click', () => {
+            if (selectedMapFeature && selectedMapFeature.latitude && selectedMapFeature.longitude && operationsMap) {
+                operationsMap.setView([selectedMapFeature.latitude, selectedMapFeature.longitude], 15, { animate: true });
+            }
+        });
+    }
+
+    // ==========================================================================
     // 6. ISSUE DETAILS MODAL
     // ==========================================================================
     function openIssueDetails(issue) {
@@ -3116,6 +3592,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (!isRiskFetching && (currentActiveSection === 'risk' || currentActiveSection === 'dashboard')) {
             loadRisk(false);
+        }
+        if (!isMapFetching && currentActiveSection === 'map') {
+            loadMapData(false);
         }
     }, 30000);
 });

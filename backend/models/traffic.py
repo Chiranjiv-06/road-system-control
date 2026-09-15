@@ -21,6 +21,10 @@ class TrafficRecord(Base):
     status = Column(String(30), nullable=False)  # Clear, Moving, Congested, Blocked
     recorded_at = Column(String(50), nullable=False)  # ISO timestamp
     
+    # Optional geospatial coordinates (Phase 12 GIS foundation)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):
