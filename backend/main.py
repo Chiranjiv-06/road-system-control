@@ -5,20 +5,33 @@ import models.issue  # Ensure models are imported so Base knows about the 'issue
 import models.traffic  # Ensure models are imported so Base knows about the 'traffic_records' table
 import models.emergency_alert  # Ensure Base knows about 'emergency_alerts' table
 import models.traffic_violation  # Ensure Base knows about 'traffic_violations' table
+import models.user  # Ensure Base knows about 'users' table
 from routes.issues import router as issues_router
 from routes.traffic import router as traffic_router
 from routes.emergency_alerts import router as emergency_alerts_router
 from routes.traffic_violations import router as traffic_violations_router
 from routes.analytics import router as analytics_router
+from routes.risk import router as risk_router
+from routes.auth import router as auth_router
+from database import SessionLocal
+from services.auth_service import AuthService
 
 # Automatically create tables in PostgreSQL on application startup
 # (No Alembic required for Phase 4)
 Base.metadata.create_all(bind=engine)
 
+# Auto-provision baseline operators if users table is uninitialized
+try:
+    _db = SessionLocal()
+    AuthService.ensure_default_users(_db)
+    _db.close()
+except Exception as _e:
+    pass
+
 # Initialize FastAPI Application
 app = FastAPI(
     title="Road System Control API",
-    description="API for road issue reporting and traffic management.",
+    description="API for road issue reporting, traffic monitoring, emergency dispatch, and RBAC authentication.",
     version="1.0.0"
 )
 
@@ -43,12 +56,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include issue management, traffic monitoring, emergency alert, traffic violation, and analytics routers
+# Include issue management, traffic monitoring, emergency alert, traffic violation, analytics, risk, and auth routers
 app.include_router(issues_router)
 app.include_router(traffic_router)
 app.include_router(emergency_alerts_router)
 app.include_router(traffic_violations_router)
 app.include_router(analytics_router)
+app.include_router(risk_router)
+app.include_router(auth_router)
 
 @app.get(
     "/api/health",

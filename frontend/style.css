@@ -1833,3 +1833,344 @@ textarea.form-control {
         grid-template-columns: 1fr;
     }
 }
+
+/* ======================================================== */
+/* PHASE 10: AI RISK & INCIDENT INTELLIGENCE STYLES         */
+/* ======================================================== */
+.risk-overview-banner {
+    background: linear-gradient(135deg, var(--bg-surface) 0%, #f8fafc 100%);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.risk-banner-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.risk-index-display {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.risk-gauge-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.4rem;
+    line-height: 1;
+    border: 3px solid currentColor;
+    background-color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    flex-shrink: 0;
+}
+
+.risk-gauge-circle span {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+
+.risk-gauge-circle.risk-low {
+    color: var(--success-base);
+    border-color: var(--success-base);
+}
+
+.risk-gauge-circle.risk-medium {
+    color: var(--warning-base);
+    border-color: var(--warning-base);
+}
+
+.risk-gauge-circle.risk-high {
+    color: #ea580c;
+    border-color: #ea580c;
+}
+
+.risk-gauge-circle.risk-critical {
+    color: var(--danger-base);
+    border-color: var(--danger-base);
+}
+
+.risk-meta-info h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.risk-meta-info p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.risk-tactical-action {
+    background-color: var(--bg-surface-secondary);
+    border-left: 4px solid var(--info-base);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 0.85rem 1.15rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.risk-tactical-action.action-critical {
+    border-left-color: var(--danger-base);
+    background-color: #fef2f2;
+}
+
+.risk-tactical-action.action-high {
+    border-left-color: #ea580c;
+    background-color: #fff7ed;
+}
+
+.risk-tactical-action.action-medium {
+    border-left-color: var(--warning-base);
+    background-color: #fffbeb;
+}
+
+.risk-action-text {
+    font-size: 0.84rem;
+    line-height: 1.45;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.risk-action-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.2rem;
+}
+
+.risk-methodology-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 4px;
+    background-color: #f1f5f9;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.badge-risk-low {
+    background-color: var(--success-soft);
+    color: var(--success-text);
+}
+
+.badge-risk-medium {
+    background-color: var(--warning-soft);
+    color: var(--warning-text);
+}
+
+.badge-risk-high {
+    background-color: #ffedd5;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
+.badge-risk-critical {
+    background-color: var(--danger-soft);
+    color: var(--danger-text);
+    border: 1px solid #fecaca;
+}
+
+.risk-breakdown-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.risk-breakdown-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.risk-breakdown-points {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.risk-factors-chip-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    max-width: 320px;
+}
+
+.risk-factor-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.73rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 4px;
+    background-color: #f8fafc;
+    border: 1px solid var(--border-color);
+    gap: 0.5rem;
+}
+
+.risk-factor-title {
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.risk-factor-pts {
+    font-weight: 700;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* ======================================================== */
+/* PHASE 11: AUTHENTICATION & ROLE-BASED ACCESS CONTROL     */
+/* ======================================================== */
+.user-auth-panel {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.auth-user-badge-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+}
+
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.badge-role-admin {
+    background-color: #ede9fe;
+    color: #6d28d9;
+    border: 1px solid #ddd6fe;
+}
+
+.badge-role-traffic {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.badge-role-emergency {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.badge-role-inspector {
+    background-color: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.badge-role-guest {
+    background-color: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.login-demo-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1.1rem;
+}
+
+.demo-role-btn {
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 0.3rem 0.65rem;
+    border-radius: 4px;
+    background-color: #f8fafc;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.demo-role-btn:hover, .demo-role-btn.active {
+    background-color: #eff6ff;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+.auth-alert-banner {
+    background-color: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #b91c1c;
+    padding: 0.6rem 0.85rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+    display: none;
+}
+
+.admin-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-status-pill {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+}
+
+.user-status-active {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.user-status-disabled {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}

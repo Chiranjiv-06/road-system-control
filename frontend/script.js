@@ -201,6 +201,67 @@ document.addEventListener('DOMContentLoaded', () => {
     const analyticsTrendsCount = document.getElementById('analyticsTrendsCount');
     const analyticsTrendsTableBody = document.getElementById('analyticsTrendsTableBody');
 
+    // --- Phase 10 AI Risk & Incident Intelligence Elements ---
+    const refreshRiskBtn = document.getElementById('refreshRiskBtn');
+    const riskRefreshStatus = document.getElementById('riskRefreshStatus');
+    const riskCityScoreCircle = document.getElementById('riskCityScoreCircle');
+    const riskCityScore = document.getElementById('riskCityScore');
+    const riskCityLevelBadge = document.getElementById('riskCityLevelBadge');
+    const riskRecommendedActionText = document.getElementById('riskRecommendedActionText');
+    const riskTacticalActionBox = document.getElementById('riskTacticalActionBox');
+    const riskTotalAreas = document.getElementById('riskTotalAreas');
+    const riskCriticalAreas = document.getElementById('riskCriticalAreas');
+    const riskHighAreas = document.getElementById('riskHighAreas');
+    const riskActiveEmergencies = document.getElementById('riskActiveEmergencies');
+    const riskUnresolvedIssues = document.getElementById('riskUnresolvedIssues');
+    const riskTotalRoads = document.getElementById('riskTotalRoads');
+    const riskLastUpdated = document.getElementById('riskLastUpdated');
+    const riskAreasCountBadge = document.getElementById('riskAreasCountBadge');
+    const riskAreasTableBody = document.getElementById('riskAreasTableBody');
+    const riskRoadsCountBadge = document.getElementById('riskRoadsCountBadge');
+    const riskRoadsTableBody = document.getElementById('riskRoadsTableBody');
+    const sidebarRiskBadge = document.getElementById('sidebarRiskBadge');
+
+    // --- Phase 11 Authentication & Operator Management Elements ---
+    const headerGuestState = document.getElementById('headerGuestState');
+    const headerAuthenticatedState = document.getElementById('headerAuthenticatedState');
+    const headerUserAvatar = document.getElementById('headerUserAvatar');
+    const headerUserName = document.getElementById('headerUserName');
+    const headerUserRoleBadge = document.getElementById('headerUserRoleBadge');
+    const openLoginModalBtn = document.getElementById('openLoginModalBtn');
+    const headerLogoutBtn = document.getElementById('headerLogoutBtn');
+
+    const loginModal = document.getElementById('loginModal');
+    const closeLoginModalBtn = document.getElementById('closeLoginModalBtn');
+    const cancelLoginModalBtn = document.getElementById('cancelLoginModalBtn');
+    const loginForm = document.getElementById('loginForm');
+    const loginUsernameInput = document.getElementById('loginUsernameInput');
+    const loginPasswordInput = document.getElementById('loginPasswordInput');
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+    const loginErrorBanner = document.getElementById('loginErrorBanner');
+    const demoRoleBtns = document.querySelectorAll('.demo-role-btn');
+
+    const adminAccessDeniedBox = document.getElementById('adminAccessDeniedBox');
+    const adminAuthorizedView = document.getElementById('adminAuthorizedView');
+    const adminSignInPromptBtn = document.getElementById('adminSignInPromptBtn');
+    const openCreateOperatorModalBtn = document.getElementById('openCreateOperatorModalBtn');
+    const refreshOperatorsBtn = document.getElementById('refreshOperatorsBtn');
+    const adminUsersCountBadge = document.getElementById('adminUsersCountBadge');
+    const adminUsersLastUpdated = document.getElementById('adminUsersLastUpdated');
+    const adminUsersTableBody = document.getElementById('adminUsersTableBody');
+
+    const createOperatorModal = document.getElementById('createOperatorModal');
+    const closeCreateOperatorModalBtn = document.getElementById('closeCreateOperatorModalBtn');
+    const cancelCreateOpBtn = document.getElementById('cancelCreateOpBtn');
+    const createOperatorForm = document.getElementById('createOperatorForm');
+    const createOperatorErrorBanner = document.getElementById('createOperatorErrorBanner');
+    const newOpUsernameInput = document.getElementById('newOpUsernameInput');
+    const newOpFullNameInput = document.getElementById('newOpFullNameInput');
+    const newOpEmailInput = document.getElementById('newOpEmailInput');
+    const newOpRoleInput = document.getElementById('newOpRoleInput');
+    const newOpPasswordInput = document.getElementById('newOpPasswordInput');
+    const submitCreateOpBtn = document.getElementById('submitCreateOpBtn');
+
     // In-memory holder for selected image in current form session
     let currentImageSessionDataUrl = null;
 
@@ -212,6 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'emergency-alerts': 'Emergency Alerts',
         'traffic-violations': 'Traffic Violation & Rule Enforcement Center',
         'analytics': 'Traffic Analytics & Intelligence Center',
+        'risk': 'AI Risk & Incident Intelligence Center',
         'map': 'Interactive Road Map',
         'admin': 'Administration & Roles'
     };
@@ -441,6 +503,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (sectionKey === 'analytics') {
             loadAnalytics(false);
+        }
+        if (sectionKey === 'risk') {
+            loadRisk(false);
+        }
+        if (sectionKey === 'admin') {
+            checkAdminSectionAccess();
         }
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1090,11 +1158,18 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(`${API_BASE_URL}/emergency-alerts/${encodeURIComponent(alertId)}/status`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ status: newStatus })
             });
 
-            if (!res.ok) {
+            if (res.status === 401) {
+                showToast("Authentication required: Please sign in as an Operator.", "error");
+                openLoginModal('EMERGENCY_OPERATOR');
+                return;
+            } else if (res.status === 403) {
+                showToast("Access forbidden: Requires EMERGENCY_OPERATOR or ADMIN role.", "error");
+                return;
+            } else if (!res.ok) {
                 throw new Error(`Failed to update status: ${res.status}`);
             }
 
@@ -1183,7 +1258,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await fetch(`${API_BASE_URL}/emergency-alerts`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify(payload)
                 });
 
@@ -1195,6 +1270,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Refresh summary and render
                     loadAlerts(false);
+                } else if (response.status === 401) {
+                    showToast("Authentication required: Please sign in as an Operator.", "error");
+                    openLoginModal('EMERGENCY_OPERATOR');
+                } else if (response.status === 403) {
+                    showToast("Access forbidden: Requires EMERGENCY_OPERATOR or ADMIN role.", "error");
                 } else if (response.status === 422) {
                     const err = await response.json();
                     console.error("Validation error broadcasting alert:", err);
@@ -1446,11 +1526,18 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(`${API_BASE_URL}/traffic-violations/${encodeURIComponent(violationId)}/status`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ status: newStatus })
             });
 
-            if (!res.ok) {
+            if (res.status === 401) {
+                showToast("Authentication required: Please sign in as an Operator.", "error");
+                openLoginModal('TRAFFIC_OPERATOR');
+                return;
+            } else if (res.status === 403) {
+                showToast("Access forbidden: Requires TRAFFIC_OPERATOR or ADMIN role.", "error");
+                return;
+            } else if (!res.ok) {
                 throw new Error(`Failed to update violation status: ${res.status}`);
             }
 
@@ -1543,7 +1630,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await fetch(`${API_BASE_URL}/traffic-violations`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify(payload)
                 });
 
@@ -1553,6 +1640,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     closeCreateViolationModal();
                     showToast(`Traffic Violation ${createdVio.id} recorded successfully!`, 'success');
                     loadViolations(false);
+                } else if (response.status === 401) {
+                    showToast("Authentication required: Please sign in as an Operator.", "error");
+                    openLoginModal('TRAFFIC_OPERATOR');
+                } else if (response.status === 403) {
+                    showToast("Access forbidden: Requires TRAFFIC_OPERATOR or ADMIN role.", "error");
                 } else if (response.status === 422) {
                     const err = await response.json();
                     console.error("Validation error logging violation:", err);
@@ -1937,6 +2029,686 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================================================
+    // 5E. AI RISK & INCIDENT INTELLIGENCE (PHASE 10 FASTAPI + POSTGRESQL)
+    // ==========================================================================
+    let isRiskFetching = false;
+
+    function getRiskLevelBadge(level) {
+        switch (level) {
+            case 'Critical':
+                return '<span class="badge badge-risk-critical">Critical Risk</span>';
+            case 'High':
+                return '<span class="badge badge-risk-high">High Risk</span>';
+            case 'Medium':
+                return '<span class="badge badge-risk-medium">Medium Risk</span>';
+            case 'Low':
+                return '<span class="badge badge-risk-low">Low Risk</span>';
+            default:
+                return `<span class="badge badge-neutral">${escapeHtml(level)}</span>`;
+        }
+    }
+
+    function renderRiskOverview(overview) {
+        if (!overview) return;
+        const score = overview.city_risk_score ?? 0;
+        const level = overview.city_risk_level ?? 'Low';
+        const levelLower = level.toLowerCase();
+
+        if (riskCityScore) riskCityScore.textContent = score;
+        if (riskCityLevelBadge) {
+            riskCityLevelBadge.textContent = `${level} Risk`;
+            riskCityLevelBadge.className = `badge badge-risk-${levelLower}`;
+        }
+
+        if (riskCityScoreCircle) {
+            riskCityScoreCircle.className = `risk-gauge-circle risk-${levelLower}`;
+        }
+
+        if (riskTotalAreas) riskTotalAreas.textContent = overview.total_areas_assessed ?? 0;
+        if (riskCriticalAreas) riskCriticalAreas.textContent = overview.critical_risk_areas ?? 0;
+        if (riskHighAreas) riskHighAreas.textContent = overview.high_risk_areas ?? 0;
+        if (riskActiveEmergencies) riskActiveEmergencies.textContent = overview.active_emergencies_count ?? 0;
+        if (riskUnresolvedIssues) riskUnresolvedIssues.textContent = overview.unresolved_issues_count ?? 0;
+        if (riskTotalRoads) riskTotalRoads.textContent = overview.total_roads_assessed ?? 0;
+
+        if (riskRecommendedActionText) {
+            riskRecommendedActionText.textContent = overview.recommended_action || 'All telemetry nominal.';
+        }
+
+        if (riskTacticalActionBox) {
+            riskTacticalActionBox.className = `risk-tactical-action action-${levelLower}`;
+        }
+
+        if (sidebarRiskBadge) {
+            sidebarRiskBadge.textContent = `${score}`;
+            sidebarRiskBadge.className = `badge badge-risk-${levelLower} ml-auto`;
+        }
+    }
+
+    function renderRiskAreas(areas) {
+        if (!riskAreasTableBody) return;
+        if (riskAreasCountBadge) {
+            riskAreasCountBadge.textContent = `${areas ? areas.length : 0} Sectors Evaluated`;
+        }
+
+        if (!areas || areas.length === 0) {
+            riskAreasTableBody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="table-loading-cell">No sectors evaluated. Verify PostgreSQL tables.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        riskAreasTableBody.innerHTML = areas.map(a => {
+            const score = a.risk_score ?? 0;
+            const lvl = a.risk_level ?? 'Low';
+            const lvlLower = lvl.toLowerCase();
+            const breakdown = a.score_breakdown || {};
+
+            return `
+                <tr>
+                    <td><strong>${escapeHtml(a.area)}</strong></td>
+                    <td style="min-width: 130px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <strong style="font-size: 0.95rem;">${score}</strong>
+                            <div class="bar-metric-track" style="flex: 1; height: 6px;">
+                                <div class="bar-metric-fill fill-${lvlLower === 'critical' ? 'red' : (lvlLower === 'high' ? 'orange' : (lvlLower === 'medium' ? 'amber' : 'green'))}" style="width: ${Math.min(100, Math.max(8, score))}%;"></div>
+                            </div>
+                        </div>
+                        <div class="text-muted text-xs" style="margin-top: 2px;">
+                            E:${breakdown.emergency_score || 0} T:${breakdown.traffic_score || 0} H:${breakdown.issue_score || 0} V:${breakdown.violation_score || 0}
+                        </div>
+                    </td>
+                    <td>${getRiskLevelBadge(lvl)}</td>
+                    <td>
+                        <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-primary);">${escapeHtml(a.primary_factor)}</div>
+                    </td>
+                    <td>${a.active_emergencies > 0 ? `<span class="badge badge-danger">${a.active_emergencies} Active</span>` : '<span class="text-muted">0</span>'}</td>
+                    <td>${a.unresolved_issues > 0 ? `<span class="badge badge-warning-soft">${a.unresolved_issues} Open</span>` : '<span class="text-muted">0</span>'}</td>
+                    <td>${a.average_speed ? `<strong>${a.average_speed} km/h</strong>` : '<span class="text-muted">-</span>'}</td>
+                    <td>${a.recent_violations > 0 ? `<span class="badge badge-purple">${a.recent_violations}</span>` : '<span class="text-muted">0</span>'}</td>
+                    <td>
+                        <div style="font-size: 0.78rem; line-height: 1.35; color: var(--text-secondary); background: #f8fafc; border-left: 3px solid var(--border-color); padding: 0.35rem 0.6rem; border-radius: 2px;">
+                            ${escapeHtml(a.recommended_action)}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function renderRiskRoads(roads) {
+        if (!riskRoadsTableBody) return;
+        if (riskRoadsCountBadge) {
+            riskRoadsCountBadge.textContent = `${roads ? roads.length : 0} Monitored Corridors`;
+        }
+
+        if (!roads || roads.length === 0) {
+            riskRoadsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="table-loading-cell">No monitored road corridors found.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        riskRoadsTableBody.innerHTML = roads.map(r => {
+            const score = r.risk_score ?? 0;
+            const lvl = r.risk_level ?? 'Low';
+            const lvlLower = lvl.toLowerCase();
+
+            return `
+                <tr>
+                    <td><strong>${escapeHtml(r.road_name)}</strong></td>
+                    <td>${escapeHtml(r.area || 'Metro Sector')}</td>
+                    <td style="min-width: 120px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <strong>${score}</strong>
+                            <div class="bar-metric-track" style="flex: 1; height: 6px;">
+                                <div class="bar-metric-fill fill-${lvlLower === 'critical' ? 'red' : (lvlLower === 'high' ? 'orange' : (lvlLower === 'medium' ? 'amber' : 'green'))}" style="width: ${Math.min(100, Math.max(8, score))}%;"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${getRiskLevelBadge(lvl)}</td>
+                    <td>
+                        <strong>${r.average_speed} km/h</strong>
+                        <div class="text-muted text-xs">${r.vehicle_count} vehicles</div>
+                    </td>
+                    <td>${getCongestionBadge(r.congestion_level)}</td>
+                    <td>${getTrafficStatusBadge(r.traffic_status)}</td>
+                    <td>
+                        <div style="font-size: 0.78rem; line-height: 1.35; color: var(--text-secondary);">
+                            ${escapeHtml(r.recommended_action)}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function loadRisk(isInitial = false) {
+        if (isRiskFetching) return;
+        isRiskFetching = true;
+
+        try {
+            const [overviewRes, areasRes, roadsRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/risk/overview`),
+                fetch(`${API_BASE_URL}/risk/areas`),
+                fetch(`${API_BASE_URL}/risk/roads`)
+            ]);
+
+            if (!overviewRes.ok || !areasRes.ok || !roadsRes.ok) {
+                throw new Error("One or more risk intelligence endpoints returned non-OK status");
+            }
+
+            const [overview, areasData, roadsData] = await Promise.all([
+                overviewRes.json(),
+                areasRes.json(),
+                roadsRes.json()
+            ]);
+
+            renderRiskOverview(overview);
+            renderRiskAreas(areasData.areas || []);
+            renderRiskRoads(roadsData.roads || []);
+
+            if (riskLastUpdated) {
+                const now = new Date();
+                riskLastUpdated.textContent = `Evaluated: ${now.toLocaleTimeString()}`;
+            }
+        } catch (error) {
+            console.error("Failed to load risk intelligence from FastAPI:", error);
+            if (riskAreasTableBody) {
+                riskAreasTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="table-loading-cell text-danger">
+                            Failed to connect to AI Risk Intelligence engine. Verify FastAPI backend is running.
+                        </td>
+                    </tr>
+                `;
+            }
+            if (riskRoadsTableBody) {
+                riskRoadsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="table-loading-cell text-danger">
+                            Failed to connect to AI Risk Intelligence engine. Verify FastAPI backend is running.
+                        </td>
+                    </tr>
+                `;
+            }
+        } finally {
+            isRiskFetching = false;
+        }
+    }
+
+    // Refresh / Sync Button (Risk - Phase 10)
+    if (refreshRiskBtn) {
+        refreshRiskBtn.addEventListener('click', () => {
+            showToast('Syncing risk intelligence from PostgreSQL...', 'default');
+            loadRisk(false);
+        });
+    }
+
+    // ==========================================================================
+    // 5F. AUTHENTICATION & OPERATOR MANAGEMENT (PHASE 11 FASTAPI + POSTGRESQL)
+    // ==========================================================================
+    let authState = {
+        token: null,
+        user: null
+    };
+
+    function getAuthHeaders(extraHeaders = {}) {
+        const headers = { 'Content-Type': 'application/json', ...extraHeaders };
+        if (authState.token) {
+            headers['Authorization'] = `Bearer ${authState.token}`;
+        }
+        return headers;
+    }
+
+    function getRoleBadge(role) {
+        switch (role) {
+            case 'ADMIN':
+                return '<span class="role-badge badge-role-admin">ADMIN</span>';
+            case 'TRAFFIC_OPERATOR':
+                return '<span class="role-badge badge-role-traffic">TRAFFIC OP</span>';
+            case 'EMERGENCY_OPERATOR':
+                return '<span class="role-badge badge-role-emergency">EMERGENCY OP</span>';
+            case 'ROAD_INSPECTOR':
+                return '<span class="role-badge badge-role-inspector">INSPECTOR</span>';
+            default:
+                return `<span class="role-badge badge-role-guest">${escapeHtml(role || 'GUEST')}</span>`;
+        }
+    }
+
+    function updateAuthUI() {
+        if (authState.token && authState.user) {
+            if (headerGuestState) headerGuestState.style.display = 'none';
+            if (headerAuthenticatedState) headerAuthenticatedState.style.display = 'flex';
+
+            if (headerUserName) headerUserName.textContent = authState.user.full_name || authState.user.username;
+            if (headerUserAvatar) {
+                const names = (authState.user.full_name || authState.user.username).trim().split(' ');
+                headerUserAvatar.textContent = names.length > 1 ? (names[0][0] + names[1][0]).toUpperCase() : names[0].slice(0, 2).toUpperCase();
+            }
+
+            if (headerUserRoleBadge) {
+                headerUserRoleBadge.textContent = authState.user.role;
+                headerUserRoleBadge.className = `role-badge badge-role-${authState.user.role.toLowerCase().replace('_', '-')}`;
+            }
+        } else {
+            if (headerGuestState) headerGuestState.style.display = 'flex';
+            if (headerAuthenticatedState) headerAuthenticatedState.style.display = 'none';
+        }
+
+        if (currentActiveSection === 'admin') {
+            checkAdminSectionAccess();
+        }
+    }
+
+    function checkAdminSectionAccess() {
+        if (!adminAuthorizedView || !adminAccessDeniedBox) return;
+
+        if (authState.token && authState.user && authState.user.role === 'ADMIN') {
+            adminAuthorizedView.style.display = 'block';
+            adminAccessDeniedBox.style.display = 'none';
+            loadAdminOperators();
+        } else {
+            adminAuthorizedView.style.display = 'none';
+            adminAccessDeniedBox.style.display = 'block';
+        }
+    }
+
+    function openLoginModal(prefilledRole = null) {
+        if (!loginModal) return;
+        if (loginErrorBanner) {
+            loginErrorBanner.style.display = 'none';
+            loginErrorBanner.textContent = '';
+        }
+        if (prefilledRole) {
+            demoRoleBtns.forEach(btn => {
+                if (btn.dataset.demoRole === prefilledRole) {
+                    btn.click();
+                }
+            });
+        }
+        loginModal.style.display = 'flex';
+        if (loginUsernameInput) loginUsernameInput.focus();
+    }
+
+    function closeLoginModal() {
+        if (!loginModal) return;
+        loginModal.style.display = 'none';
+        if (loginForm) loginForm.reset();
+        if (loginErrorBanner) {
+            loginErrorBanner.style.display = 'none';
+            loginErrorBanner.textContent = '';
+        }
+    }
+
+    async function handleLogin(username, password) {
+        if (!username || !password) {
+            if (loginErrorBanner) {
+                loginErrorBanner.textContent = "Please enter both username/email and password.";
+                loginErrorBanner.style.display = 'block';
+            }
+            return;
+        }
+
+        if (loginSubmitBtn) {
+            loginSubmitBtn.disabled = true;
+            loginSubmitBtn.innerHTML = '<span class="spinner-inline"></span> Authenticating...';
+        }
+        if (loginErrorBanner) loginErrorBanner.style.display = 'none';
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (response.status === 200) {
+                const data = await response.json();
+                authState.token = data.access_token;
+                authState.user = data.user;
+                sessionStorage.setItem('rsc_auth_token', data.access_token);
+
+                closeLoginModal();
+                updateAuthUI();
+                showToast(`Welcome back, ${data.user.full_name} (${data.user.role})!`, 'success');
+            } else if (response.status === 401) {
+                if (loginErrorBanner) {
+                    loginErrorBanner.textContent = "Invalid username or password. Please verify credentials.";
+                    loginErrorBanner.style.display = 'block';
+                }
+            } else if (response.status === 403) {
+                if (loginErrorBanner) {
+                    loginErrorBanner.textContent = "Your operator account has been deactivated. Contact an administrator.";
+                    loginErrorBanner.style.display = 'block';
+                }
+            } else {
+                throw new Error(`Server returned status: ${response.status}`);
+            }
+        } catch (error) {
+            console.error("Login failed:", error);
+            if (loginErrorBanner) {
+                loginErrorBanner.textContent = "Unable to connect to authentication service. Ensure FastAPI backend is active.";
+                loginErrorBanner.style.display = 'block';
+            }
+        } finally {
+            if (loginSubmitBtn) {
+                loginSubmitBtn.disabled = false;
+                loginSubmitBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                    Sign In
+                `;
+            }
+        }
+    }
+
+    async function handleLogout() {
+        try {
+            if (authState.token) {
+                await fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+            }
+        } catch (e) {
+            // Ignore logout fetch errors
+        }
+
+        authState.token = null;
+        authState.user = null;
+        sessionStorage.removeItem('rsc_auth_token');
+        updateAuthUI();
+        showToast("Signed out of operator session.", "default");
+    }
+
+    async function restoreSession() {
+        const savedToken = sessionStorage.getItem('rsc_auth_token');
+        if (!savedToken) return;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${savedToken}` }
+            });
+
+            if (res.status === 200) {
+                const user = await res.json();
+                authState.token = savedToken;
+                authState.user = user;
+                updateAuthUI();
+            } else {
+                sessionStorage.removeItem('rsc_auth_token');
+            }
+        } catch (e) {
+            sessionStorage.removeItem('rsc_auth_token');
+        }
+    }
+
+    async function loadAdminOperators() {
+        if (!adminUsersTableBody) return;
+        if (!authState.token || !authState.user || authState.user.role !== 'ADMIN') return;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/auth/users`, {
+                headers: getAuthHeaders()
+            });
+
+            if (res.status === 200) {
+                const data = await res.json();
+                const users = data.users || [];
+
+                if (adminUsersCountBadge) {
+                    adminUsersCountBadge.textContent = `${users.length} Operators Registered`;
+                }
+                if (adminUsersLastUpdated) {
+                    adminUsersLastUpdated.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+                }
+
+                if (users.length === 0) {
+                    adminUsersTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="table-loading-cell">No operator accounts found.</td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                adminUsersTableBody.innerHTML = users.map(u => `
+                    <tr>
+                        <td><strong>#${u.id}</strong></td>
+                        <td><strong>${escapeHtml(u.username)}</strong></td>
+                        <td>${escapeHtml(u.full_name)}</td>
+                        <td>${escapeHtml(u.email)}</td>
+                        <td>${getRoleBadge(u.role)}</td>
+                        <td>
+                            <span class="user-status-pill ${u.is_active ? 'user-status-active' : 'user-status-disabled'}">
+                                ${u.is_active ? 'Active' : 'Disabled'}
+                            </span>
+                        </td>
+                        <td class="text-right">
+                            ${u.id !== authState.user.id ? `
+                                <button class="btn btn-outline btn-sm toggle-user-status-btn" data-user-id="${u.id}" data-current-active="${u.is_active}">
+                                    ${u.is_active ? 'Disable' : 'Enable'}
+                                </button>
+                            ` : '<span class="text-muted text-xs">Self</span>'}
+                        </td>
+                    </tr>
+                `).join('');
+
+                // Attach status toggle event listeners
+                document.querySelectorAll('.toggle-user-status-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const uid = btn.dataset.userId;
+                        const currentlyActive = btn.dataset.currentActive === 'true';
+                        await toggleOperatorStatus(uid, !currentlyActive);
+                    });
+                });
+            } else if (res.status === 401 || res.status === 403) {
+                adminUsersTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="table-loading-cell text-danger">
+                            Access Denied: You do not have ADMIN permissions to view operator accounts.
+                        </td>
+                    </tr>
+                `;
+            }
+        } catch (err) {
+            console.error("Failed to load operator accounts:", err);
+            adminUsersTableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="table-loading-cell text-danger">
+                        Failed to load operator accounts from PostgreSQL.
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    async function toggleOperatorStatus(userId, newActiveState) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/auth/users/${userId}/status`, {
+                method: 'PATCH',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ is_active: newActiveState })
+            });
+
+            if (res.status === 200) {
+                showToast(`Operator #${userId} status updated to ${newActiveState ? 'Active' : 'Disabled'}.`, 'success');
+                loadAdminOperators();
+            } else {
+                showToast('Failed to update operator status.', 'error');
+            }
+        } catch (e) {
+            showToast('Network error updating operator status.', 'error');
+        }
+    }
+
+    function openCreateOperatorModal() {
+        if (!createOperatorModal) return;
+        if (createOperatorErrorBanner) createOperatorErrorBanner.style.display = 'none';
+        createOperatorModal.style.display = 'flex';
+        if (newOpUsernameInput) newOpUsernameInput.focus();
+    }
+
+    function closeCreateOperatorModal() {
+        if (!createOperatorModal) return;
+        createOperatorModal.style.display = 'none';
+        if (createOperatorForm) createOperatorForm.reset();
+        if (createOperatorErrorBanner) createOperatorErrorBanner.style.display = 'none';
+    }
+
+    // Modal Triggers & Controls (Phase 11)
+    if (openLoginModalBtn) openLoginModalBtn.addEventListener('click', () => openLoginModal());
+    if (closeLoginModalBtn) closeLoginModalBtn.addEventListener('click', closeLoginModal);
+    if (cancelLoginModalBtn) cancelLoginModalBtn.addEventListener('click', closeLoginModal);
+
+    if (loginModal) {
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) closeLoginModal();
+        });
+    }
+
+    const demoCredentials = {
+        'ADMIN': { u: 'admin', p: 'AdminPassword@123' },
+        'TRAFFIC_OPERATOR': { u: 'traffic_op', p: 'TrafficPassword@123' },
+        'EMERGENCY_OPERATOR': { u: 'emergency_op', p: 'EmergencyPassword@123' },
+        'ROAD_INSPECTOR': { u: 'road_insp', p: 'InspectorPassword@123' }
+    };
+
+    demoRoleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            demoRoleBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const roleKey = btn.dataset.demoRole;
+            const creds = demoCredentials[roleKey];
+            if (creds && loginUsernameInput && loginPasswordInput) {
+                loginUsernameInput.value = creds.u;
+                loginPasswordInput.value = creds.p;
+            }
+        });
+    });
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const u = loginUsernameInput ? loginUsernameInput.value.trim() : '';
+            const p = loginPasswordInput ? loginPasswordInput.value : '';
+            await handleLogin(u, p);
+        });
+    }
+
+    if (headerLogoutBtn) {
+        headerLogoutBtn.addEventListener('click', handleLogout);
+    }
+
+    if (adminSignInPromptBtn) {
+        adminSignInPromptBtn.addEventListener('click', () => openLoginModal('ADMIN'));
+    }
+
+    if (openCreateOperatorModalBtn) openCreateOperatorModalBtn.addEventListener('click', openCreateOperatorModal);
+    if (closeCreateOperatorModalBtn) closeCreateOperatorModalBtn.addEventListener('click', closeCreateOperatorModal);
+    if (cancelCreateOpBtn) cancelCreateOpBtn.addEventListener('click', closeCreateOperatorModal);
+
+    if (createOperatorModal) {
+        createOperatorModal.addEventListener('click', (e) => {
+            if (e.target === createOperatorModal) closeCreateOperatorModal();
+        });
+    }
+
+    if (refreshOperatorsBtn) {
+        refreshOperatorsBtn.addEventListener('click', () => {
+            showToast("Syncing operator accounts...", "default");
+            loadAdminOperators();
+        });
+    }
+
+    if (createOperatorForm) {
+        createOperatorForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = newOpUsernameInput ? newOpUsernameInput.value.trim() : '';
+            const full_name = newOpFullNameInput ? newOpFullNameInput.value.trim() : '';
+            const email = newOpEmailInput ? newOpEmailInput.value.trim() : '';
+            const role = newOpRoleInput ? newOpRoleInput.value : '';
+            const password = newOpPasswordInput ? newOpPasswordInput.value : '';
+
+            if (!username || !full_name || !email || !role || !password) {
+                if (createOperatorErrorBanner) {
+                    createOperatorErrorBanner.textContent = "Please fill in all operator fields.";
+                    createOperatorErrorBanner.style.display = 'block';
+                }
+                return;
+            }
+
+            if (password.length < 8) {
+                if (createOperatorErrorBanner) {
+                    createOperatorErrorBanner.textContent = "Password must be at least 8 characters long.";
+                    createOperatorErrorBanner.style.display = 'block';
+                }
+                return;
+            }
+
+            if (submitCreateOpBtn) {
+                submitCreateOpBtn.disabled = true;
+                submitCreateOpBtn.innerHTML = '<span class="spinner-inline"></span> Provisioning...';
+            }
+            if (createOperatorErrorBanner) createOperatorErrorBanner.style.display = 'none';
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/auth/users`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ username, full_name, email, role, password })
+                });
+
+                if (res.status === 201) {
+                    const newUser = await res.json();
+                    closeCreateOperatorModal();
+                    showToast(`Operator @${newUser.username} (${newUser.role}) created successfully!`, 'success');
+                    loadAdminOperators();
+                } else if (res.status === 400 || res.status === 422) {
+                    const err = await res.json();
+                    if (createOperatorErrorBanner) {
+                        createOperatorErrorBanner.textContent = err.detail || "Validation error: Username or email may already be in use.";
+                        createOperatorErrorBanner.style.display = 'block';
+                    }
+                } else if (res.status === 401 || res.status === 403) {
+                    if (createOperatorErrorBanner) {
+                        createOperatorErrorBanner.textContent = "Access denied. Only ADMIN accounts can provision operators.";
+                        createOperatorErrorBanner.style.display = 'block';
+                    }
+                } else {
+                    throw new Error(`Server returned: ${res.status}`);
+                }
+            } catch (err) {
+                console.error("Failed to create operator:", err);
+                if (createOperatorErrorBanner) {
+                    createOperatorErrorBanner.textContent = "Unable to create operator account. Check server connection.";
+                    createOperatorErrorBanner.style.display = 'block';
+                }
+            } finally {
+                if (submitCreateOpBtn) {
+                    submitCreateOpBtn.disabled = false;
+                    submitCreateOpBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                        Create Operator
+                    `;
+                }
+            }
+        });
+    }
+
+    // Modal Escape Key Listener
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (loginModal && loginModal.style.display === 'flex') closeLoginModal();
+            if (createOperatorModal && createOperatorModal.style.display === 'flex') closeCreateOperatorModal();
+        }
+    });
+
+    // ==========================================================================
     // 6. ISSUE DETAILS MODAL
     // ==========================================================================
     function openIssueDetails(issue) {
@@ -2176,9 +2948,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await fetch(`${API_BASE_URL}/issues`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify(payload)
                 });
 
@@ -2302,6 +3072,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'nav-analytics':
                     switchSection('analytics');
                     break;
+                case 'nav-risk':
+                    switchSection('risk');
+                    break;
                 case 'back-to-dashboard':
                     switchSection('dashboard');
                     break;
@@ -2314,13 +3087,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================================================
     // 9. INITIALIZATION
     // ==========================================================================
-    // Initial health check and load issues, traffic, alerts, violations & analytics from PostgreSQL
+    // Initial health check and load issues, traffic, alerts, violations, analytics & risk from PostgreSQL
+    restoreSession();
     checkBackendHealth();
     loadIssues(true);
     loadTraffic(true);
     loadAlerts(true);
     loadViolations(true);
     loadAnalytics(true);
+    loadRisk(true);
 
     // Periodic health check every 15 seconds to dynamically track backend connection
     setInterval(checkBackendHealth, 15000);
@@ -2338,6 +3113,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (!isAnalyticsFetching && currentActiveSection === 'analytics') {
             loadAnalytics(false);
+        }
+        if (!isRiskFetching && (currentActiveSection === 'risk' || currentActiveSection === 'dashboard')) {
+            loadRisk(false);
         }
     }, 30000);
 });

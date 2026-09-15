@@ -4,6 +4,7 @@ from typing import List
 from database import get_db
 from schemas.traffic import TrafficCreate, TrafficResponse, TrafficSummaryResponse
 from services.traffic_service import TrafficService
+from dependencies.auth import require_traffic_operator
 
 router = APIRouter(prefix="/api/traffic", tags=["Traffic Monitoring"])
 
@@ -34,7 +35,11 @@ def get_all_traffic(db: Session = Depends(get_db)):
     summary="Record traffic monitoring data",
     description="Validate incoming traffic reading, assign unique TRF ID, and save to PostgreSQL."
 )
-def create_traffic(traffic_in: TrafficCreate, db: Session = Depends(get_db)):
+def create_traffic(
+    traffic_in: TrafficCreate,
+    operator=Depends(require_traffic_operator),
+    db: Session = Depends(get_db)
+):
     """Create a new traffic observation record."""
     try:
         created = TrafficService.create_traffic(db, traffic_in)
