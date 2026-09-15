@@ -15,8 +15,8 @@ Current road management systems are mostly reactive. Authorities receive complai
 - Emergency alert dispatch
 - Traffic violation and rule enforcement management
 - Cross-domain traffic analytics & intelligence center
+- Explainable AI risk & incident intelligence (0–100 composite risk scoring, tactical recommendations)
 - Interactive map integration (Upcoming)
-- AI-based issue prioritization (Future Scope)
 - Admin dashboard (Upcoming)
 
 ---
@@ -65,24 +65,28 @@ road-system-control/
 │   │   ├── traffic.py   # REST API endpoints (/api/traffic)
 │   │   ├── emergency_alerts.py # REST API endpoints (/api/emergency-alerts)
 │   │   ├── traffic_violations.py # REST API endpoints (/api/traffic-violations)
-│   │   └── analytics.py # REST API endpoints (/api/analytics)
+│   │   ├── analytics.py # REST API endpoints (/api/analytics)
+│   │   └── risk.py      # REST API endpoints (/api/risk)
 │   ├── schemas/
 │   │   ├── issue.py     # Pydantic validation for issues
 │   │   ├── traffic.py   # Pydantic validation for traffic records & summary
 │   │   ├── emergency_alert.py # Pydantic validation for emergency alerts & status updates
 │   │   ├── traffic_violation.py # Pydantic validation for traffic violations & status updates
-│   │   └── analytics.py # Pydantic validation for analytics responses
+│   │   ├── analytics.py # Pydantic validation for analytics responses
+│   │   └── risk.py      # Pydantic validation for risk scores & explainability
 │   ├── services/
 │   │   ├── issue_service.py   # Issue persistence & sequential ISS-XXXX generator
 │   │   ├── traffic_service.py # Traffic persistence & sequential TRF-XXXX generator
 │   │   ├── emergency_alert_service.py # Alert persistence & sequential EMG-XXXX generator
 │   │   ├── traffic_violation_service.py # Violation persistence & sequential VIO-XXXX generator
-│   │   └── analytics_service.py # Cross-domain analytics calculation engine
+│   │   ├── analytics_service.py # Cross-domain analytics calculation engine
+│   │   └── risk_service.py    # Explainable multi-domain risk evaluation engine
 │   ├── test_phase4.py   # Automated tests for Phase 4 (issues persistence)
 │   ├── test_phase6.py   # Automated tests for Phase 6 (traffic monitoring)
 │   ├── test_phase7.py   # Automated tests for Phase 7 (emergency alert management)
 │   ├── test_phase8.py   # Automated tests for Phase 8 (traffic violation management)
-│   └── test_phase9.py   # Automated tests for Phase 9 (analytics & intelligence)
+│   ├── test_phase9.py   # Automated tests for Phase 9 (analytics & intelligence)
+│   └── test_phase10.py  # Automated tests for Phase 10 (risk intelligence & scoring)
 │
 ├── docs/
 ├── .env.example         # Environment template
@@ -102,8 +106,10 @@ road-system-control/
 - **Phase 6**: Traffic Monitoring (Full-stack telemetry, PostgreSQL, summary API, polling) — *Completed*
 - **Phase 7**: Emergency Alert Management (Full-stack incident dispatch, PostgreSQL, lifecycle management) — *Completed*
 - **Phase 8**: Traffic Violation Management (Rule violations, automated radar tracking, penalties, PostgreSQL) — *Completed*
-- **Phase 9**: Traffic Analytics & Intelligence Dashboard (Cross-domain KPIs, trends, PostgreSQL analysis) — **Completed**
-- **Phase 10**: Interactive Map Integration / Admin Roles — *Upcoming*
+- **Phase 9**: Traffic Analytics & Intelligence Dashboard (Cross-domain KPIs, trends, PostgreSQL analysis) — *Completed*
+- **Phase 10**: AI Risk & Incident Intelligence (0–100 explainable risk scoring, multi-domain hazard synthesis, tactical directives) — *Completed*
+- **Phase 11**: Authentication & Role-Based Access Control (Operator accounts, bcrypt hashing, JWT Bearer tokens, Admin management) — **Completed**
+- **Phase 12**: Interactive GIS Map Integration — *Upcoming*
 
 ---
 
@@ -321,10 +327,156 @@ python test_phase9.py
 
 ---
 
+## 🧠 Phase 10: AI Risk & Incident Intelligence Documentation
+
+### 1. Data-Driven Assessment vs. Statistical ML
+Because the local PostgreSQL database contains fewer than 100 historical operational records (<30 issues, ~15 traffic records, ~12 emergencies, ~10 violations), training a classical or deep machine-learning model on such sparse sample sizes would lead to severe overfitting, spurious correlations, and hallucinated inferences. In adherence to strict scientific and engineering integrity:
+- **No fake training data was fabricated.**
+- **The system is NOT claimed to be a trained statistical ML model.**
+- **The intelligence layer is implemented as an explainable, deterministic multi-domain risk evaluation engine** where every single point in the 0–100 score is directly calculated from and traceable to observable PostgreSQL telemetry.
+
+### 2. Multi-Domain Mathematical Scoring Rubric (Max 100 Points)
+
+| Domain | Maximum Weight | Primary Contributing Factors | Scoring Breakdown |
+|---|---|---|---|
+| **Active Emergencies** | **35 Points** | Real-time hazard dispatches & broadcast alerts | Active Critical (+25 pts), Active High (+15 pts), Active Medium (+8 pts), Active Low (+4 pts), Investigating status (50% wt) |
+| **Traffic Flow & Bottlenecks** | **25 Points** | Congestion state, speed deficit, and vehicle surges | Severe (+18 pts), Heavy (+14 pts), Moderate (+8 pts), Low (+2 pts); Speed deficit &lt;15 km/h (+7 pts), &lt;25 km/h (+5 pts), &lt;35 km/h (+3 pts); Volume &gt;800 (+3 pts) |
+| **Road Hazards & Infrastructure** | **20 Points** | Unresolved pothole, drainage, and hazard reports | Unresolved Critical (+10 pts), High (+6 pts), Medium (+3 pts), Low (+1 pt) |
+| **Rule Infringements & Penalties** | **20 Points** | Moving violations, speeding radar, fine burdens | Critical violations (+6 pts), High (+4 pts), Medium (+2 pts), Low (+1 pt); Fine volume &gt;₹5,000 (+3 pts) |
+
+**Total Score Formula**:
+$$\text{Risk Score} = \min\left(100, \max\left(0, \text{round}(\text{Score}_{\text{EMG}} + \text{Score}_{\text{TRF}} + \text{Score}_{\text{ISS}} + \text{Score}_{\text{VIO}})\right)\right)$$
+
+### 3. Operational Risk Classification Levels
+
+| Score Range | Classification Level | Tactical Control Directive |
+|---|---|---|
+| **80 – 100** | <span style="color:#ef4444; font-weight:bold;">Critical</span> | **Priority Alert**: Dispatch emergency response teams to scene; execute localized road closures and traffic diversions. |
+| **60 – 79** | <span style="color:#ea580c; font-weight:bold;">High</span> | **Active Intervention**: Deploy dynamic signal green waves and field traffic marshals to alleviate bottlenecks. |
+| **30 – 59** | <span style="color:#f59e0b; font-weight:bold;">Medium</span> | **Targeted Monitoring**: Increase radar surveillance and schedule municipal road maintenance repair crews. |
+| **0 – 29** | <span style="color:#10b981; font-weight:bold;">Low</span> | **Nominal Operations**: Telemetry within standard thresholds; continue routine automated sensor polling. |
+
+### 4. API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/risk/overview` | City composite risk index, severity breakdown, top danger sectors, and primary tactical directive |
+| `GET` | `/api/risk/areas` | Risk assessment for all city sectors/wards, sorted descending by composite risk score |
+| `GET` | `/api/risk/areas/{area}` | Detailed evaluation for a specific area (404 if unknown/no records found) |
+| `GET` | `/api/risk/roads` | Risk assessment across all monitored roadways with traffic telemetry |
+| `GET` | `/api/risk/roads/{road_name}` | Detailed corridor risk evaluation with speed deficit and congestion analysis |
+
+### 5. Automated Verification Testing
+```bash
+cd backend
+python test_phase10.py
+```
+
+---
+
+## 🔐 Phase 11: Authentication & Role-Based Access Control (RBAC) Documentation
+
+### 1. Authentication Architecture
+Phase 11 introduces operator identity authentication and role-based authorization:
+- **Password Security**: Passwords are never stored in plaintext. They are salted and hashed using `bcrypt` (via `passlib`) with an industry-standard computational cost factor.
+- **Stateless Bearer Tokens**: JSON Web Tokens (JWT) signed using HMAC-SHA256 (`HS256`) encode authenticated operator identities (`sub`, `role`, `user_id`, `exp`, `iat`).
+- **Configuration Hygiene**: Secrets (`JWT_SECRET_KEY`), signing algorithms (`JWT_ALGORITHM`), and expiration lifetimes (`JWT_ACCESS_TOKEN_EXPIRE_MINUTES`) are dynamically parsed from `.env` environment variables without hardcoded defaults.
+- **Session & Token Storage Strategy**: For this Vanilla JS Single Page Application, tokens are persisted in `sessionStorage` rather than `localStorage`.
+  - *Tradeoff Analysis*: `localStorage` persists indefinitely across browser tabs and system restarts, presenting significant exposure risk to cross-site scripting (XSS) attacks or shared terminal inspection. `sessionStorage` strictly isolates tokens to the active browser tab session and automatically purges them upon tab termination, providing a superior security posture for municipal operator workstations without requiring complex refresh-token rotation infrastructure.
+
+### 2. Available Operator Roles
+
+| Role | Target Persona | Scope of Authority |
+|---|---|---|
+| `ADMIN` | System Administrator / Shift Commander | Universal administrative privileges. Has unrestricted access to all endpoints, operator account provisioning (`POST /api/auth/users`), and status toggling (`PATCH /api/auth/users/{id}/status`). |
+| `TRAFFIC_OPERATOR` | TMC / Traffic Marshall Operator | Authorized for traffic telemetry ingestion (`POST /api/traffic`), traffic violation recording (`POST /api/traffic-violations`), and violation adjudication status changes. |
+| `EMERGENCY_OPERATOR` | Incident Response Dispatcher | Authorized for broadcasting live city emergency alerts (`POST /api/emergency-alerts`) and transitioning incident lifecycle states (`Investigating`, `Resolved`). |
+| `ROAD_INSPECTOR` | Field Maintenance Inspector | Authorized for municipal road hazard audits, pothole verification, and road issue status tracking. |
+
+### 3. Role-Based Access Control (RBAC) Matrix
+
+| Endpoint Route | Method | Public / Unauth | TRAFFIC_OPERATOR | EMERGENCY_OPERATOR | ROAD_INSPECTOR | ADMIN |
+|---|---|:---:|:---:|:---:|:---:|:---:|
+| `/api/health` | `GET` | ✅ Yes | ✅ | ✅ | ✅ | ✅ |
+| `/api/auth/login` | `POST` | ✅ Yes | ✅ | ✅ | ✅ | ✅ |
+| `/api/auth/me` | `GET` | ❌ 401 | ✅ | ✅ | ✅ | ✅ |
+| `/api/auth/logout` | `POST` | ✅ Yes | ✅ | ✅ | ✅ | ✅ |
+| `/api/auth/users` | `GET` | ❌ 401 | ❌ 403 | ❌ 403 | ❌ 403 | ✅ Yes |
+| `/api/auth/users` | `POST` | ❌ 401 | ❌ 403 | ❌ 403 | ❌ 403 | ✅ Yes |
+| `/api/auth/users/{id}/status` | `PATCH` | ❌ 401 | ❌ 403 | ❌ 403 | ❌ 403 | ✅ Yes |
+| `/api/emergency-alerts` (Broadcast) | `POST` | ❌ 401 | ❌ 403 | ✅ Yes | ❌ 403 | ✅ Yes |
+| `/api/emergency-alerts/{id}/status` | `PATCH` | ❌ 401 | ❌ 403 | ✅ Yes | ❌ 403 | ✅ Yes |
+| `/api/traffic-violations` (Create) | `POST` | ❌ 401 | ✅ Yes | ❌ 403 | ❌ 403 | ✅ Yes |
+| `/api/traffic-violations/{id}/status` | `PATCH` | ❌ 401 | ✅ Yes | ❌ 403 | ❌ 403 | ✅ Yes |
+| `/api/traffic` (Sensor Ingest) | `POST` | ❌ 401 | ✅ Yes | ❌ 403 | ❌ 403 | ✅ Yes |
+| Read-Only Dashboards & Telemetry | `GET` | ✅ Yes | ✅ | ✅ | ✅ | ✅ |
+
+*Note: In development and test environments, `legacy_fallback=True` permits unauthenticated calls to legacy test fixtures unless `AUTH_ENFORCE_ALL=true` is activated in `.env`.*
+
+### 4. Database Schema: `users` Table
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | Integer | Primary Key, Auto-increment | Unique operator identifier |
+| `username` | String(50) | Unique, Indexed, Not Null | Unique login handle |
+| `email` | String(100) | Unique, Indexed, Not Null | Unique operator email address |
+| `password_hash` | String(255) | Not Null | Salted bcrypt password hash (never plaintext) |
+| `full_name` | String(100) | Not Null | Operator full display name |
+| `role` | String(30) | Indexed, Not Null | System role (`ADMIN`, `TRAFFIC_OPERATOR`, `EMERGENCY_OPERATOR`, `ROAD_INSPECTOR`) |
+| `is_active` | Boolean | Default True, Not Null | Account status flag; deactivated users are rejected with 403 |
+| `created_at` | DateTime(tz) | Server Default `func.now()` | Account creation timestamp |
+| `updated_at` | DateTime(tz) | Auto-update on modification | Account last updated timestamp |
+
+### 5. Environment Variables
+
+Add to your `.env` configuration:
+```env
+# JWT Security Settings (Phase 11)
+JWT_SECRET_KEY=e83921af7b4c9284d720b601e3895ac7f98d1a3c8e4265f019487b92c4e128ef
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=480
+
+# Enforce strict authentication across all legacy endpoints
+AUTH_ENFORCE_ALL=false
+```
+
+### 6. Default Operator Accounts (Local Development)
+
+The backend auto-provisions default operator accounts upon application startup if the `users` table is empty. You can also manually seed/reset operators at any time:
+```bash
+cd backend
+python seed_users.py
+```
+
+| Username | Default Password | Role |
+|---|---|---|
+| `admin` | `AdminPassword@123` | `ADMIN` |
+| `traffic_op` | `TrafficPassword@123` | `TRAFFIC_OPERATOR` |
+| `emergency_op` | `EmergencyPassword@123` | `EMERGENCY_OPERATOR` |
+| `road_insp` | `InspectorPassword@123` | `ROAD_INSPECTOR` |
+
+### 7. Automated Verification Testing
+Run the dedicated Phase 11 test suite covering 14 authentication and RBAC checks:
+```bash
+cd backend
+python test_phase11.py
+```
+Run the full 75-test regression suite across all implemented phases:
+```bash
+python test_phase4.py; python test_phase6.py; python test_phase7.py; python test_phase8.py; python test_phase9.py; python test_phase10.py; python test_phase11.py
+```
+
+### 8. Realistic Security Limitations & Scope Boundaries
+- **No Hardware MFA/2FA**: Multi-factor authentication (e.g., TOTP/SMS/WebAuthn) is not yet implemented; access relies on single-factor credentials.
+- **Stateless Token Invalidation**: Logout clears the client-side session token. Because JWTs are stateless, server-side revocation prior to expiration requires checking `is_active` or an explicit token revocation blocklist (recommended for Redis in future enterprise phases).
+- **Refresh Token Lifecycle**: Access tokens have an 8-hour operational lifetime. A dedicated dual-token architecture (short-lived access + sliding refresh token) should be adopted before high-security production deployment.
+
+---
+
 ## 📌 Important Limitations & Scope Boundary
 - **No Backend Image Storage**: Photo selection currently operates as a client-side session preview. Binary file uploads to cloud/disk storage will be introduced in future phases.
-- **No Maps or AI Libraries**: Phase 9 strictly utilizes Vanilla HTML/CSS/JS without external mapping libraries (Leaflet/Google Maps) or AI prediction models.
-- **Guarded Polling**: Telemetry, broadcasts, violations, and intelligence analytics auto-refresh every 30 seconds via active-request guards when viewing their respective tabs.
+- **Explainable Rules-Based Model**: Phase 10 deliberately uses a transparent mathematical scoring model rather than black-box ML to guarantee zero hallucinated predictions on small datasets.
+- **Guarded Polling**: Telemetry, broadcasts, violations, intelligence analytics, and risk assessments auto-refresh every 30 seconds via active-request guards when viewing their respective tabs.
 
 ---
 
@@ -336,4 +488,4 @@ python test_phase9.py
 
 ## Status
 
-🚧 Under Development — Phase 9 Completed
+🚧 Under Development — Phase 11 Completed

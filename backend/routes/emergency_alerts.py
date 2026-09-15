@@ -9,6 +9,7 @@ from schemas.emergency_alert import (
     EmergencyAlertStatusUpdate
 )
 from services.emergency_alert_service import EmergencyAlertService
+from dependencies.auth import require_emergency_operator
 
 router = APIRouter(prefix="/api/emergency-alerts", tags=["Emergency Alerts"])
 
@@ -44,6 +45,7 @@ def get_all_emergency_alerts(
 )
 def create_emergency_alert(
     alert_in: EmergencyAlertCreate,
+    operator=Depends(require_emergency_operator),
     db: Session = Depends(get_db)
 ):
     """Create a new emergency alert record in PostgreSQL."""
@@ -84,6 +86,7 @@ def get_emergency_alert_by_id(
 def update_emergency_alert_status(
     alert_id: str,
     status_update: EmergencyAlertStatusUpdate,
+    operator=Depends(require_emergency_operator),
     db: Session = Depends(get_db)
 ):
     """Update status for a specific emergency alert or return 404 if not found."""

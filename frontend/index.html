@@ -54,6 +54,11 @@
                     <span>Analytics</span>
                     <span class="badge badge-info ml-auto">Live</span>
                 </a>
+                <a href="#risk" class="nav-item" data-section="risk" id="navRisk">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                    <span>Risk Intelligence</span>
+                    <span class="badge badge-warning-soft ml-auto" id="sidebarRiskBadge">AI</span>
+                </a>
                 <a href="#map" class="nav-item" data-section="map">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
                     <span>Map</span>
@@ -98,12 +103,30 @@
                         <span class="status-text" id="systemStatusText">Connecting...</span>
                     </div>
 
-                    <!-- User/Admin Area -->
-                    <div class="user-profile">
-                        <div class="user-avatar" aria-hidden="true">TC</div>
-                        <div class="user-info">
-                            <span class="user-name">Officer Control</span>
-                            <span class="user-role">Traffic Authority</span>
+                    <!-- User Authentication & Role Area -->
+                    <div class="user-auth-panel" id="headerAuthPanel">
+                        <!-- Unauthenticated State (Default) -->
+                        <div id="headerGuestState" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="role-badge badge-role-guest">Public Guest</span>
+                            <button class="btn btn-primary btn-sm" id="openLoginModalBtn">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                                Operator Login
+                            </button>
+                        </div>
+
+                        <!-- Authenticated Operator State -->
+                        <div id="headerAuthenticatedState" style="display: none; align-items: center; gap: 0.6rem;">
+                            <div class="user-profile" style="cursor: default;">
+                                <div class="user-avatar" id="headerUserAvatar">AD</div>
+                                <div class="user-info">
+                                    <span class="user-name" id="headerUserName">Administrator</span>
+                                    <span class="role-badge badge-role-admin" id="headerUserRoleBadge">ADMIN</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline btn-sm" id="headerLogoutBtn" title="Sign out of operator session">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                Logout
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -219,6 +242,10 @@
                             <button class="btn btn-outline quick-action-btn" data-action="nav-analytics">
                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                                 Analytics
+                            </button>
+                            <button class="btn btn-outline quick-action-btn" data-action="nav-risk">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                                Risk Intelligence
                             </button>
                         </div>
                     </div>
@@ -1050,7 +1077,196 @@
                     </div>
                 </section>
 
-                <!-- SECTION 7: MAP (PLACEHOLDER) -->
+                <!-- ======================================================== -->
+                <!-- SECTION 7: AI RISK & INCIDENT INTELLIGENCE (PHASE 10)    -->
+                <!-- ======================================================== -->
+                <section class="view-section" id="section-risk">
+                    <!-- HEADER BAR -->
+                    <div class="traffic-header-bar">
+                        <div class="traffic-header-titles">
+                            <h2>AI Risk & Incident Intelligence Center</h2>
+                            <p>Explainable multi-domain risk evaluation synthesizing road hazards, traffic bottlenecks, emergency alerts, and rule violations</p>
+                        </div>
+                        <div class="traffic-actions-group">
+                            <span class="refresh-indicator" id="riskRefreshStatus">Auto-refresh (30s)</span>
+                            <button class="btn btn-outline btn-sm" id="refreshRiskBtn" title="Sync live risk intelligence from PostgreSQL">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                Sync Risk Intelligence
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- CITYWIDE COMPOSITE RISK BANNER -->
+                    <div class="risk-overview-banner">
+                        <div class="risk-banner-top">
+                            <div class="risk-index-display">
+                                <div class="risk-gauge-circle risk-low" id="riskCityScoreCircle">
+                                    <span id="riskCityScore">--</span>
+                                    <span id="riskCityScoreMax">/100</span>
+                                </div>
+                                <div class="risk-meta-info">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
+                                        <h3>City Composite Risk Index</h3>
+                                        <span class="badge badge-risk-low" id="riskCityLevelBadge">Evaluating...</span>
+                                    </div>
+                                    <p>Weighted synthesis across all monitored sectors and transportation corridors</p>
+                                </div>
+                            </div>
+                            <div class="risk-methodology-badge" title="Data-driven calculation methodology">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                <span>Deterministic Multi-Domain Model (Explainable, Non-ML)</span>
+                            </div>
+                        </div>
+
+                        <!-- TACTICAL ACTION DIRECTIVE -->
+                        <div class="risk-tactical-action action-medium" id="riskTacticalActionBox">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            <div>
+                                <div class="risk-action-label">Command-Center Operational Directive</div>
+                                <div class="risk-action-text" id="riskRecommendedActionText">Connecting to database telemetry...</div>
+                            </div>
+                        </div>
+
+                        <!-- MINI STATS BAR -->
+                        <div class="metrics-grid" style="margin-bottom: 0;">
+                            <div class="mini-stat-pill">
+                                <span class="mini-stat-pill-label">Sectors Evaluated</span>
+                                <span class="mini-stat-pill-val" id="riskTotalAreas">-</span>
+                            </div>
+                            <div class="mini-stat-pill">
+                                <span class="mini-stat-pill-label">Critical Hotspots</span>
+                                <span class="mini-stat-pill-val text-danger" id="riskCriticalAreas">-</span>
+                            </div>
+                            <div class="mini-stat-pill">
+                                <span class="mini-stat-pill-label">High Risk Sectors</span>
+                                <span class="mini-stat-pill-val" style="color: #ea580c;" id="riskHighAreas">-</span>
+                            </div>
+                            <div class="mini-stat-pill">
+                                <span class="mini-stat-pill-label">Active Emergencies</span>
+                                <span class="mini-stat-pill-val text-danger" id="riskActiveEmergencies">-</span>
+                            </div>
+                            <div class="mini-stat-pill">
+                                <span class="mini-stat-pill-label">Unresolved Hazards</span>
+                                <span class="mini-stat-pill-val text-warning" id="riskUnresolvedIssues">-</span>
+                            </div>
+                            <div class="mini-stat-pill">
+                                <span class="mini-stat-pill-label">Road Corridors</span>
+                                <span class="mini-stat-pill-val text-primary" id="riskTotalRoads">-</span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: flex-end;">
+                            <span class="text-muted text-xs" id="riskLastUpdated">Connecting to PostgreSQL telemetry...</span>
+                        </div>
+                    </div>
+
+                    <!-- RISK SCORING METHODOLOGY RUBRIC (4 DOMAINS) -->
+                    <div class="metrics-grid" style="margin-bottom: 1.5rem;">
+                        <div class="risk-breakdown-card">
+                            <div class="risk-breakdown-header">
+                                <span>Emergency Hazards</span>
+                                <span class="badge badge-danger-soft">35 Pts Max</span>
+                            </div>
+                            <div class="risk-breakdown-points" id="riskWeightEmg">Active Alerts</div>
+                            <span class="text-muted text-xs">Critical alerts (+25 pts), High (+15 pts), Investigating status (50% wt)</span>
+                        </div>
+                        <div class="risk-breakdown-card">
+                            <div class="risk-breakdown-header">
+                                <span>Traffic Bottlenecks</span>
+                                <span class="badge badge-warning-soft">25 Pts Max</span>
+                            </div>
+                            <div class="risk-breakdown-points" id="riskWeightTrf">Congestion & Speed</div>
+                            <span class="text-muted text-xs">Severe congestion (+18 pts), Speed deficit &lt;15 km/h (+7 pts), Volume surge</span>
+                        </div>
+                        <div class="risk-breakdown-card">
+                            <div class="risk-breakdown-header">
+                                <span>Road Infrastructure</span>
+                                <span class="badge badge-info">20 Pts Max</span>
+                            </div>
+                            <div class="risk-breakdown-points" id="riskWeightIss">Unresolved Issues</div>
+                            <span class="text-muted text-xs">Critical hazards (+10 pts), High (+6 pts), Open/In-progress road issues</span>
+                        </div>
+                        <div class="risk-breakdown-card">
+                            <div class="risk-breakdown-header">
+                                <span>Rule Infringements</span>
+                                <span class="badge badge-postgres">20 Pts Max</span>
+                            </div>
+                            <div class="risk-breakdown-points" id="riskWeightVio">Violations & Fines</div>
+                            <span class="text-muted text-xs">Dangerous driving (+6 pts), Red-light jumping (+4 pts), Fine volume surge</span>
+                        </div>
+                    </div>
+
+                    <!-- AREA RISK INTELLIGENCE TABLE PANEL -->
+                    <div class="panel-card table-panel" style="margin-bottom: 1.5rem;">
+                        <div class="panel-header">
+                            <div class="panel-title-area">
+                                <h3 class="panel-title">City Sectors & Wards Risk Assessment</h3>
+                                <span class="panel-badge badge-postgres">Ranked by Composite Score</span>
+                            </div>
+                            <span class="text-muted text-xs" id="riskAreasCountBadge">Calculating...</span>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Area / Sector</th>
+                                        <th>Risk Score</th>
+                                        <th>Risk Level</th>
+                                        <th>Primary Risk Contributor</th>
+                                        <th>Emergencies</th>
+                                        <th>Hazards</th>
+                                        <th>Flow Speed</th>
+                                        <th>Violations</th>
+                                        <th style="min-width: 220px;">Tactical Control Recommendation</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="riskAreasTableBody">
+                                    <tr>
+                                        <td colspan="9" class="table-loading-cell">
+                                            <span class="spinner-inline"></span> Calculating explainable risk intelligence across city sectors...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- MONITORED ROAD CORRIDORS RISK TABLE PANEL -->
+                    <div class="panel-card table-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-area">
+                                <h3 class="panel-title">Monitored Transportation Corridors</h3>
+                                <span class="panel-badge badge-postgres">Telemetry Correlated</span>
+                            </div>
+                            <span class="text-muted text-xs" id="riskRoadsCountBadge">Calculating...</span>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Road Corridor</th>
+                                        <th>Area</th>
+                                        <th>Risk Score</th>
+                                        <th>Risk Level</th>
+                                        <th>Flow / Speed</th>
+                                        <th>Congestion</th>
+                                        <th>Status</th>
+                                        <th style="min-width: 220px;">Corridor Intervention</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="riskRoadsTableBody">
+                                    <tr>
+                                        <td colspan="8" class="table-loading-cell">
+                                            <span class="spinner-inline"></span> Correlating road corridor telemetry with incident databases...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 8: MAP (PLACEHOLDER) -->
                 <section class="view-section" id="section-map">
                     <div class="panel-card empty-state-panel">
                         <div class="empty-state-icon">🗺️</div>
@@ -1060,13 +1276,90 @@
                     </div>
                 </section>
 
-                <!-- SECTION 6: ADMIN (PLACEHOLDER) -->
+                <!-- SECTION 6: ADMIN & RBAC OPERATOR MANAGEMENT (PHASE 11) -->
                 <section class="view-section" id="section-admin">
-                    <div class="panel-card empty-state-panel">
-                        <div class="empty-state-icon">⚙️</div>
-                        <h2>Administration & Roles</h2>
-                        <p class="text-muted">Staff user management, incident escalation workflows, and system audit logs.</p>
-                        <button class="btn btn-outline quick-action-btn" data-action="back-to-dashboard">Return to Dashboard</button>
+                    <!-- ADMIN ACCESS DENIED BANNER (Shown for non-admin) -->
+                    <div class="panel-card empty-state-panel" id="adminAccessDeniedBox" style="display: none;">
+                        <div class="empty-state-icon">🔒</div>
+                        <h2>Administrator Privilege Required</h2>
+                        <p class="text-muted">Operator provisioning, permission assignments, and user status controls are restricted strictly to the <strong>ADMIN</strong> role.</p>
+                        <div style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 1rem;">
+                            <button class="btn btn-primary" id="adminSignInPromptBtn">Sign In as Admin</button>
+                            <button class="btn btn-outline quick-action-btn" data-action="back-to-dashboard">Return to Dashboard</button>
+                        </div>
+                    </div>
+
+                    <!-- ADMIN OPERATOR MANAGEMENT VIEW (Shown for Admin) -->
+                    <div id="adminAuthorizedView">
+                        <!-- HEADER BAR -->
+                        <div class="traffic-header-bar">
+                            <div class="traffic-header-titles">
+                                <h2>Administration & Operator Accounts</h2>
+                                <p>Manage municipal control-center operator credentials, security roles, and active account authorizations</p>
+                            </div>
+                            <div class="admin-header-actions">
+                                <button class="btn btn-primary btn-sm" id="openCreateOperatorModalBtn">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    Provision New Operator
+                                </button>
+                                <button class="btn btn-outline btn-sm" id="refreshOperatorsBtn">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                    Sync Users
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ACCESS CONTROL MATRIX REFERENCE CARD -->
+                        <div class="panel-card" style="padding: 1.1rem 1.4rem; margin-bottom: 1.5rem;">
+                            <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.6rem; color: var(--text-primary);">Role-Based Access Control (RBAC) Matrix</div>
+                            <div class="details-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;">
+                                <div style="font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">
+                                    <strong style="color: #6d28d9;">ADMIN:</strong> Full universal privileges across user management, emergency dispatch, traffic regulation, and inspection.
+                                </div>
+                                <div style="font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">
+                                    <strong style="color: #0369a1;">TRAFFIC_OPERATOR:</strong> Telemetry updates, corridor congestion management, and traffic violation enforcement logging.
+                                </div>
+                                <div style="font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">
+                                    <strong style="color: #b91c1c;">EMERGENCY_OPERATOR:</strong> Emergency broadcast issuance, hazard priority coordination, and alert status dispatch.
+                                </div>
+                                <div style="font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">
+                                    <strong style="color: #047857;">ROAD_INSPECTOR:</strong> Road issue inspection, hazard severity assignment, and maintenance resolution verification.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- OPERATOR ACCOUNTS TABLE -->
+                        <div class="panel-card table-panel">
+                            <div class="panel-header">
+                                <div class="panel-title-area">
+                                    <h3 class="panel-title">Registered Operator Accounts</h3>
+                                    <span class="panel-badge badge-postgres" id="adminUsersCountBadge">PostgreSQL Live</span>
+                                </div>
+                                <span class="text-muted text-xs" id="adminUsersLastUpdated">Syncing...</span>
+                            </div>
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Operator Username</th>
+                                            <th>Display Name</th>
+                                            <th>Email Address</th>
+                                            <th>Assigned Role</th>
+                                            <th>Account Status</th>
+                                            <th class="text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminUsersTableBody">
+                                        <tr>
+                                            <td colspan="7" class="table-loading-cell">
+                                                <span class="spinner-inline"></span> Loading operator accounts from PostgreSQL...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </section>
             </main>
@@ -1078,7 +1371,7 @@
                     <span class="footer-separator">•</span>
                     <span class="footer-desc">AI-powered road management platform</span>
                     <span class="footer-separator">•</span>
-                    <span class="footer-tag">Hackathon Project</span>
+                    <span class="footer-tag">Enterprise Road Operations Platform</span>
                 </div>
             </footer>
         </div>
@@ -1297,6 +1590,126 @@
                         Record Violation
                     </button>
                     <button type="button" class="btn btn-outline" id="cancelCreateViolationBtn">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- OPERATOR AUTHENTICATION LOGIN MODAL (Phase 11) -->
+    <div class="modal-backdrop" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle" style="display: none;">
+        <div class="modal-card" style="max-width: 440px;">
+            <div class="modal-header">
+                <div class="modal-header-info">
+                    <span class="badge badge-role-admin">Security</span>
+                    <h3 class="modal-title" id="loginModalTitle">Operator Sign In</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeLoginModalBtn" aria-label="Close form">&times;</button>
+            </div>
+            <form id="loginForm">
+                <div class="modal-body">
+                    <!-- Quick Demo Role Switcher -->
+                    <div style="margin-bottom: 0.85rem;">
+                        <label class="form-label" style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Quick Demo Role Profiles:</label>
+                        <div class="login-demo-selector">
+                            <button type="button" class="demo-role-btn" data-demo-user="admin" data-demo-pwd="AdminPassword@123" data-demo-role="ADMIN">
+                                <span style="color: #6d28d9;">●</span> Admin
+                            </button>
+                            <button type="button" class="demo-role-btn" data-demo-user="traffic_op" data-demo-pwd="TrafficPassword@123" data-demo-role="TRAFFIC_OPERATOR">
+                                <span style="color: #0369a1;">●</span> Traffic Desk
+                            </button>
+                            <button type="button" class="demo-role-btn" data-demo-user="emergency_op" data-demo-pwd="EmergencyPassword@123" data-demo-role="EMERGENCY_OPERATOR">
+                                <span style="color: #b91c1c;">●</span> Emergency
+                            </button>
+                            <button type="button" class="demo-role-btn" data-demo-user="road_insp" data-demo-pwd="InspectorPassword@123" data-demo-role="ROAD_INSPECTOR">
+                                <span style="color: #047857;">●</span> Inspector
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Error Alert Banner -->
+                    <div class="auth-alert-banner" id="loginErrorBanner"></div>
+
+                    <div class="form-group">
+                        <label for="loginUsernameInput" class="form-label">Operator Username or Email <span class="required-star">*</span></label>
+                        <input type="text" id="loginUsernameInput" class="form-control" placeholder="e.g. admin or operator@roadcontrol.gov" required autocomplete="username">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="loginPasswordInput" class="form-label">Password <span class="required-star">*</span></label>
+                        <input type="password" id="loginPasswordInput" class="form-control" placeholder="Enter account password" required autocomplete="current-password">
+                    </div>
+
+                    <div class="text-muted text-xs" style="margin-top: 0.5rem; line-height: 1.4;">
+                        🔒 Authentication issues a signed Bearer JWT valid for 8 hours with Role-Based Access Control (RBAC).
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" id="loginSubmitBtn">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                        Sign In
+                    </button>
+                    <button type="button" class="btn btn-outline" id="cancelLoginModalBtn">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PROVISION OPERATOR ACCOUNT MODAL (ADMIN ONLY - Phase 11) -->
+    <div class="modal-backdrop" id="createOperatorModal" role="dialog" aria-modal="true" aria-labelledby="createOperatorModalTitle" style="display: none;">
+        <div class="modal-card" style="max-width: 480px;">
+            <div class="modal-header">
+                <div class="modal-header-info">
+                    <span class="badge badge-role-admin">Admin Action</span>
+                    <h3 class="modal-title" id="createOperatorModalTitle">Provision Operator Account</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeCreateOperatorModalBtn" aria-label="Close form">&times;</button>
+            </div>
+            <form id="createOperatorForm">
+                <div class="modal-body">
+                    <div class="auth-alert-banner" id="createOperatorErrorBanner"></div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label for="newOpUsernameInput" class="form-label">Username <span class="required-star">*</span></label>
+                            <input type="text" id="newOpUsernameInput" class="form-control" placeholder="e.g. ward4_inspector" required minlength="3" maxlength="50">
+                        </div>
+                        <div class="form-group">
+                            <label for="newOpFullNameInput" class="form-label">Full Name <span class="required-star">*</span></label>
+                            <input type="text" id="newOpFullNameInput" class="form-control" placeholder="e.g. Rahul Sharma" required minlength="2" maxlength="100">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newOpEmailInput" class="form-label">Email Address <span class="required-star">*</span></label>
+                        <input type="email" id="newOpEmailInput" class="form-control" placeholder="e.g. rahul.sharma@roadcontrol.gov" required>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label for="newOpRoleInput" class="form-label">Security Role <span class="required-star">*</span></label>
+                            <select id="newOpRoleInput" class="form-control" required>
+                                <option value="ROAD_INSPECTOR" selected>ROAD_INSPECTOR</option>
+                                <option value="TRAFFIC_OPERATOR">TRAFFIC_OPERATOR</option>
+                                <option value="EMERGENCY_OPERATOR">EMERGENCY_OPERATOR</option>
+                                <option value="ADMIN">ADMIN</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="newOpPasswordInput" class="form-label">Password <span class="required-star">*</span></label>
+                            <input type="password" id="newOpPasswordInput" class="form-control" placeholder="Min 6 characters" required minlength="6">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" id="submitCreateOpBtn">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Provision Account
+                    </button>
+                    <button type="button" class="btn btn-outline" id="cancelCreateOpBtn">
                         Cancel
                     </button>
                 </div>

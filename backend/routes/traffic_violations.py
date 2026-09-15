@@ -9,6 +9,7 @@ from schemas.traffic_violation import (
     TrafficViolationStatusUpdate
 )
 from services.traffic_violation_service import TrafficViolationService
+from dependencies.auth import require_traffic_operator
 
 router = APIRouter(prefix="/api/traffic-violations", tags=["Traffic Violations"])
 
@@ -53,6 +54,7 @@ def get_all_traffic_violations(
 )
 def create_traffic_violation(
     violation_in: TrafficViolationCreate,
+    operator=Depends(require_traffic_operator),
     db: Session = Depends(get_db)
 ):
     """Create a new traffic violation record in PostgreSQL."""
@@ -93,6 +95,7 @@ def get_traffic_violation_by_id(
 def update_traffic_violation_status(
     violation_id: str,
     status_update: TrafficViolationStatusUpdate,
+    operator=Depends(require_traffic_operator),
     db: Session = Depends(get_db)
 ):
     """Update status for a specific traffic violation or return 404 if not found."""
