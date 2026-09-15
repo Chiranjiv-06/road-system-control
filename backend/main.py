@@ -13,12 +13,15 @@ from routes.traffic_violations import router as traffic_violations_router
 from routes.analytics import router as analytics_router
 from routes.risk import router as risk_router
 from routes.auth import router as auth_router
-from database import SessionLocal
+from routes.map import router as map_router
+from database import SessionLocal, ensure_spatial_columns
 from services.auth_service import AuthService
 
 # Automatically create tables in PostgreSQL on application startup
-# (No Alembic required for Phase 4)
 Base.metadata.create_all(bind=engine)
+
+# Ensure optional spatial columns exist (Phase 12 GIS foundation)
+ensure_spatial_columns()
 
 # Auto-provision baseline operators if users table is uninitialized
 try:
@@ -64,6 +67,7 @@ app.include_router(traffic_violations_router)
 app.include_router(analytics_router)
 app.include_router(risk_router)
 app.include_router(auth_router)
+app.include_router(map_router)
 
 @app.get(
     "/api/health",

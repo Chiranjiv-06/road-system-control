@@ -4,7 +4,7 @@ Emergency Alert SQLAlchemy ORM Model
 Represents the 'emergency_alerts' table in PostgreSQL.
 """
 
-from sqlalchemy import Column, String, Text, DateTime, func
+from sqlalchemy import Column, String, Text, Float, DateTime, func
 from database import Base
 
 class EmergencyAlert(Base):
@@ -28,6 +28,11 @@ class EmergencyAlert(Base):
     # Allowed: "Active", "Investigating", "Resolved"
 
     issued_at = Column(String(50), nullable=False)  # ISO 8601 string
+
+    # Optional geospatial coordinates (Phase 12 GIS foundation)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):
