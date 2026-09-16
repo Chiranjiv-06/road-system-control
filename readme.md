@@ -621,7 +621,8 @@ Phase 13 establishes an internal, role-aware operational notification and incide
 [ New High/Critical Operational Event ]
                  │
                  ▼
-[ Duplicate Suppression Check (source_domain + source_id) ]
+[ Duplicate Suppression Check (source_domain + source_id + notification_type) ]
+   (Suppresses across ALL states: UNREAD, READ, and ACKNOWLEDGED)
                  │
                  ▼
         ┌────────────────┐
@@ -630,16 +631,18 @@ Phase 13 establishes an internal, role-aware operational notification and incide
                 │ Operator views alert or clicks "Mark Read"
                 ▼
         ┌────────────────┐
-        │      READ      │ ◄── Sets read_at timestamp in PostgreSQL
+        │      READ      │ ◄── Records read_at timestamp and read_by (authenticated operator)
         └───────┬────────┘
                 │ Operator takes action and submits acknowledgement remarks
                 ▼
         ┌────────────────┐
-        │  ACKNOWLEDGED  │ ◄── Sets acknowledged_at, records acknowledged_by operator, preserves audit trail
+        │  ACKNOWLEDGED  │ ◄── Records acknowledged_at, acknowledged_by operator, and remarks
         └────────────────┘
 ```
 
-- **Duplicate Suppression**: `NotificationService.check_duplicate()` ensures active incidents do not spawn duplicate alerts during automatic 30-second polling or on-demand synchronization.
+- **Read & Acknowledged Audit Trail**: Both status transitions (`UNREAD -> READ` and `READ -> ACKNOWLEDGED`) record authoritative operator identity from the authenticated JWT token context (`read_by` and `acknowledged_by`). The backend rejects any client-supplied operator identities to preserve tamper-proof audit trails.
+- **Duplicate Suppression Across Full Lifecycle**: `NotificationService.check_duplicate()` inspects `(source_domain, source_id, notification_type)` across all lifecycle states (`UNREAD`, `READ`, `ACKNOWLEDGED`). An acknowledged notification permanently suppresses duplicate generation for the same source entity during 30-second automated polling cycles and manual sync executions. Distinct incidents or differing notification types generate separate, traceable records.
+- **Concurrency-Safe ID Generation**: Notification identifiers (`NTF-XXXX`) are atomically generated via a PostgreSQL sequence (`notification_id_seq`), preventing duplicate ID collisions across concurrent worker processes and bulk sync requests. Schema provisioning (`ensure_notification_schema()`) guarantees sequence synchronization with the maximum existing table ID on application launch, with graceful fallback for non-PostgreSQL testing environments.
 
 ### 4. API Reference
 
@@ -647,17 +650,17 @@ Phase 13 establishes an internal, role-aware operational notification and incide
 - `GET /api/notifications`: List notifications with query filters (`status`, `severity`, `source_domain`, `limit`, `offset`) scoped to the authenticated operator's role.
 - `GET /api/notifications/summary`: Retrieve summary metrics (unread count, critical count, acknowledged count, domain breakdowns).
 - `GET /api/notifications/{id}`: Single notification detail with RBAC verification.
-- `PATCH /api/notifications/{id}/read`: Mark notification as read (updates `read_at`).
+- `PATCH /api/notifications/{id}/read`: Mark notification as read (records `read_at` and `read_by` from authenticated operator).
 - `PATCH /api/notifications/{id}/acknowledge`: Mark notification as acknowledged (records `acknowledged_by`, `acknowledged_at`, and optional operational remarks).
 - `POST /api/notifications/sync`: Trigger on-demand synchronization scanning existing records for unnotified events.
 
 ### 5. Automated Verification Testing
-Run the dedicated Phase 13 test suite covering 16 end-to-end checks:
+Run the dedicated Phase 13 test suite covering 17 end-to-end checks:
 ```bash
 cd backend
 python test_phase13.py
 ```
-Run the full 108-test regression suite across all implemented phases:
+Run the full 109-test regression suite across all implemented phases:
 ```bash
 python test_phase4.py; python test_phase6.py; python test_phase7.py; python test_phase8.py; python test_phase9.py; python test_phase10.py; python test_phase11.py; python test_phase12.py; python test_phase13.py
 ```
@@ -670,6 +673,7 @@ python test_phase4.py; python test_phase6.py; python test_phase7.py; python test
 - **Guarded Polling**: Telemetry, broadcasts, violations, intelligence analytics, risk assessments, GIS map layers, and operational notifications auto-refresh every 30 seconds via active-request guards when viewing their respective tabs.
 - **Honest Spatial Coordinates**: Features without live onboard GPS use deterministic municipal reference coordinates tagged explicitly with their provenance source.
 - **In-System Notifications Only**: Phase 13 notifications operate strictly within the municipal control center interface and PostgreSQL database without third-party external SMS or push messaging integrations.
+- **Sequence Concurrency Model**: Atomic ID generation depends on PostgreSQL `notification_id_seq`. In non-sequence environments (such as pure in-memory SQLite mocks), ID generation falls back to max-ID table scans which may experience race conditions under high concurrent insertion volumes.
 
 ---
 

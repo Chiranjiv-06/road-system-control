@@ -16,7 +16,7 @@ from routes.risk import router as risk_router
 from routes.auth import router as auth_router
 from routes.map import router as map_router
 from routes.notifications import router as notifications_router
-from database import SessionLocal, ensure_spatial_columns
+from database import SessionLocal, ensure_spatial_columns, ensure_notification_schema
 from services.auth_service import AuthService
 
 # Automatically create tables in PostgreSQL on application startup
@@ -24,6 +24,9 @@ Base.metadata.create_all(bind=engine)
 
 # Ensure optional spatial columns exist (Phase 12 GIS foundation)
 ensure_spatial_columns()
+
+# Ensure notification schema and atomic sequence exist (Phase 13)
+ensure_notification_schema()
 
 # Auto-provision baseline operators if users table is uninitialized
 try:

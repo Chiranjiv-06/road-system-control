@@ -49,6 +49,27 @@ def ensure_spatial_columns():
     except Exception as e:
         print(f"Spatial column verification check: {e}")
 
+def ensure_notification_schema():
+    """
+    Idempotently verifies and adds the read_by column to notifications table
+    and initializes the notification_id_seq sequence in PostgreSQL.
+    Synchronizes sequence value with max existing NTF-XXXX identifier.
+    """
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS read_by VARCHAR(50);"))
+            conn.execute(text("CREATE SEQUENCE IF NOT EXISTS notification_id_seq START WITH 1;"))
+            max_id = conn.execute(text(
+                "SELECT COALESCE(MAX(CAST(SUBSTRING(id FROM 5) AS INTEGER)), 0) "
+                "FROM notifications WHERE id ~ '^NTF-[0-9]+$'"
+            )).scalar()
+            if max_id and max_id > 0:
+                conn.execute(text(f"SELECT setval('notification_id_seq', {max_id}, true);"))
+            conn.commit()
+    except Exception as e:
+        print(f"Notification schema verification check: {e}")
+
+
 def get_db():
     """
     FastAPI dependency that yields a database session per request
