@@ -299,6 +299,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const drawerTacticalText = document.getElementById('drawerTacticalText');
     const drawerCenterBtn = document.getElementById('drawerCenterBtn');
 
+    // --- Phase 13 Notifications & Operational Escalation Elements ---
+    const sidebarNotifBadge = document.getElementById('sidebarNotifBadge');
+    const headerNotifBtn = document.getElementById('headerNotifBtn');
+    const headerNotifBadge = document.getElementById('headerNotifBadge');
+    const metricNotifUnread = document.getElementById('metricNotifUnread');
+    const metricNotifCritical = document.getElementById('metricNotifCritical');
+    const metricNotifAck = document.getElementById('metricNotifAck');
+    const metricNotifTotal = document.getElementById('metricNotifTotal');
+    const notifStatusPills = document.querySelectorAll('.notif-status-pill');
+    const notifSeverityFilter = document.getElementById('notifSeverityFilter');
+    const notifDomainFilter = document.getElementById('notifDomainFilter');
+    const resetNotifFiltersBtn = document.getElementById('resetNotifFiltersBtn');
+    const syncNotificationsBtn = document.getElementById('syncNotificationsBtn');
+    const markAllReadBtn = document.getElementById('markAllReadBtn');
+    const refreshNotificationsBtn = document.getElementById('refreshNotificationsBtn');
+    const notificationsFeedContainer = document.getElementById('notificationsFeedContainer');
+    const acknowledgeModal = document.getElementById('acknowledgeModal');
+    const closeAckModalBtn = document.getElementById('closeAckModalBtn');
+    const cancelAckModalBtn = document.getElementById('cancelAckModalBtn');
+    const acknowledgeForm = document.getElementById('acknowledgeForm');
+    const ackNotifIdInput = document.getElementById('ackNotifIdInput');
+    const ackRemarksInput = document.getElementById('ackRemarksInput');
+    const ackModalNotifId = document.getElementById('ackModalNotifId');
+    const ackModalAlertTitle = document.getElementById('ackModalAlertTitle');
+    const ackModalAlertMessage = document.getElementById('ackModalAlertMessage');
+
     // In-memory holder for selected image in current form session
     let currentImageSessionDataUrl = null;
 
@@ -312,6 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'analytics': 'Traffic Analytics & Intelligence Center',
         'risk': 'AI Risk & Incident Intelligence Center',
         'map': 'Live Operations Map',
+        'notifications': 'Notifications & Operational Escalation',
         'admin': 'Administration & Roles'
     };
 
@@ -553,6 +580,10 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 if (operationsMap) operationsMap.invalidateSize();
             }, 250);
+        }
+        if (sectionKey === 'notifications') {
+            loadNotifications(false);
+            loadNotificationsSummary();
         }
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2347,6 +2378,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentActiveSection === 'admin') {
             checkAdminSectionAccess();
         }
+        loadNotificationsSummary();
+        if (currentActiveSection === 'notifications') {
+            loadNotifications(false);
+        }
     }
 
     function checkAdminSectionAccess() {
@@ -3185,6 +3220,436 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================================================
+    // 5H. NOTIFICATIONS & OPERATIONAL ESCALATION (PHASE 13)
+    // ==========================================================================
+    let notificationsState = [];
+    let isNotifFetching = false;
+    let activeNotifStatusFilter = 'ALL';
+
+    function getNotifSeverityBadge(severity) {
+        switch (severity) {
+            case 'Critical':
+                return '<span class="badge badge-danger">Critical</span>';
+            case 'High':
+                return '<span class="badge badge-warning">High</span>';
+            case 'Medium':
+                return '<span class="badge badge-neutral">Medium</span>';
+            case 'Low':
+                return '<span class="badge badge-info">Low</span>';
+            default:
+                return `<span class="badge badge-neutral">${escapeHtml(severity)}</span>`;
+        }
+    }
+
+    function getNotifStatusBadge(status) {
+        switch (status) {
+            case 'UNREAD':
+                return '<span class="badge badge-danger">UNREAD</span>';
+            case 'READ':
+                return '<span class="badge badge-neutral">READ</span>';
+            case 'ACKNOWLEDGED':
+                return '<span class="badge badge-success">ACKNOWLEDGED</span>';
+            default:
+                return `<span class="badge badge-neutral">${escapeHtml(status)}</span>`;
+        }
+    }
+
+    function getDomainIconAndLabel(domain) {
+        switch (domain) {
+            case 'emergency_alerts':
+                return { icon: '🚨', label: 'Emergency Alert' };
+            case 'traffic':
+                return { icon: '🚗', label: 'Traffic Flow' };
+            case 'traffic_violations':
+                return { icon: '📸', label: 'Traffic Violation' };
+            case 'issues':
+                return { icon: '⚠️', label: 'Road Hazard' };
+            case 'risk':
+                return { icon: '🛡️', label: 'AI Risk Escalation' };
+            default:
+                return { icon: '🔔', label: escapeHtml(domain) };
+        }
+    }
+
+    async function loadNotifications(showSpinner = false) {
+        if (isNotifFetching) return;
+        isNotifFetching = true;
+
+        if (showSpinner && notificationsFeedContainer) {
+            notificationsFeedContainer.innerHTML = `
+                <div class="panel-card" style="text-align: center; padding: 2.5rem;">
+                    <span class="spinner-inline"></span>
+                    <p class="text-muted" style="margin-top: 0.5rem;">Loading operational notifications from PostgreSQL...</p>
+                </div>
+            `;
+        }
+
+        try {
+            const params = new URLSearchParams();
+            if (activeNotifStatusFilter && activeNotifStatusFilter !== 'ALL') {
+                params.append('status', activeNotifStatusFilter);
+            }
+            if (notifSeverityFilter && notifSeverityFilter.value) {
+                params.append('severity', notifSeverityFilter.value);
+            }
+            if (notifDomainFilter && notifDomainFilter.value) {
+                params.append('source_domain', notifDomainFilter.value);
+            }
+
+            const url = `${API_BASE_URL}/notifications${params.toString() ? '?' + params.toString() : ''}`;
+            const res = await fetch(url, { headers: getAuthHeaders() });
+
+            if (res.status === 200) {
+                const data = await res.json();
+                notificationsState = data.items || [];
+                renderNotifications(notificationsState);
+            } else {
+                notificationsFeedContainer.innerHTML = `
+                    <div class="panel-card empty-state-panel">
+                        <div class="empty-state-icon">⚠️</div>
+                        <h3>Failed to Load Notifications</h3>
+                        <p class="text-muted">Server returned status ${res.status}. Check role authorization.</p>
+                    </div>
+                `;
+            }
+        } catch (err) {
+            console.error("Error loading notifications:", err);
+            if (notificationsFeedContainer) {
+                notificationsFeedContainer.innerHTML = `
+                    <div class="panel-card empty-state-panel">
+                        <div class="empty-state-icon">⚠️</div>
+                        <h3>Connection Error</h3>
+                        <p class="text-muted">Unable to reach backend notifications service.</p>
+                    </div>
+                `;
+            }
+        } finally {
+            isNotifFetching = false;
+        }
+    }
+
+    async function loadNotificationsSummary() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/notifications/summary`, {
+                headers: getAuthHeaders()
+            });
+
+            if (res.status === 200) {
+                const s = await res.json();
+
+                // Update Header and Sidebar Badges
+                const unreadCount = s.unread_count || 0;
+                if (headerNotifBadge) {
+                    if (unreadCount > 0) {
+                        headerNotifBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                        headerNotifBadge.style.display = 'block';
+                    } else {
+                        headerNotifBadge.style.display = 'none';
+                    }
+                }
+                if (sidebarNotifBadge) {
+                    if (unreadCount > 0) {
+                        sidebarNotifBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                        sidebarNotifBadge.style.display = 'inline-block';
+                    } else {
+                        sidebarNotifBadge.style.display = 'none';
+                    }
+                }
+
+                // Update KPI Cards
+                if (metricNotifUnread) metricNotifUnread.textContent = unreadCount;
+                if (metricNotifCritical) metricNotifCritical.textContent = (s.critical_count || 0) + (s.high_count || 0);
+                if (metricNotifAck) metricNotifAck.textContent = s.acknowledged_count || 0;
+                if (metricNotifTotal) metricNotifTotal.textContent = s.total_notifications || 0;
+            }
+        } catch (err) {
+            console.warn("Could not fetch notifications summary:", err);
+        }
+    }
+
+    function renderNotifications(items) {
+        if (!notificationsFeedContainer) return;
+
+        if (!items || items.length === 0) {
+            notificationsFeedContainer.innerHTML = `
+                <div class="panel-card empty-state-panel">
+                    <div class="empty-state-icon">🔔</div>
+                    <h3>No Notifications Found</h3>
+                    <p class="text-muted">No operational alerts match the selected status, severity, or domain filters.</p>
+                </div>
+            `;
+            return;
+        }
+
+        notificationsFeedContainer.innerHTML = items.map(n => {
+            const isUnread = n.status === 'UNREAD';
+            const isAck = n.status === 'ACKNOWLEDGED';
+            const domInfo = getDomainIconAndLabel(n.source_domain);
+            const sevLower = (n.severity || 'medium').toLowerCase();
+            const createdDate = n.created_at ? new Date(n.created_at).toLocaleString() : 'Recent';
+
+            return `
+                <div class="notification-card severity-${sevLower} ${isUnread ? 'is-unread' : ''} ${isAck ? 'is-acknowledged' : ''}" data-notif-id="${escapeHtml(n.id)}">
+                    <div class="notif-card-header">
+                        <div class="notif-title-area">
+                            ${isUnread ? '<span class="notif-unread-dot" title="Unread Escalation"></span>' : ''}
+                            <span style="font-size: 1.1rem;">${domInfo.icon}</span>
+                            <h4 class="notif-title">${escapeHtml(n.title)}</h4>
+                            ${getNotifSeverityBadge(n.severity)}
+                            ${getNotifStatusBadge(n.status)}
+                        </div>
+                        <span class="notif-timestamp">${escapeHtml(createdDate)}</span>
+                    </div>
+
+                    <p class="notif-message">${escapeHtml(n.message)}</p>
+
+                    <div class="notif-meta-bar">
+                        <div class="notif-tags-group">
+                            <span class="notif-chip chip-domain">${domInfo.icon} ${escapeHtml(domInfo.label)}</span>
+                            ${n.source_id ? `<span class="notif-chip chip-source">[${escapeHtml(n.source_id)}]</span>` : ''}
+                            ${n.area ? `<span class="notif-chip chip-area">📍 ${escapeHtml(n.area)}</span>` : ''}
+                            <span class="notif-chip">Target: ${escapeHtml(n.recipient_role)}</span>
+                            ${n.acknowledged_by ? `<span class="notif-chip" style="background-color: #ecfdf5; color: #047857; border-color: #a7f3d0;">✓ Ack by ${escapeHtml(n.acknowledged_by)}</span>` : ''}
+                        </div>
+
+                        <div class="notif-actions-group">
+                            ${isUnread ? `
+                                <button type="button" class="btn btn-outline btn-sm btn-notif-action notif-btn-read" data-id="${escapeHtml(n.id)}">
+                                    ✓ Mark Read
+                                </button>
+                            ` : ''}
+                            ${!isAck ? `
+                                <button type="button" class="btn btn-primary btn-sm btn-notif-action notif-btn-ack" data-id="${escapeHtml(n.id)}" data-title="${escapeHtml(n.title)}" data-msg="${escapeHtml(n.message)}">
+                                    Acknowledge
+                                </button>
+                            ` : ''}
+                            ${n.source_id ? `
+                                <button type="button" class="btn btn-outline btn-sm btn-notif-action notif-btn-goto" data-domain="${escapeHtml(n.source_domain)}" data-source-id="${escapeHtml(n.source_id)}">
+                                    Go to Record &rarr;
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Attach Card Button Listeners
+        notificationsFeedContainer.querySelectorAll('.notif-btn-read').forEach(btn => {
+            btn.addEventListener('click', () => markNotificationAsRead(btn.dataset.id));
+        });
+
+        notificationsFeedContainer.querySelectorAll('.notif-btn-ack').forEach(btn => {
+            btn.addEventListener('click', () => openAcknowledgeModal(btn.dataset.id, btn.dataset.title, btn.dataset.msg));
+        });
+
+        notificationsFeedContainer.querySelectorAll('.notif-btn-goto').forEach(btn => {
+            btn.addEventListener('click', () => navigateToSource(btn.dataset.domain, btn.dataset.sourceId));
+        });
+    }
+
+    async function markNotificationAsRead(notifId) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/notifications/${notifId}/read`, {
+                method: 'PATCH',
+                headers: getAuthHeaders()
+            });
+
+            if (res.status === 200) {
+                showToast(`Notification ${notifId} marked as read.`, 'success');
+                const item = notificationsState.find(n => n.id === notifId);
+                if (item) item.status = 'READ';
+                renderNotifications(notificationsState);
+                loadNotificationsSummary();
+            } else {
+                const err = await res.json();
+                showToast(err.detail || 'Could not mark notification as read.', 'error');
+            }
+        } catch (e) {
+            showToast('Network error marking notification read.', 'error');
+        }
+    }
+
+    function openAcknowledgeModal(notifId, title, message) {
+        if (!acknowledgeModal) return;
+        if (ackNotifIdInput) ackNotifIdInput.value = notifId;
+        if (ackModalNotifId) ackModalNotifId.textContent = notifId;
+        if (ackModalAlertTitle) ackModalAlertTitle.textContent = title || 'Operational Escalation';
+        if (ackModalAlertMessage) ackModalAlertMessage.textContent = message || '';
+        if (ackRemarksInput) ackRemarksInput.value = '';
+        acknowledgeModal.style.display = 'flex';
+        if (ackRemarksInput) ackRemarksInput.focus();
+    }
+
+    function closeAcknowledgeModal() {
+        if (!acknowledgeModal) return;
+        acknowledgeModal.style.display = 'none';
+        if (acknowledgeForm) acknowledgeForm.reset();
+    }
+
+    async function handleAcknowledgeSubmit(notifId, remarks) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/notifications/${notifId}/acknowledge`, {
+                method: 'PATCH',
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ remarks: remarks || null })
+            });
+
+            if (res.status === 200) {
+                showToast(`Notification ${notifId} acknowledged successfully.`, 'success');
+                closeAcknowledgeModal();
+                loadNotifications(false);
+                loadNotificationsSummary();
+            } else {
+                const err = await res.json();
+                showToast(err.detail || 'Failed to acknowledge notification.', 'error');
+            }
+        } catch (e) {
+            showToast('Network error acknowledging notification.', 'error');
+        }
+    }
+
+    async function syncOperationalAlerts() {
+        if (syncNotificationsBtn) syncNotificationsBtn.disabled = true;
+        try {
+            const res = await fetch(`${API_BASE_URL}/notifications/sync`, {
+                method: 'POST',
+                headers: getAuthHeaders()
+            });
+
+            if (res.status === 200) {
+                const data = await res.json();
+                showToast(`Sync complete: ${data.new_notifications} new alerts identified.`, 'success');
+                loadNotifications(false);
+                loadNotificationsSummary();
+            } else {
+                showToast('Notification sync failed.', 'error');
+            }
+        } catch (e) {
+            showToast('Network error syncing alerts.', 'error');
+        } finally {
+            if (syncNotificationsBtn) syncNotificationsBtn.disabled = false;
+        }
+    }
+
+    async function markAllVisibleAsRead() {
+        const unreadItems = notificationsState.filter(n => n.status === 'UNREAD');
+        if (unreadItems.length === 0) {
+            showToast('No unread notifications to mark as read.', 'default');
+            return;
+        }
+
+        let updatedCount = 0;
+        for (const item of unreadItems) {
+            try {
+                const res = await fetch(`${API_BASE_URL}/notifications/${item.id}/read`, {
+                    method: 'PATCH',
+                    headers: getAuthHeaders()
+                });
+                if (res.status === 200) updatedCount++;
+            } catch (e) {}
+        }
+
+        showToast(`Marked ${updatedCount} notifications as read.`, 'success');
+        loadNotifications(false);
+        loadNotificationsSummary();
+    }
+
+    function navigateToSource(domain, sourceId) {
+        showToast(`Navigating to ${sourceId} (${domain})...`, 'default');
+        switch (domain) {
+            case 'emergency_alerts':
+                switchSection('emergency-alerts');
+                break;
+            case 'traffic':
+                switchSection('traffic-monitoring');
+                break;
+            case 'traffic_violations':
+                switchSection('traffic-violations');
+                break;
+            case 'issues':
+                switchSection('dashboard');
+                break;
+            case 'risk':
+                switchSection('risk');
+                break;
+            default:
+                switchSection('dashboard');
+        }
+    }
+
+    // Modal Triggers & Controls (Phase 13)
+    if (closeAckModalBtn) closeAckModalBtn.addEventListener('click', closeAcknowledgeModal);
+    if (cancelAckModalBtn) cancelAckModalBtn.addEventListener('click', closeAcknowledgeModal);
+    if (acknowledgeModal) {
+        acknowledgeModal.addEventListener('click', (e) => {
+            if (e.target === acknowledgeModal) closeAcknowledgeModal();
+        });
+    }
+
+    if (acknowledgeForm) {
+        acknowledgeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const notifId = ackNotifIdInput ? ackNotifIdInput.value.trim() : '';
+            const remarks = ackRemarksInput ? ackRemarksInput.value.trim() : '';
+            if (notifId) {
+                await handleAcknowledgeSubmit(notifId, remarks);
+            }
+        });
+    }
+
+    // Filter Toolbar Event Listeners (Phase 13)
+    notifStatusPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            notifStatusPills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            activeNotifStatusFilter = pill.dataset.status || 'ALL';
+            loadNotifications(false);
+        });
+    });
+
+    if (notifSeverityFilter) {
+        notifSeverityFilter.addEventListener('change', () => loadNotifications(false));
+    }
+
+    if (notifDomainFilter) {
+        notifDomainFilter.addEventListener('change', () => loadNotifications(false));
+    }
+
+    if (resetNotifFiltersBtn) {
+        resetNotifFiltersBtn.addEventListener('click', () => {
+            activeNotifStatusFilter = 'ALL';
+            notifStatusPills.forEach(p => {
+                if (p.dataset.status === 'ALL') p.classList.add('active');
+                else p.classList.remove('active');
+            });
+            if (notifSeverityFilter) notifSeverityFilter.value = '';
+            if (notifDomainFilter) notifDomainFilter.value = '';
+            showToast('Notification filters reset.', 'default');
+            loadNotifications(false);
+        });
+    }
+
+    if (syncNotificationsBtn) {
+        syncNotificationsBtn.addEventListener('click', syncOperationalAlerts);
+    }
+
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', markAllVisibleAsRead);
+    }
+
+    if (refreshNotificationsBtn) {
+        refreshNotificationsBtn.addEventListener('click', () => loadNotifications(true));
+    }
+
+    if (headerNotifBtn) {
+        headerNotifBtn.addEventListener('click', () => switchSection('notifications'));
+    }
+
+    // ==========================================================================
     // 6. ISSUE DETAILS MODAL
     // ==========================================================================
     function openIssueDetails(issue) {
@@ -3572,6 +4037,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadViolations(true);
     loadAnalytics(true);
     loadRisk(true);
+    loadNotificationsSummary();
 
     // Periodic health check every 15 seconds to dynamically track backend connection
     setInterval(checkBackendHealth, 15000);
@@ -3595,6 +4061,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (!isMapFetching && currentActiveSection === 'map') {
             loadMapData(false);
+        }
+        if (!isNotifFetching) {
+            loadNotificationsSummary();
+            if (currentActiveSection === 'notifications') {
+                loadNotifications(false);
+            }
         }
     }, 30000);
 });

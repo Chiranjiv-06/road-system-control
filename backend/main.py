@@ -6,6 +6,7 @@ import models.traffic  # Ensure models are imported so Base knows about the 'tra
 import models.emergency_alert  # Ensure Base knows about 'emergency_alerts' table
 import models.traffic_violation  # Ensure Base knows about 'traffic_violations' table
 import models.user  # Ensure Base knows about 'users' table
+import models.notification  # Ensure Base knows about 'notifications' table
 from routes.issues import router as issues_router
 from routes.traffic import router as traffic_router
 from routes.emergency_alerts import router as emergency_alerts_router
@@ -14,6 +15,7 @@ from routes.analytics import router as analytics_router
 from routes.risk import router as risk_router
 from routes.auth import router as auth_router
 from routes.map import router as map_router
+from routes.notifications import router as notifications_router
 from database import SessionLocal, ensure_spatial_columns
 from services.auth_service import AuthService
 
@@ -68,6 +70,7 @@ app.include_router(analytics_router)
 app.include_router(risk_router)
 app.include_router(auth_router)
 app.include_router(map_router)
+app.include_router(notifications_router)
 
 @app.get(
     "/api/health",

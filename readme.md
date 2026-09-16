@@ -57,12 +57,13 @@ road-system-control/
 │   ├── seed_users.py    # Manual demo seed script for operator accounts
 │   ├── requirements.txt # Minimal Python dependencies
 │   ├── models/
-│   │   ├── __init__.py  # Model exports (Issue, TrafficRecord, EmergencyAlert, TrafficViolation, User)
+│   │   ├── __init__.py  # Model exports (Issue, TrafficRecord, EmergencyAlert, TrafficViolation, User, Notification)
 │   │   ├── issue.py     # SQLAlchemy Issue model (with latitude/longitude)
 │   │   ├── traffic.py   # SQLAlchemy TrafficRecord model (with latitude/longitude)
 │   │   ├── emergency_alert.py # SQLAlchemy EmergencyAlert model (with latitude/longitude)
 │   │   ├── traffic_violation.py # SQLAlchemy TrafficViolation model (with latitude/longitude)
-│   │   └── user.py      # SQLAlchemy User model ('users' table)
+│   │   ├── user.py      # SQLAlchemy User model ('users' table)
+│   │   └── notification.py # SQLAlchemy Notification model ('notifications' table)
 │   ├── routes/
 │   │   ├── issues.py    # REST API endpoints (/api/issues)
 │   │   ├── traffic.py   # REST API endpoints (/api/traffic)
@@ -71,7 +72,8 @@ road-system-control/
 │   │   ├── analytics.py # REST API endpoints (/api/analytics)
 │   │   ├── risk.py      # REST API endpoints (/api/risk)
 │   │   ├── auth.py      # REST API endpoints (/api/auth)
-│   │   └── map.py       # REST API endpoints (/api/map/overview)
+│   │   ├── map.py       # REST API endpoints (/api/map/overview)
+│   │   └── notifications.py # REST API endpoints (/api/notifications)
 │   ├── schemas/
 │   │   ├── issue.py     # Pydantic validation for issues
 │   │   ├── traffic.py   # Pydantic validation for traffic records & summary
@@ -80,7 +82,8 @@ road-system-control/
 │   │   ├── analytics.py # Pydantic validation for analytics responses
 │   │   ├── risk.py      # Pydantic validation for risk scores & explainability
 │   │   ├── user.py      # Pydantic validation for authentication & users
-│   │   └── map.py       # Pydantic validation for GIS map features & overview
+│   │   ├── map.py       # Pydantic validation for GIS map features & overview
+│   │   └── notification.py # Pydantic validation for operational notifications
 │   ├── services/
 │   │   ├── issue_service.py   # Issue persistence & sequential ISS-XXXX generator
 │   │   ├── traffic_service.py # Traffic persistence & sequential TRF-XXXX generator
@@ -89,7 +92,8 @@ road-system-control/
 │   │   ├── analytics_service.py # Cross-domain analytics calculation engine
 │   │   ├── risk_service.py    # Explainable multi-domain risk evaluation engine
 │   │   ├── auth_service.py    # Authentication, password hashing, and JWT engine
-│   │   └── map_service.py     # Multi-domain GIS resolver & spatial provenance engine
+│   │   ├── map_service.py     # Multi-domain GIS resolver & spatial provenance engine
+│   │   └── notification_service.py # Role routing, duplicate prevention & operational sync
 │   ├── test_phase4.py   # Automated tests for Phase 4 (issues persistence)
 │   ├── test_phase6.py   # Automated tests for Phase 6 (traffic monitoring)
 │   ├── test_phase7.py   # Automated tests for Phase 7 (emergency alert management)
@@ -97,7 +101,8 @@ road-system-control/
 │   ├── test_phase9.py   # Automated tests for Phase 9 (analytics & intelligence)
 │   ├── test_phase10.py  # Automated tests for Phase 10 (risk intelligence & scoring)
 │   ├── test_phase11.py  # Automated tests for Phase 11 (authentication & RBAC)
-│   └── test_phase12.py  # Automated tests for Phase 12 (interactive GIS map)
+│   ├── test_phase12.py  # Automated tests for Phase 12 (interactive GIS map)
+│   └── test_phase13.py  # Automated tests for Phase 13 (notifications & escalation)
 │
 ├── docs/
 ├── .env.example         # Environment template
@@ -120,7 +125,8 @@ road-system-control/
 - **Phase 9**: Traffic Analytics & Intelligence Dashboard (Cross-domain KPIs, trends, PostgreSQL analysis) — *Completed*
 - **Phase 10**: AI Risk & Incident Intelligence (0–100 explainable risk scoring, multi-domain hazard synthesis, tactical directives) — *Completed*
 - **Phase 11**: Authentication & Role-Based Access Control (Operator accounts, bcrypt hashing, JWT Bearer tokens, Admin management) — *Completed*
-- **Phase 12**: Interactive GIS / Live Operations Map (Offline-first Leaflet GIS, 5 cross-domain spatial layers, honest coordinate provenance, tactical drawer) — **Completed**
+- **Phase 12**: Interactive GIS / Live Operations Map (Offline-first Leaflet GIS, 5 cross-domain spatial layers, honest coordinate provenance, tactical drawer) — *Completed*
+- **Phase 13**: Notifications & Operational Escalation (Role-routed escalation, duplicate suppression, acknowledgement lifecycle, cross-domain operational sync) — **Completed**
 
 ---
 
@@ -590,11 +596,80 @@ python test_phase4.py; python test_phase6.py; python test_phase7.py; python test
 
 ---
 
+## 🔔 Phase 13: Notifications & Operational Escalation
+
+Phase 13 establishes an internal, role-aware operational notification and incident escalation system for the Road System Control platform. It bridges raw database entries and field operators by converting high-priority events into actionable, traceable notifications routed strictly by operator role.
+
+### 1. In-System Scope & Honest Engineering Boundaries
+
+- **Zero Unverified External Channels**: In compliance with professional engineering standards, this phase implements **reliable in-system notifications only** persisted in PostgreSQL. It does **not** simulate or claim SMS, WhatsApp, Email, Firebase, or mobile push notification gateways.
+- **Strict Role-Based Routing**: Notifications are dispatched strictly to the operator role authorized to act on that category of event. Operators only view alerts targeted to their operational domain, while administrators (`ADMIN`) maintain universal oversight.
+
+### 2. Role-Based Routing Matrix
+
+| Operational Event Category | Source Domain | Trigger Threshold | Target Recipient Role |
+|---|---|---|---|
+| **Road Hazards & Potholes** | `issues` | Severity `High` or `Critical` & unresolved status | `ROAD_INSPECTOR` |
+| **Severe Traffic Congestion** | `traffic` | Congestion rating `Heavy` or `Severe` | `TRAFFIC_OPERATOR` |
+| **Automated Radar Violations** | `traffic_violations` | Severity `High` or `Critical` & active status | `TRAFFIC_OPERATOR` |
+| **Emergency Incident Alerts** | `emergency_alerts` | Severity `High` or `Critical` & active/investigating | `EMERGENCY_OPERATOR` |
+| **AI Risk Spikes & System Escalations** | `risk` | Composite Risk Score &ge; 70 or Level `Critical` | `ADMIN` |
+
+### 3. Notification Lifecycle & Audit Trail
+
+```
+[ New High/Critical Operational Event ]
+                 │
+                 ▼
+[ Duplicate Suppression Check (source_domain + source_id) ]
+                 │
+                 ▼
+        ┌────────────────┐
+        │     UNREAD     │ ◄── Displays pulsing red halo and unread badge in header/sidebar
+        └───────┬────────┘
+                │ Operator views alert or clicks "Mark Read"
+                ▼
+        ┌────────────────┐
+        │      READ      │ ◄── Sets read_at timestamp in PostgreSQL
+        └───────┬────────┘
+                │ Operator takes action and submits acknowledgement remarks
+                ▼
+        ┌────────────────┐
+        │  ACKNOWLEDGED  │ ◄── Sets acknowledged_at, records acknowledged_by operator, preserves audit trail
+        └────────────────┘
+```
+
+- **Duplicate Suppression**: `NotificationService.check_duplicate()` ensures active incidents do not spawn duplicate alerts during automatic 30-second polling or on-demand synchronization.
+
+### 4. API Reference
+
+#### Endpoints
+- `GET /api/notifications`: List notifications with query filters (`status`, `severity`, `source_domain`, `limit`, `offset`) scoped to the authenticated operator's role.
+- `GET /api/notifications/summary`: Retrieve summary metrics (unread count, critical count, acknowledged count, domain breakdowns).
+- `GET /api/notifications/{id}`: Single notification detail with RBAC verification.
+- `PATCH /api/notifications/{id}/read`: Mark notification as read (updates `read_at`).
+- `PATCH /api/notifications/{id}/acknowledge`: Mark notification as acknowledged (records `acknowledged_by`, `acknowledged_at`, and optional operational remarks).
+- `POST /api/notifications/sync`: Trigger on-demand synchronization scanning existing records for unnotified events.
+
+### 5. Automated Verification Testing
+Run the dedicated Phase 13 test suite covering 16 end-to-end checks:
+```bash
+cd backend
+python test_phase13.py
+```
+Run the full 108-test regression suite across all implemented phases:
+```bash
+python test_phase4.py; python test_phase6.py; python test_phase7.py; python test_phase8.py; python test_phase9.py; python test_phase10.py; python test_phase11.py; python test_phase12.py; python test_phase13.py
+```
+
+---
+
 ## 📌 Important Limitations & Scope Boundary
 - **No Backend Image Storage**: Photo selection currently operates as a client-side session preview. Binary file uploads to cloud/disk storage will be introduced in future phases.
 - **Explainable Rules-Based Model**: Phase 10 deliberately uses a transparent mathematical scoring model rather than black-box ML to guarantee zero hallucinated predictions on small datasets.
-- **Guarded Polling**: Telemetry, broadcasts, violations, intelligence analytics, risk assessments, and GIS map layers auto-refresh every 30 seconds via active-request guards when viewing their respective tabs.
+- **Guarded Polling**: Telemetry, broadcasts, violations, intelligence analytics, risk assessments, GIS map layers, and operational notifications auto-refresh every 30 seconds via active-request guards when viewing their respective tabs.
 - **Honest Spatial Coordinates**: Features without live onboard GPS use deterministic municipal reference coordinates tagged explicitly with their provenance source.
+- **In-System Notifications Only**: Phase 13 notifications operate strictly within the municipal control center interface and PostgreSQL database without third-party external SMS or push messaging integrations.
 
 ---
 
@@ -606,4 +681,4 @@ python test_phase4.py; python test_phase6.py; python test_phase7.py; python test
 
 ## Status
 
-🚧 Under Development — Phase 12 Completed
+🚧 Under Development — Phase 13 Completed
