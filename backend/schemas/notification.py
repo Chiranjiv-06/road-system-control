@@ -68,6 +68,7 @@ class NotificationResponse(BaseModel):
     recipient_role: str
     created_at: datetime
     read_at: Optional[datetime] = None
+    read_by: Optional[str] = None
     acknowledged_at: Optional[datetime] = None
     acknowledged_by: Optional[str] = None
 

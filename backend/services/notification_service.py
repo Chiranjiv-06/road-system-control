@@ -10,7 +10,7 @@ from typing import Optional, List, Tuple, Dict, Any
 from datetime import datetime, timezone
 import re
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, and_, or_, text
 
 from models.notification import Notification
 from models.user import User
@@ -30,9 +30,21 @@ class NotificationService:
     @classmethod
     def generate_next_notification_id(cls, db: Session) -> str:
         """
-        Generates a sequential notification ID in the format NTF-XXXX (e.g., NTF-0001).
-        Uses pessimistic query lock or max ID lookup for consistency.
+        Generates a sequential, concurrency-safe notification ID in format NTF-XXXX (e.g., NTF-0001).
+        Uses PostgreSQL sequence `notification_id_seq` for atomic collision-free allocation,
+        with fallback to max ID lookup if sequence is unavailable (e.g., SQLite test fixtures).
         """
+        try:
+            val = db.execute(text("SELECT nextval('notification_id_seq')")).scalar()
+            if val is not None:
+                return f"NTF-{int(val):04d}"
+        except Exception:
+            # Fallback if sequence does not exist or database is SQLite
+            try:
+                db.rollback()
+            except Exception:
+                pass
+
         all_ids = db.query(Notification.id).all()
         max_num = 0
         pattern = re.compile(r"^NTF-(\d+)$")
@@ -55,8 +67,9 @@ class NotificationService:
         notification_type: str
     ) -> Optional[Notification]:
         """
-        Checks if an unacknowledged notification already exists for the given source entity.
-        Prevents spamming duplicate alerts during operational polling or multi-event broadcasts.
+        Checks if a notification already exists for the given source entity.
+        Suppresses duplicates across all operational states (UNREAD, READ, and ACKNOWLEDGED),
+        ensuring an acknowledged incident does not regenerate duplicate alerts on subsequent syncs.
         """
         if not source_id:
             return None
@@ -66,8 +79,7 @@ class NotificationService:
             .filter(
                 Notification.source_domain == source_domain.strip().lower(),
                 Notification.source_id == source_id.strip(),
-                Notification.notification_type == notification_type.strip(),
-                Notification.status.in_(["UNREAD", "READ"])
+                Notification.notification_type == notification_type.strip()
             )
             .first()
         )
@@ -250,6 +262,11 @@ class NotificationService:
         if notif.status == "UNREAD":
             notif.status = "READ"
             notif.read_at = datetime.now(timezone.utc)
+            notif.read_by = user.username if user else "system_operator"
+            db.commit()
+            db.refresh(notif)
+        elif not notif.read_by:
+            notif.read_by = user.username if user else "system_operator"
             db.commit()
             db.refresh(notif)
 

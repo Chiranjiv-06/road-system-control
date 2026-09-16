@@ -24,9 +24,11 @@ Validates:
 14. Error handling: Nonexistent notification ID returns 404
 15. Error handling: Invalid status / severity returns 422 / 400
 16. Full regression across all earlier phases (Phases 4, 6, 7, 8, 9, 10, 11, 12)
+17. Duplicate suppression across full lifecycle (UNREAD -> READ -> ACKNOWLEDGED)
 """
 
 import sys
+from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 from database import SessionLocal, engine, Base
 from main import app
@@ -68,6 +70,15 @@ def run_tests():
     db = SessionLocal()
     AuthService.ensure_default_users(db)
 
+    # Clean up test fixture notifications from prior test runs for idempotent test execution
+    db.query(Notification).filter(
+        Notification.source_id.in_([
+            "EMG-TEST-001", "ISS-TEST-01", "TRF-TEST-01",
+            "VIO-TEST-01", "EMG-TEST-02", "RISK-TEST-01"
+        ])
+    ).delete(synchronize_session=False)
+    db.commit()
+
     # Pre-fetch operator JWT tokens
     admin_token = get_auth_token("admin", "AdminPassword@123")
     traffic_token = get_auth_token("traffic_op", "TrafficPassword@123")
@@ -87,11 +98,11 @@ def run_tests():
             "id", "notification_type", "title", "message",
             "source_domain", "source_id", "area", "severity",
             "status", "recipient_role", "created_at", "read_at",
-            "acknowledged_at", "acknowledged_by"
+            "read_by", "acknowledged_at", "acknowledged_by"
         ]
         for col in required_cols:
             assert col in columns, f"Column '{col}' missing from 'notifications' table"
-        print("PASS - Test 1: Notifications table and columns verified in PostgreSQL")
+        print("PASS - Test 1: Notifications table and columns verified in PostgreSQL (including read_by)")
         passed += 1
     except AssertionError as e:
         print(f"FAIL - Test 1: {e}")
@@ -286,7 +297,8 @@ def run_tests():
         d = res.json()
         assert d["status"] == "READ"
         assert d["read_at"] is not None
-        print(f"PASS - Test 9: Status transitioned to READ with valid read_at timestamp")
+        assert d["read_by"] == "emergency_op", f"Expected read_by 'emergency_op', got '{d.get('read_by')}'"
+        print(f"PASS - Test 9: Status transitioned to READ with valid read_at and read_by ({d['read_by']})")
         passed += 1
     except AssertionError as e:
         print(f"FAIL - Test 9: {e}")
@@ -469,6 +481,96 @@ def run_tests():
         passed += 1
     except AssertionError as e:
         print(f"FAIL - Test 16: {e}")
+        failed += 1
+
+    # ----------------------------------------------------
+    # TEST 17: Duplicate Suppression for ACKNOWLEDGED Notifications
+    # ----------------------------------------------------
+    try:
+        from models.emergency_alert import EmergencyAlert
+        # Clean up any leftover test alert and notification from previous runs
+        db.query(Notification).filter(Notification.source_id == "EMG-ACK-DUP-TEST").delete()
+        db.query(EmergencyAlert).filter(EmergencyAlert.id == "EMG-ACK-DUP-TEST").delete()
+        db.commit()
+
+        test_alert = EmergencyAlert(
+            id="EMG-ACK-DUP-TEST",
+            alert_type="Hazard",
+            title="Dedicated Alert for Acknowledged Duplicate Suppression",
+            description="Testing duplicate suppression on acknowledged notification",
+            location="Sitabuldi Junction",
+            area="Sitabuldi",
+            severity="High",
+            status="Active",
+            issued_at=datetime.now(timezone.utc)
+        )
+        db.add(test_alert)
+        db.commit()
+
+        # Step 1: Create notification
+        ack_payload = NotificationCreate(
+            notification_type="EMERGENCY_DISPATCH",
+            title=f"Emergency Alert: {test_alert.title}",
+            message=f"{test_alert.description} — Location: {test_alert.location}",
+            source_domain="emergency_alerts",
+            source_id=test_alert.id,
+            area=test_alert.area,
+            severity=test_alert.severity,
+            recipient_role="EMERGENCY_OPERATOR"
+        )
+        notif_ack, was_new = NotificationService.create_notification(db, ack_payload)
+        assert was_new is True, "Test notification should be newly created"
+        assert notif_ack.status == "UNREAD"
+
+        # Step 2: Mark READ
+        read_res = client.patch(
+            f"/api/notifications/{notif_ack.id}/read",
+            headers={"Authorization": f"Bearer {emergency_token}"}
+        )
+        assert read_res.status_code == 200
+        assert read_res.json()["status"] == "READ"
+
+        # Step 3: Acknowledge it
+        ack_res = client.patch(
+            f"/api/notifications/{notif_ack.id}/acknowledge",
+            json={"remarks": "Confirmed and units on scene."},
+            headers={"Authorization": f"Bearer {emergency_token}"}
+        )
+        assert ack_res.status_code == 200
+        assert ack_res.json()["status"] == "ACKNOWLEDGED"
+
+        # Count existing notifications for this source entity before sync
+        matching_before = db.query(Notification).filter(
+            Notification.source_domain == "emergency_alerts",
+            Notification.source_id == test_alert.id,
+            Notification.notification_type == "EMERGENCY_DISPATCH"
+        ).count()
+        assert matching_before == 1
+
+        # Step 4: Run notification sync again
+        sync_res = client.post(
+            "/api/notifications/sync",
+            headers={"Authorization": f"Bearer {admin_token}"}
+        )
+        assert sync_res.status_code == 200
+
+        # Step 5: Verify no duplicate notification is created for the same source event
+        matching_after = db.query(Notification).filter(
+            Notification.source_domain == "emergency_alerts",
+            Notification.source_id == test_alert.id,
+            Notification.notification_type == "EMERGENCY_DISPATCH"
+        ).count()
+        assert matching_after == 1, f"Duplicate notification generated! Expected 1, found {matching_after}"
+
+        # Clean up test entity and notification
+        db.query(Notification).filter(Notification.source_id == "EMG-ACK-DUP-TEST").delete()
+        db.query(EmergencyAlert).filter(EmergencyAlert.id == "EMG-ACK-DUP-TEST").delete()
+        db.commit()
+
+        print("PASS - Test 17: Duplicate suppression verified for ACKNOWLEDGED state during operational sync")
+        passed += 1
+    except AssertionError as e:
+        print(f"FAIL - Test 17: {e}")
         failed += 1
 
     # ----------------------------------------------------

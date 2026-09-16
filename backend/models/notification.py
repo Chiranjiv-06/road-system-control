@@ -33,6 +33,7 @@ class Notification(Base):
     # Timestamps & audit tracking
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     read_at = Column(DateTime(timezone=True), nullable=True)
+    read_by = Column(String(50), nullable=True)  # Operator username who marked as read
     acknowledged_at = Column(DateTime(timezone=True), nullable=True)
     acknowledged_by = Column(String(50), nullable=True)  # Operator username who acknowledged
 
