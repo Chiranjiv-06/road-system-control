@@ -3,5 +3,6 @@ from models.traffic import TrafficRecord
 from models.emergency_alert import EmergencyAlert
 from models.traffic_violation import TrafficViolation
 from models.user import User
+from models.notification import Notification
 
-__all__ = ["Issue", "TrafficRecord", "EmergencyAlert", "TrafficViolation", "User"]
+__all__ = ["Issue", "TrafficRecord", "EmergencyAlert", "TrafficViolation", "User", "Notification"]

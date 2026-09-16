@@ -66,6 +66,11 @@
                     <span>Operations Map</span>
                     <span class="badge badge-info ml-auto" id="sidebarMapBadge">GIS</span>
                 </a>
+                <a href="#notifications" class="nav-item" data-section="notifications" id="navNotifications">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <span>Notifications</span>
+                    <span class="badge badge-danger ml-auto" id="sidebarNotifBadge" style="display: none;">0</span>
+                </a>
 
                 <span class="nav-category">Administration</span>
                 <a href="#admin" class="nav-item" data-section="admin">
@@ -105,6 +110,12 @@
                         <span class="status-dot" id="systemStatusDot"></span>
                         <span class="status-text" id="systemStatusText">Connecting...</span>
                     </div>
+
+                    <!-- Notification Bell Quick-Access (Phase 13) -->
+                    <button class="header-notif-btn" id="headerNotifBtn" title="Operational Escalations & Notifications" aria-label="Notifications">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        <span class="header-notif-badge" id="headerNotifBadge" style="display: none;">0</span>
+                    </button>
 
                     <!-- User Authentication & Role Area -->
                     <div class="user-auth-panel" id="headerAuthPanel">
@@ -1503,6 +1514,126 @@
                             </div>
                         </div>
                     </div>
+                <!-- SECTION 7: NOTIFICATIONS & OPERATIONAL ESCALATION (PHASE 13) -->
+                <section class="view-section" id="section-notifications">
+                    <!-- HEADER BAR -->
+                    <div class="traffic-header-bar">
+                        <div class="traffic-header-titles">
+                            <h2>Notifications & Operational Escalation</h2>
+                            <p>Role-routed operational alerts, hazard escalations, and incident acknowledgement audit trails</p>
+                        </div>
+                        <div class="admin-header-actions">
+                            <button class="btn btn-primary btn-sm" id="syncNotificationsBtn" title="Scan operational modules for new high/critical events">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                Sync Alerts
+                            </button>
+                            <button class="btn btn-outline btn-sm" id="markAllReadBtn" title="Mark visible notifications as read">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Mark All Read
+                            </button>
+                            <button class="btn btn-outline btn-sm" id="refreshNotificationsBtn" title="Refresh notification feed">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- NOTIFICATION SUMMARY KPI METRIC CARDS -->
+                    <div class="metrics-grid" style="margin-bottom: 1.5rem;">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Unread Escalations</span>
+                                <span class="metric-icon-box red">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value" id="metricNotifUnread">0</div>
+                            <div class="metric-subtext">Requires Operator Attention</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Critical Severity</span>
+                                <span class="metric-icon-box orange">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value" id="metricNotifCritical">0</div>
+                            <div class="metric-subtext">High/Critical Priority Alerts</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Acknowledged</span>
+                                <span class="metric-icon-box green">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value" id="metricNotifAck">0</div>
+                            <div class="metric-subtext">Resolved / Action Taken</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-title">Total Logged</span>
+                                <span class="metric-icon-box blue">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value" id="metricNotifTotal">0</div>
+                            <div class="metric-subtext">Scoped to Active Role</div>
+                        </div>
+                    </div>
+
+                    <!-- NOTIFICATION CONTROLS & FILTER TOOLBAR -->
+                    <div class="map-toolbar" style="margin-bottom: 1.25rem;">
+                        <div class="domain-pill-group">
+                            <button type="button" class="domain-pill-btn active notif-status-pill" data-status="ALL">
+                                <span>All Statuses</span>
+                            </button>
+                            <button type="button" class="domain-pill-btn notif-status-pill" data-status="UNREAD">
+                                <span>Unread Only</span>
+                            </button>
+                            <button type="button" class="domain-pill-btn notif-status-pill" data-status="READ">
+                                <span>Read</span>
+                            </button>
+                            <button type="button" class="domain-pill-btn notif-status-pill" data-status="ACKNOWLEDGED">
+                                <span>Acknowledged</span>
+                            </button>
+                        </div>
+
+                        <div class="map-dropdown-filters">
+                            <select id="notifSeverityFilter" class="map-select-filter">
+                                <option value="">All Severities</option>
+                                <option value="Critical">Critical Only</option>
+                                <option value="High">High Priority</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Low">Low</option>
+                            </select>
+
+                            <select id="notifDomainFilter" class="map-select-filter">
+                                <option value="">All Domains</option>
+                                <option value="emergency_alerts">🚨 Emergency Alerts</option>
+                                <option value="traffic">🚗 Traffic Congestion</option>
+                                <option value="traffic_violations">📸 Traffic Violations</option>
+                                <option value="issues">⚠️ Road Issues</option>
+                                <option value="risk">🛡️ AI Risk Spikes</option>
+                            </select>
+
+                            <button type="button" class="btn btn-outline btn-sm" id="resetNotifFiltersBtn">
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- NOTIFICATIONS LIST FEED CONTAINER -->
+                    <div class="notifications-feed" id="notificationsFeedContainer">
+                        <div class="panel-card empty-state-panel" id="notificationsEmptyState">
+                            <div class="empty-state-icon">🔔</div>
+                            <h3>No Notifications</h3>
+                            <p class="text-muted">No operational escalations found matching the selected criteria.</p>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- SECTION 6: ADMIN & RBAC OPERATOR MANAGEMENT (PHASE 11) -->
@@ -1939,6 +2070,41 @@
                         Provision Account
                     </button>
                     <button type="button" class="btn btn-outline" id="cancelCreateOpBtn">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    <!-- NOTIFICATION ACKNOWLEDGEMENT MODAL (Phase 13) -->
+    <div class="modal-backdrop" id="acknowledgeModal" role="dialog" aria-modal="true" aria-labelledby="ackModalTitle" style="display: none;">
+        <div class="modal-card" style="max-width: 480px;">
+            <div class="modal-header">
+                <div class="modal-header-info">
+                    <span class="badge badge-success" id="ackModalNotifId">NTF-0000</span>
+                    <h3 class="modal-title" id="ackModalTitle">Acknowledge Escalation</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeAckModalBtn" aria-label="Close form">&times;</button>
+            </div>
+            <form id="acknowledgeForm">
+                <div class="modal-body">
+                    <div id="ackModalAlertSummary" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-card-alt, #f8fafc); border-radius: 6px; font-size: 0.82rem; border-left: 3px solid var(--primary-color, #2563eb);">
+                        <strong id="ackModalAlertTitle">Alert Title</strong>
+                        <p id="ackModalAlertMessage" style="margin: 0.35rem 0 0 0; color: var(--text-secondary);">Alert details...</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ackRemarksInput" class="form-label">Operational Remarks / Action Taken</label>
+                        <textarea id="ackRemarksInput" class="form-control" rows="3" placeholder="e.g. Field crew dispatched, traffic diverted to Ring Road, camera footage logged..."></textarea>
+                    </div>
+
+                    <input type="hidden" id="ackNotifIdInput" value="">
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" id="confirmAckBtn">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Confirm Acknowledgement
+                    </button>
+                    <button type="button" class="btn btn-outline" id="cancelAckModalBtn">
                         Cancel
                     </button>
                 </div>
