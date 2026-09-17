@@ -325,6 +325,60 @@ document.addEventListener('DOMContentLoaded', () => {
     const ackModalAlertTitle = document.getElementById('ackModalAlertTitle');
     const ackModalAlertMessage = document.getElementById('ackModalAlertMessage');
 
+    // --- Phase 14 Field Work Orders Elements ---
+    const sidebarWorkOrdersBadge = document.getElementById('sidebarWorkOrdersBadge');
+    const refreshWorkOrdersBtn = document.getElementById('refreshWorkOrdersBtn');
+    const openCreateWorkOrderModalBtn = document.getElementById('openCreateWorkOrderModalBtn');
+    const woKpiTotal = document.getElementById('woKpiTotal');
+    const woKpiActive = document.getElementById('woKpiActive');
+    const woKpiBreached = document.getElementById('woKpiBreached');
+    const woKpiCompleted = document.getElementById('woKpiCompleted');
+    const woKpiCostSubtext = document.getElementById('woKpiCostSubtext');
+    const woStatusFilter = document.getElementById('woStatusFilter');
+    const woPriorityFilter = document.getElementById('woPriorityFilter');
+    const woTypeFilter = document.getElementById('woTypeFilter');
+    const woAreaSearch = document.getElementById('woAreaSearch');
+    const resetWoFiltersBtn = document.getElementById('resetWoFiltersBtn');
+    const woCountBadge = document.getElementById('woCountBadge');
+    const workOrdersTableBody = document.getElementById('workOrdersTableBody');
+
+    // Create Modal Elements
+    const createWorkOrderModal = document.getElementById('createWorkOrderModal');
+    const closeCreateWorkOrderModalBtn = document.getElementById('closeCreateWoModalBtn');
+    const cancelCreateWorkOrderBtn = document.getElementById('cancelCreateWoBtn');
+    const createWorkOrderForm = document.getElementById('createWorkOrderForm');
+    const submitCreateWoBtn = document.getElementById('submitCreateWoBtn');
+    const createWoErrorBanner = document.getElementById('createWoErrorBanner');
+    const woTitleInput = document.getElementById('woTitleInput');
+    const woOrderTypeInput = document.getElementById('woOrderTypeInput');
+    const woSourceIdInput = document.getElementById('woSourceIdInput');
+    const woAreaInput = document.getElementById('woAreaInput');
+    const woLocationInput = document.getElementById('woLocationInput');
+    const woPriorityInput = document.getElementById('woPriorityInput');
+    const woAssignedCrewInput = document.getElementById('woAssignedCrewInput');
+    const woTargetSlaInput = document.getElementById('woTargetSlaInput');
+    const woLatitudeInput = document.getElementById('woLatitudeInput');
+    const woLongitudeInput = document.getElementById('woLongitudeInput');
+    const woDescriptionInput = document.getElementById('woDescriptionInput');
+    const woSourceDomainHidden = document.getElementById('woSourceDomainHidden');
+
+    // Update Status Modal Elements
+    const updateWorkOrderModal = document.getElementById('updateWorkOrderModal');
+    const closeUpdateWoModalBtn = document.getElementById('closeUpdateWoModalBtn');
+    const cancelUpdateWoBtn = document.getElementById('cancelUpdateWoBtn');
+    const updateWorkOrderForm = document.getElementById('updateWorkOrderForm');
+    const submitUpdateWoBtn = document.getElementById('submitUpdateWoBtn');
+    const updateWoErrorBanner = document.getElementById('updateWoErrorBanner');
+    const updateWoBadgeId = document.getElementById('updateWoBadgeId');
+    const updateWoTitleDisplay = document.getElementById('updateWoTitleDisplay');
+    const updateWoLocationDisplay = document.getElementById('updateWoLocationDisplay');
+    const updateWoStatusSelect = document.getElementById('updateWoStatusSelect');
+    const updateWoActualCostInput = document.getElementById('updateWoActualCostInput');
+    const updateWoNotesInput = document.getElementById('updateWoNotesInput');
+    const updateWoNotesLabel = document.getElementById('updateWoNotesLabel');
+    const updateWoCostGroup = document.getElementById('updateWoCostGroup');
+    const updateWoIdHidden = document.getElementById('updateWoIdHidden');
+
     // In-memory holder for selected image in current form session
     let currentImageSessionDataUrl = null;
 
@@ -339,6 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'risk': 'AI Risk & Incident Intelligence Center',
         'map': 'Live Operations Map',
         'notifications': 'Notifications & Operational Escalation',
+        'work-orders': 'Field Work Orders & Incident Dispatch',
         'admin': 'Administration & Roles'
     };
 
@@ -584,6 +639,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sectionKey === 'notifications') {
             loadNotifications(false);
             loadNotificationsSummary();
+        }
+        if (sectionKey === 'work-orders') {
+            loadWorkOrders(false);
+            loadWorkOrdersSummary();
         }
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2836,6 +2895,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mapLayers.issue = L.layerGroup().addTo(operationsMap);
         mapLayers.violation = L.layerGroup().addTo(operationsMap);
         mapLayers.risk = L.layerGroup().addTo(operationsMap);
+        mapLayers.workOrder = L.layerGroup().addTo(operationsMap);
 
         // Legend collapse/expand toggle
         if (legendToggleBtn && legendBody) {
@@ -2875,6 +2935,10 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'risk':
                 pinClass = 'marker-risk';
                 iconHtml = '🛡️';
+                break;
+            case 'work_order':
+                pinClass = 'marker-workorder';
+                iconHtml = '👷';
                 break;
         }
 
@@ -2972,6 +3036,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (feature.domain === 'risk') {
                 drawerMetricTitle.textContent = 'AI Risk Intelligence Score';
                 drawerMetricVal.textContent = feature.metric_label || 'Evaluated';
+            } else if (feature.domain === 'work_order') {
+                drawerMetricTitle.textContent = 'Crew & SLA Target';
+                drawerMetricVal.textContent = `${meta.assigned_crew || 'Crew'} (${meta.sla_status || 'ON_TRACK'})`;
             } else {
                 drawerMetricTitle.textContent = 'Operational Metric';
                 drawerMetricVal.textContent = feature.metric_label || 'Incident Active';
@@ -2990,6 +3057,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     : 'Traffic moving within acceptable threshold. Continue sensor polling.';
             } else if (feature.domain === 'violation') {
                 drawerTacticalText.textContent = `Automated radar logged ${meta.violation_type || 'infringement'}. Proceed with notice adjudication.`;
+            } else if (feature.domain === 'work_order') {
+                drawerTacticalText.textContent = `Field crew "${meta.assigned_crew || 'Unit'}" actively mobilized. Priority: ${feature.severity}. SLA status: ${meta.sla_status || 'ON_TRACK'}.`;
             } else {
                 drawerTacticalText.textContent = 'Verify road hazard severity during municipal field maintenance shift.';
             }
@@ -3102,6 +3171,11 @@ document.addEventListener('DOMContentLoaded', () => {
             data.violations.forEach(f => addFeatureMarker(f, mapLayers.violation));
         }
 
+        // 6. Render Active Field Work Orders (Phase 14)
+        if (data.work_orders && (activeMapDomain === 'all' || activeMapDomain === 'work_order')) {
+            data.work_orders.forEach(f => addFeatureMarker(f, mapLayers.workOrder));
+        }
+
         if (mapLastUpdated) {
             mapLastUpdated.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
         }
@@ -3139,6 +3213,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await res.json();
+
+            // Fetch active work orders layer
+            try {
+                const woRes = await fetch(`${API_BASE_URL}/map/work-orders`, {
+                    headers: getAuthHeaders()
+                });
+                if (woRes.ok) {
+                    const woJson = await woRes.json();
+                    data.work_orders = woJson.features || [];
+                }
+            } catch (woErr) {
+                // Non-blocking spatial layer
+            }
+
             renderMapData(data);
         } catch (err) {
             console.error("Failed to load map overview:", err);
@@ -3423,6 +3511,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                     Acknowledge
                                 </button>
                             ` : ''}
+                            ${isAck && n.source_id ? `
+                                <button type="button" class="btn btn-primary btn-sm btn-notif-action notif-btn-dispatch" data-domain="${escapeHtml(n.source_domain)}" data-source-id="${escapeHtml(n.source_id)}" data-title="${escapeHtml(n.title)}" data-area="${escapeHtml(n.area || '')}">
+                                    Dispatch Work Order &rarr;
+                                </button>
+                            ` : ''}
                             ${n.source_id ? `
                                 <button type="button" class="btn btn-outline btn-sm btn-notif-action notif-btn-goto" data-domain="${escapeHtml(n.source_domain)}" data-source-id="${escapeHtml(n.source_id)}">
                                     Go to Record &rarr;
@@ -3441,6 +3534,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         notificationsFeedContainer.querySelectorAll('.notif-btn-ack').forEach(btn => {
             btn.addEventListener('click', () => openAcknowledgeModal(btn.dataset.id, btn.dataset.title, btn.dataset.msg));
+        });
+
+        notificationsFeedContainer.querySelectorAll('.notif-btn-dispatch').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const dom = btn.dataset.domain;
+                let oType = 'ROAD_REPAIR';
+                if (dom === 'emergency_alerts') oType = 'EMERGENCY_RESPONSE';
+                else if (dom === 'traffic') oType = 'TRAFFIC_DIVERSION';
+                else if (dom === 'issues') oType = 'ROAD_REPAIR';
+
+                openCreateWorkOrderModal({
+                    orderType: oType,
+                    sourceDomain: dom,
+                    sourceId: btn.dataset.sourceId,
+                    title: `Dispatch: ${btn.dataset.title}`,
+                    area: btn.dataset.area || ''
+                });
+            });
         });
 
         notificationsFeedContainer.querySelectorAll('.notif-btn-goto').forEach(btn => {
@@ -3647,6 +3758,569 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (headerNotifBtn) {
         headerNotifBtn.addEventListener('click', () => switchSection('notifications'));
+    }
+
+    // ==========================================================================
+    // 5I. FIELD WORK ORDERS & INCIDENT DISPATCH (PHASE 14)
+    // ==========================================================================
+    let workOrdersState = [];
+    let isWorkOrdersFetching = false;
+
+    function getWorkOrderStatusBadge(status) {
+        switch (status) {
+            case 'PENDING':
+                return '<span class="badge badge-pending">PENDING</span>';
+            case 'DISPATCHED':
+                return '<span class="badge badge-dispatched">DISPATCHED</span>';
+            case 'IN_PROGRESS':
+                return '<span class="badge badge-inprogress">IN PROGRESS</span>';
+            case 'COMPLETED':
+                return '<span class="badge badge-completed">COMPLETED</span>';
+            case 'CANCELLED':
+                return '<span class="badge badge-cancelled">CANCELLED</span>';
+            default:
+                return `<span class="badge badge-neutral">${escapeHtml(status || 'UNKNOWN')}</span>`;
+        }
+    }
+
+    function getWorkOrderPriorityBadge(priority) {
+        switch (priority) {
+            case 'Critical':
+                return '<span class="badge badge-danger">Critical</span>';
+            case 'High':
+                return '<span class="badge badge-warning">High</span>';
+            case 'Medium':
+                return '<span class="badge badge-info">Medium</span>';
+            case 'Low':
+                return '<span class="badge badge-neutral">Low</span>';
+            default:
+                return `<span class="badge badge-neutral">${escapeHtml(priority || 'Normal')}</span>`;
+        }
+    }
+
+    function getWorkOrderSlaBadge(wo) {
+        const slaStatus = wo.sla_status || 'ON_TRACK';
+        if (wo.status === 'COMPLETED') {
+            return '<span class="sla-pill sla-ontrack"><span class="sla-dot"></span> Resolved</span>';
+        }
+        if (slaStatus === 'BREACHED') {
+            return '<span class="sla-pill sla-breached"><span class="sla-dot"></span> BREACHED</span>';
+        }
+        if (slaStatus === 'EXPIRING_SOON') {
+            return '<span class="sla-pill sla-expiring"><span class="sla-dot"></span> Expiring Soon</span>';
+        }
+        return '<span class="sla-pill sla-ontrack"><span class="sla-dot"></span> On Track</span>';
+    }
+
+    function getCompatibleSourceDomain(orderType) {
+        switch (orderType) {
+            case 'ROAD_REPAIR':
+            case 'FIELD_INSPECTION':
+                return 'issues';
+            case 'EMERGENCY_RESPONSE':
+                return 'emergency_alerts';
+            case 'TRAFFIC_DIVERSION':
+                return 'traffic';
+            default:
+                return 'issues';
+        }
+    }
+
+    async function loadWorkOrders(showSpinner = false) {
+        if (isWorkOrdersFetching) return;
+        isWorkOrdersFetching = true;
+
+        if (showSpinner && workOrdersTableBody) {
+            workOrdersTableBody.innerHTML = `
+                <tr>
+                    <td colspan="10" class="table-loading-cell">
+                        <span class="spinner-inline"></span> Loading work orders from PostgreSQL...
+                    </td>
+                </tr>
+            `;
+        }
+
+        try {
+            const params = new URLSearchParams();
+            if (woStatusFilter && woStatusFilter.value) params.append('status', woStatusFilter.value);
+            if (woPriorityFilter && woPriorityFilter.value) params.append('priority', woPriorityFilter.value);
+            if (woTypeFilter && woTypeFilter.value) params.append('order_type', woTypeFilter.value);
+            if (woAreaSearch && woAreaSearch.value.trim()) params.append('area', woAreaSearch.value.trim());
+
+            const qs = params.toString() ? `?${params.toString()}` : '';
+            const res = await fetch(`${API_BASE_URL}/work-orders${qs}`, {
+                headers: getAuthHeaders()
+            });
+
+            if (res.status === 200) {
+                const data = await res.json();
+                workOrdersState = data.items || [];
+                renderWorkOrdersTable(workOrdersState);
+            } else if (res.status === 401) {
+                handleSessionExpired();
+            } else {
+                console.error("Failed to load work orders:", res.status);
+                if (workOrdersTableBody) {
+                    workOrdersTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="10" class="table-loading-cell text-danger">
+                                Failed to load work orders from backend (Status: ${res.status}).
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+        } catch (err) {
+            console.error("Error fetching work orders:", err);
+            if (workOrdersTableBody) {
+                workOrdersTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="table-loading-cell text-danger">
+                            Network error connecting to work orders service.
+                        </td>
+                    </tr>
+                `;
+            }
+        } finally {
+            isWorkOrdersFetching = false;
+        }
+    }
+
+    async function loadWorkOrdersSummary() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/work-orders/summary`, {
+                headers: getAuthHeaders()
+            });
+            if (res.status === 200) {
+                const s = await res.json();
+                if (woKpiTotal) woKpiTotal.textContent = s.total_work_orders || 0;
+                if (woKpiActive) woKpiActive.textContent = s.active_work_orders || 0;
+                if (woKpiBreached) woKpiBreached.textContent = s.sla_breached_count || 0;
+                if (woKpiCompleted) woKpiCompleted.textContent = s.completed_work_orders || 0;
+                if (woKpiCostSubtext) {
+                    const cost = Number(s.total_expenditure || 0).toLocaleString('en-IN');
+                    woKpiCostSubtext.textContent = `₹${cost} total remediation cost`;
+                }
+                if (sidebarWorkOrdersBadge) {
+                    const active = s.active_work_orders || 0;
+                    if (active > 0) {
+                        sidebarWorkOrdersBadge.textContent = active > 99 ? '99+' : active;
+                        sidebarWorkOrdersBadge.style.display = 'inline-block';
+                    } else {
+                        sidebarWorkOrdersBadge.style.display = 'none';
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn("Could not fetch work orders summary:", e);
+        }
+    }
+
+    function renderWorkOrdersTable(items) {
+        if (!workOrdersTableBody) return;
+        if (woCountBadge) {
+            woCountBadge.textContent = `${items.length} Order${items.length === 1 ? '' : 's'}`;
+        }
+
+        if (items.length === 0) {
+            workOrdersTableBody.innerHTML = `
+                <tr>
+                    <td colspan="10" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+                        <strong>No Work Orders Found</strong>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 0.82rem;">Adjust filter parameters or create a new dispatch order.</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        workOrdersTableBody.innerHTML = items.map(wo => {
+            const isTerminal = wo.status === 'COMPLETED' || wo.status === 'CANCELLED';
+            const readableType = (wo.order_type || '').replace(/_/g, ' ');
+            return `
+                <tr>
+                    <td><strong>${escapeHtml(wo.id)}</strong></td>
+                    <td><span style="font-weight: 600; font-size: 0.78rem;">${escapeHtml(readableType)}</span></td>
+                    <td>
+                        <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(wo.title)}</div>
+                        <div class="text-muted text-xs" style="max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(wo.description)}">
+                            ${escapeHtml(wo.description)}
+                        </div>
+                    </td>
+                    <td>
+                        ${wo.source_id ? `
+                            <span class="wo-source-chip" title="Linked to ${escapeHtml(wo.source_domain)}">
+                                <span style="font-size: 0.7rem;">🔗</span> ${escapeHtml(wo.source_id)}
+                            </span>
+                        ` : '<span class="text-muted text-xs">Direct</span>'}
+                    </td>
+                    <td>
+                        <div style="font-weight: 500;">${escapeHtml(wo.area)}</div>
+                        <div class="text-muted text-xs">${escapeHtml(wo.location)}</div>
+                    </td>
+                    <td>
+                        <div class="wo-crew-label">
+                            <span>👷</span> ${escapeHtml(wo.assigned_crew)}
+                        </div>
+                    </td>
+                    <td>${getWorkOrderPriorityBadge(wo.priority)}</td>
+                    <td>${getWorkOrderSlaBadge(wo)}</td>
+                    <td>${getWorkOrderStatusBadge(wo.status)}</td>
+                    <td class="text-right">
+                        ${!isTerminal ? `
+                            <button type="button" class="btn btn-outline btn-sm btn-wo-action wo-btn-update" data-id="${escapeHtml(wo.id)}">
+                                Update Status &rarr;
+                            </button>
+                        ` : `
+                            <span class="text-muted text-xs" style="padding-right: 0.5rem;">Archived</span>
+                        `}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        workOrdersTableBody.querySelectorAll('.wo-btn-update').forEach(btn => {
+            btn.addEventListener('click', () => openUpdateWorkOrderModal(btn.dataset.id));
+        });
+    }
+
+    function openCreateWorkOrderModal(prefill = {}) {
+        if (!createWorkOrderModal) return;
+        if (createWoErrorBanner) {
+            createWoErrorBanner.textContent = '';
+            createWoErrorBanner.style.display = 'none';
+        }
+        if (createWorkOrderForm) createWorkOrderForm.reset();
+
+        if (prefill.orderType && woOrderTypeInput) {
+            woOrderTypeInput.value = prefill.orderType;
+        }
+        if (prefill.sourceDomain && woSourceDomainHidden) {
+            woSourceDomainHidden.value = prefill.sourceDomain;
+        } else if (woOrderTypeInput && woSourceDomainHidden) {
+            woSourceDomainHidden.value = getCompatibleSourceDomain(woOrderTypeInput.value);
+        }
+        if (prefill.sourceId && woSourceIdInput) {
+            woSourceIdInput.value = prefill.sourceId;
+        }
+        if (prefill.title && woTitleInput) {
+            woTitleInput.value = prefill.title;
+        }
+        if (prefill.area && woAreaInput) {
+            woAreaInput.value = prefill.area;
+        }
+        if (prefill.location && woLocationInput) {
+            woLocationInput.value = prefill.location;
+        }
+        if (prefill.priority && woPriorityInput) {
+            woPriorityInput.value = prefill.priority;
+        }
+        if (prefill.latitude && woLatitudeInput) {
+            woLatitudeInput.value = prefill.latitude;
+        }
+        if (prefill.longitude && woLongitudeInput) {
+            woLongitudeInput.value = prefill.longitude;
+        }
+
+        createWorkOrderModal.style.display = 'flex';
+    }
+
+    function closeCreateWorkOrderModal() {
+        if (createWorkOrderModal) createWorkOrderModal.style.display = 'none';
+        if (createWoErrorBanner) {
+            createWoErrorBanner.textContent = '';
+            createWoErrorBanner.style.display = 'none';
+        }
+    }
+
+    async function handleCreateWorkOrderSubmit(e) {
+        e.preventDefault();
+        if (!submitCreateWoBtn) return;
+
+        const payload = {
+            title: woTitleInput ? woTitleInput.value.trim() : '',
+            order_type: woOrderTypeInput ? woOrderTypeInput.value : 'ROAD_REPAIR',
+            source_domain: woSourceDomainHidden ? woSourceDomainHidden.value : 'issues',
+            source_id: woSourceIdInput && woSourceIdInput.value.trim() ? woSourceIdInput.value.trim() : null,
+            area: woAreaInput ? woAreaInput.value.trim() : '',
+            location: woLocationInput ? woLocationInput.value.trim() : '',
+            priority: woPriorityInput ? woPriorityInput.value : 'High',
+            assigned_crew: woAssignedCrewInput ? woAssignedCrewInput.value.trim() : '',
+            target_sla_hours: woTargetSlaInput ? parseInt(woTargetSlaInput.value, 10) : 24,
+            description: woDescriptionInput ? woDescriptionInput.value.trim() : '',
+            latitude: woLatitudeInput && woLatitudeInput.value ? parseFloat(woLatitudeInput.value) : null,
+            longitude: woLongitudeInput && woLongitudeInput.value ? parseFloat(woLongitudeInput.value) : null
+        };
+
+        if (!payload.title || !payload.area || !payload.location || !payload.assigned_crew || !payload.description) {
+            showToast('Please fill in all mandatory fields.', 'error');
+            return;
+        }
+
+        submitCreateWoBtn.disabled = true;
+        if (createWoErrorBanner) createWoErrorBanner.style.display = 'none';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/work-orders`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...getAuthHeaders()
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.status === 201) {
+                const created = await res.json();
+                showToast(`Work Order ${created.id} dispatched successfully!`, 'success');
+                closeCreateWorkOrderModal();
+                loadWorkOrders(true);
+                loadWorkOrdersSummary();
+            } else if (res.status === 400 || res.status === 409) {
+                const err = await res.json();
+                const msg = err.detail || 'Dispatch failed: Duplicate active order or invalid pairing.';
+                if (createWoErrorBanner) {
+                    createWoErrorBanner.textContent = msg;
+                    createWoErrorBanner.style.display = 'block';
+                }
+                showToast(msg, 'error');
+            } else if (res.status === 403) {
+                const err = await res.json();
+                const msg = err.detail || 'Forbidden: Insufficient role permissions for this order type.';
+                if (createWoErrorBanner) {
+                    createWoErrorBanner.textContent = msg;
+                    createWoErrorBanner.style.display = 'block';
+                }
+                showToast(msg, 'error');
+            } else if (res.status === 401) {
+                handleSessionExpired();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showToast(err.detail || `Server error: ${res.status}`, 'error');
+            }
+        } catch (err) {
+            showToast('Network error dispatching work order.', 'error');
+        } finally {
+            submitCreateWoBtn.disabled = false;
+        }
+    }
+
+    function openUpdateWorkOrderModal(woId) {
+        if (!updateWorkOrderModal) return;
+        const wo = workOrdersState.find(w => w.id === woId);
+        if (!wo) {
+            showToast(`Work order ${woId} not found in state.`, 'error');
+            return;
+        }
+
+        if (updateWoIdHidden) updateWoIdHidden.value = wo.id;
+        if (updateWoBadgeId) updateWoBadgeId.textContent = wo.id;
+        if (updateWoTitleDisplay) updateWoTitleDisplay.textContent = wo.title;
+        if (updateWoLocationDisplay) updateWoLocationDisplay.textContent = `${wo.area} — ${wo.location} | Crew: ${wo.assigned_crew} (${wo.status})`;
+        if (updateWoActualCostInput) updateWoActualCostInput.value = wo.actual_cost != null ? wo.actual_cost : '';
+        if (updateWoNotesInput) updateWoNotesInput.value = wo.resolution_notes || '';
+        if (updateWoErrorBanner) {
+            updateWoErrorBanner.textContent = '';
+            updateWoErrorBanner.style.display = 'none';
+        }
+
+        // Populate valid target transitions according to lifecycle rules
+        if (updateWoStatusSelect) {
+            updateWoStatusSelect.innerHTML = '';
+            if (wo.status === 'PENDING') {
+                updateWoStatusSelect.innerHTML = `
+                    <option value="DISPATCHED" selected>DISPATCHED (Mobilize Crew to Site)</option>
+                    <option value="CANCELLED">CANCELLED (Abort Order)</option>
+                `;
+            } else if (wo.status === 'DISPATCHED') {
+                updateWoStatusSelect.innerHTML = `
+                    <option value="IN_PROGRESS" selected>IN_PROGRESS (Active Remediation on Site)</option>
+                    <option value="CANCELLED">CANCELLED (Abort Order)</option>
+                `;
+            } else if (wo.status === 'IN_PROGRESS') {
+                updateWoStatusSelect.innerHTML = `
+                    <option value="COMPLETED" selected>COMPLETED (Remediation Done & Verified)</option>
+                    <option value="CANCELLED">CANCELLED (Abort Order)</option>
+                `;
+            } else {
+                updateWoStatusSelect.innerHTML = `<option value="${wo.status}">${wo.status} (Terminal State)</option>`;
+                updateWoStatusSelect.disabled = true;
+                if (submitUpdateWoBtn) submitUpdateWoBtn.disabled = true;
+            }
+
+            if (wo.status !== 'COMPLETED' && wo.status !== 'CANCELLED') {
+                updateWoStatusSelect.disabled = false;
+                if (submitUpdateWoBtn) submitUpdateWoBtn.disabled = false;
+            }
+        }
+
+        // Toggle notes & cost visibility/requirements based on status
+        const toggleFields = () => {
+            const val = updateWoStatusSelect ? updateWoStatusSelect.value : '';
+            if (val === 'COMPLETED') {
+                if (updateWoNotesLabel) updateWoNotesLabel.innerHTML = 'Resolution Notes <span class="required-star">*</span>';
+                if (updateWoNotesInput) updateWoNotesInput.required = true;
+                if (updateWoCostGroup) updateWoCostGroup.style.display = 'block';
+            } else {
+                if (updateWoNotesLabel) updateWoNotesLabel.textContent = 'Operational / Transition Notes';
+                if (updateWoNotesInput) updateWoNotesInput.required = false;
+                if (updateWoCostGroup) updateWoCostGroup.style.display = 'block';
+            }
+        };
+
+        if (updateWoStatusSelect) {
+            updateWoStatusSelect.onchange = toggleFields;
+        }
+        toggleFields();
+
+        updateWorkOrderModal.style.display = 'flex';
+    }
+
+    function closeUpdateWorkOrderModal() {
+        if (updateWorkOrderModal) updateWorkOrderModal.style.display = 'none';
+        if (updateWoErrorBanner) {
+            updateWoErrorBanner.textContent = '';
+            updateWoErrorBanner.style.display = 'none';
+        }
+    }
+
+    async function handleUpdateWorkOrderSubmit(e) {
+        e.preventDefault();
+        if (!submitUpdateWoBtn) return;
+
+        const woId = updateWoIdHidden ? updateWoIdHidden.value : '';
+        const status = updateWoStatusSelect ? updateWoStatusSelect.value : '';
+        const notes = updateWoNotesInput ? updateWoNotesInput.value.trim() : '';
+        const costVal = updateWoActualCostInput && updateWoActualCostInput.value ? parseFloat(updateWoActualCostInput.value) : null;
+
+        if (status === 'COMPLETED' && (!notes || notes.length < 5)) {
+            showToast('Resolution notes (min 5 chars) are required to complete a work order.', 'error');
+            if (updateWoErrorBanner) {
+                updateWoErrorBanner.textContent = 'Resolution notes are required when marking an order as COMPLETED.';
+                updateWoErrorBanner.style.display = 'block';
+            }
+            return;
+        }
+
+        const payload = {
+            status: status,
+            resolution_notes: notes || null,
+            actual_cost: costVal
+        };
+
+        submitUpdateWoBtn.disabled = true;
+        if (updateWoErrorBanner) updateWoErrorBanner.style.display = 'none';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/work-orders/${woId}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...getAuthHeaders()
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.status === 200) {
+                const updated = await res.json();
+                const msg = status === 'COMPLETED'
+                    ? `Work Order ${woId} COMPLETED! Linked source entity automatically resolved.`
+                    : `Work Order ${woId} transitioned to ${status}.`;
+                showToast(msg, 'success');
+                closeUpdateWorkOrderModal();
+                loadWorkOrders(false);
+                loadWorkOrdersSummary();
+                if (status === 'COMPLETED') {
+                    loadIssues(false);
+                    loadAlerts(false);
+                    loadNotifications(false);
+                    loadNotificationsSummary();
+                }
+            } else if (res.status === 400 || res.status === 409) {
+                const err = await res.json();
+                const msg = err.detail || 'Invalid transition or completion validation failed.';
+                if (updateWoErrorBanner) {
+                    updateWoErrorBanner.textContent = msg;
+                    updateWoErrorBanner.style.display = 'block';
+                }
+                showToast(msg, 'error');
+            } else if (res.status === 403) {
+                const err = await res.json();
+                const msg = err.detail || 'Forbidden: Insufficient role permissions for this operation.';
+                if (updateWoErrorBanner) {
+                    updateWoErrorBanner.textContent = msg;
+                    updateWoErrorBanner.style.display = 'block';
+                }
+                showToast(msg, 'error');
+            } else if (res.status === 401) {
+                handleSessionExpired();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showToast(err.detail || `Server error: ${res.status}`, 'error');
+            }
+        } catch (err) {
+            showToast('Network error updating work order.', 'error');
+        } finally {
+            submitUpdateWoBtn.disabled = false;
+        }
+    }
+
+    // Work Orders Filter and Modal Listeners (Phase 14)
+    if (woOrderTypeInput && woSourceDomainHidden) {
+        woOrderTypeInput.addEventListener('change', () => {
+            woSourceDomainHidden.value = getCompatibleSourceDomain(woOrderTypeInput.value);
+        });
+    }
+
+    if (refreshWorkOrdersBtn) {
+        refreshWorkOrdersBtn.addEventListener('click', () => {
+            showToast('Syncing work orders from PostgreSQL...', 'default');
+            loadWorkOrders(true);
+            loadWorkOrdersSummary();
+        });
+    }
+
+    if (openCreateWorkOrderModalBtn) {
+        openCreateWorkOrderModalBtn.addEventListener('click', () => openCreateWorkOrderModal());
+    }
+    if (closeCreateWorkOrderModalBtn) closeCreateWorkOrderModalBtn.addEventListener('click', closeCreateWorkOrderModal);
+    if (cancelCreateWorkOrderBtn) cancelCreateWorkOrderBtn.addEventListener('click', closeCreateWorkOrderModal);
+    if (createWorkOrderModal) {
+        createWorkOrderModal.addEventListener('click', (e) => {
+            if (e.target === createWorkOrderModal) closeCreateWorkOrderModal();
+        });
+    }
+    if (createWorkOrderForm) createWorkOrderForm.addEventListener('submit', handleCreateWorkOrderSubmit);
+
+    if (closeUpdateWoModalBtn) closeUpdateWoModalBtn.addEventListener('click', closeUpdateWorkOrderModal);
+    if (cancelUpdateWoBtn) cancelUpdateWoBtn.addEventListener('click', closeUpdateWorkOrderModal);
+    if (updateWorkOrderModal) {
+        updateWorkOrderModal.addEventListener('click', (e) => {
+            if (e.target === updateWorkOrderModal) closeUpdateWorkOrderModal();
+        });
+    }
+    if (updateWorkOrderForm) updateWorkOrderForm.addEventListener('submit', handleUpdateWorkOrderSubmit);
+
+    if (woStatusFilter) woStatusFilter.addEventListener('change', () => loadWorkOrders(false));
+    if (woPriorityFilter) woPriorityFilter.addEventListener('change', () => loadWorkOrders(false));
+    if (woTypeFilter) woTypeFilter.addEventListener('change', () => loadWorkOrders(false));
+    if (woAreaSearch) {
+        let searchDebounce = null;
+        woAreaSearch.addEventListener('input', () => {
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(() => loadWorkOrders(false), 300);
+        });
+    }
+    if (resetWoFiltersBtn) {
+        resetWoFiltersBtn.addEventListener('click', () => {
+            if (woStatusFilter) woStatusFilter.value = '';
+            if (woPriorityFilter) woPriorityFilter.value = '';
+            if (woTypeFilter) woTypeFilter.value = '';
+            if (woAreaSearch) woAreaSearch.value = '';
+            showToast('Work order filters reset.', 'default');
+            loadWorkOrders(false);
+        });
     }
 
     // ==========================================================================
@@ -4016,6 +4690,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'nav-risk':
                     switchSection('risk');
                     break;
+                case 'nav-work-orders':
+                    switchSection('work-orders');
+                    break;
                 case 'back-to-dashboard':
                     switchSection('dashboard');
                     break;
@@ -4028,7 +4705,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================================================
     // 9. INITIALIZATION
     // ==========================================================================
-    // Initial health check and load issues, traffic, alerts, violations, analytics & risk from PostgreSQL
+    // Initial health check and load issues, traffic, alerts, violations, analytics, risk & work orders from PostgreSQL
     restoreSession();
     checkBackendHealth();
     loadIssues(true);
@@ -4038,6 +4715,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAnalytics(true);
     loadRisk(true);
     loadNotificationsSummary();
+    loadWorkOrdersSummary();
 
     // Periodic health check every 15 seconds to dynamically track backend connection
     setInterval(checkBackendHealth, 15000);
@@ -4066,6 +4744,12 @@ document.addEventListener('DOMContentLoaded', () => {
             loadNotificationsSummary();
             if (currentActiveSection === 'notifications') {
                 loadNotifications(false);
+            }
+        }
+        if (!isWorkOrdersFetching) {
+            loadWorkOrdersSummary();
+            if (currentActiveSection === 'work-orders') {
+                loadWorkOrders(false);
             }
         }
     }, 30000);

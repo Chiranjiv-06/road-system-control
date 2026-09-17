@@ -16,8 +16,10 @@ Current road management systems are mostly reactive. Authorities receive complai
 - Traffic violation and rule enforcement management
 - Cross-domain traffic analytics & intelligence center
 - Explainable AI risk & incident intelligence (0–100 composite risk scoring, tactical recommendations)
-- Interactive map integration (Upcoming)
-- Admin dashboard (Upcoming)
+- Interactive map integration (Offline-first Leaflet GIS operations map)
+- Role-routed operational notifications & escalation
+- Field work orders & incident dispatch operations (Municipal crew mobilization, SLA tracking, closed-loop resolution)
+- Admin dashboard & RBAC
 
 ---
 
@@ -57,13 +59,14 @@ road-system-control/
 │   ├── seed_users.py    # Manual demo seed script for operator accounts
 │   ├── requirements.txt # Minimal Python dependencies
 │   ├── models/
-│   │   ├── __init__.py  # Model exports (Issue, TrafficRecord, EmergencyAlert, TrafficViolation, User, Notification)
+│   │   ├── __init__.py  # Model exports (Issue, TrafficRecord, EmergencyAlert, TrafficViolation, User, Notification, WorkOrder)
 │   │   ├── issue.py     # SQLAlchemy Issue model (with latitude/longitude)
 │   │   ├── traffic.py   # SQLAlchemy TrafficRecord model (with latitude/longitude)
 │   │   ├── emergency_alert.py # SQLAlchemy EmergencyAlert model (with latitude/longitude)
 │   │   ├── traffic_violation.py # SQLAlchemy TrafficViolation model (with latitude/longitude)
 │   │   ├── user.py      # SQLAlchemy User model ('users' table)
-│   │   └── notification.py # SQLAlchemy Notification model ('notifications' table)
+│   │   ├── notification.py # SQLAlchemy Notification model ('notifications' table)
+│   │   └── work_order.py # SQLAlchemy WorkOrder model ('work_orders' table)
 │   ├── routes/
 │   │   ├── issues.py    # REST API endpoints (/api/issues)
 │   │   ├── traffic.py   # REST API endpoints (/api/traffic)
@@ -72,8 +75,9 @@ road-system-control/
 │   │   ├── analytics.py # REST API endpoints (/api/analytics)
 │   │   ├── risk.py      # REST API endpoints (/api/risk)
 │   │   ├── auth.py      # REST API endpoints (/api/auth)
-│   │   ├── map.py       # REST API endpoints (/api/map/overview)
-│   │   └── notifications.py # REST API endpoints (/api/notifications)
+│   │   ├── map.py       # REST API endpoints (/api/map/overview, /api/map/work-orders)
+│   │   ├── notifications.py # REST API endpoints (/api/notifications)
+│   │   └── work_orders.py # REST API endpoints (/api/work-orders)
 │   ├── schemas/
 │   │   ├── issue.py     # Pydantic validation for issues
 │   │   ├── traffic.py   # Pydantic validation for traffic records & summary
@@ -83,7 +87,8 @@ road-system-control/
 │   │   ├── risk.py      # Pydantic validation for risk scores & explainability
 │   │   ├── user.py      # Pydantic validation for authentication & users
 │   │   ├── map.py       # Pydantic validation for GIS map features & overview
-│   │   └── notification.py # Pydantic validation for operational notifications
+│   │   ├── notification.py # Pydantic validation for operational notifications
+│   │   └── work_order.py # Pydantic validation for field work orders
 │   ├── services/
 │   │   ├── issue_service.py   # Issue persistence & sequential ISS-XXXX generator
 │   │   ├── traffic_service.py # Traffic persistence & sequential TRF-XXXX generator
@@ -93,7 +98,8 @@ road-system-control/
 │   │   ├── risk_service.py    # Explainable multi-domain risk evaluation engine
 │   │   ├── auth_service.py    # Authentication, password hashing, and JWT engine
 │   │   ├── map_service.py     # Multi-domain GIS resolver & spatial provenance engine
-│   │   └── notification_service.py # Role routing, duplicate prevention & operational sync
+│   │   ├── notification_service.py # Role routing, duplicate prevention & operational sync
+│   │   └── work_order_service.py # Lifecycle enforcement, SLA engine & closed-loop resolution
 │   ├── test_phase4.py   # Automated tests for Phase 4 (issues persistence)
 │   ├── test_phase6.py   # Automated tests for Phase 6 (traffic monitoring)
 │   ├── test_phase7.py   # Automated tests for Phase 7 (emergency alert management)
@@ -102,7 +108,8 @@ road-system-control/
 │   ├── test_phase10.py  # Automated tests for Phase 10 (risk intelligence & scoring)
 │   ├── test_phase11.py  # Automated tests for Phase 11 (authentication & RBAC)
 │   ├── test_phase12.py  # Automated tests for Phase 12 (interactive GIS map)
-│   └── test_phase13.py  # Automated tests for Phase 13 (notifications & escalation)
+│   ├── test_phase13.py  # Automated tests for Phase 13 (notifications & escalation)
+│   └── test_phase14.py  # Automated tests for Phase 14 (field work orders & dispatch)
 │
 ├── docs/
 ├── .env.example         # Environment template
@@ -126,7 +133,8 @@ road-system-control/
 - **Phase 10**: AI Risk & Incident Intelligence (0–100 explainable risk scoring, multi-domain hazard synthesis, tactical directives) — *Completed*
 - **Phase 11**: Authentication & Role-Based Access Control (Operator accounts, bcrypt hashing, JWT Bearer tokens, Admin management) — *Completed*
 - **Phase 12**: Interactive GIS / Live Operations Map (Offline-first Leaflet GIS, 5 cross-domain spatial layers, honest coordinate provenance, tactical drawer) — *Completed*
-- **Phase 13**: Notifications & Operational Escalation (Role-routed escalation, duplicate suppression, acknowledgement lifecycle, cross-domain operational sync) — **Completed**
+- **Phase 13**: Notifications & Operational Escalation (Role-routed escalation, duplicate suppression, acknowledgement lifecycle, cross-domain operational sync) — *Completed*
+- **Phase 14**: Field Work Orders & Incident Dispatch Operations (SLA tracking, crew mobilization, closed-loop resolution, RBAC) — **Completed**
 
 ---
 
@@ -667,13 +675,116 @@ python test_phase4.py; python test_phase6.py; python test_phase7.py; python test
 
 ---
 
+## 📋 Phase 14: Field Work Orders & Incident Dispatch Operations
+
+Phase 14 establishes municipal field operations management, crew dispatch tracking, SLA remediation monitoring, and closed-loop resolution across the Road System Control platform. It connects central command notifications and incidents directly to on-the-ground municipal maintenance crews and traffic marshals.
+
+### 1. Work Order Lifecycle Architecture
+
+Work orders enforce a non-reversible state machine directly on the backend. Transitions outside the approved forward or cancellation paths return HTTP 400.
+
+```
+       ┌──────────────────┐
+       │     PENDING      │ ◄── Initial dispatch logged by operator
+       └────────┬─────────┘
+                │
+                ▼
+       ┌──────────────────┐
+       │    DISPATCHED    │ ◄── Field crew mobilized to incident site (dispatched_at logged)
+       └────────┬─────────┘
+                │
+                ▼
+       ┌──────────────────┐
+       │   IN_PROGRESS    │ ◄── Active on-site remediation commenced
+       └────────┬─────────┘
+                │
+                ▼
+       ┌──────────────────┐
+       │    COMPLETED     │ ◄── Remediation verified (resolution_notes & completed_by recorded)
+       └──────────────────┘     Auto-resolves linked Issue or EmergencyAlert in same transaction
+
+  (PENDING, DISPATCHED, or IN_PROGRESS may transition to CANCELLED to abort dispatch)
+```
+
+- **Enforced Forward Transitions**: Invalid backward mutations (e.g. `COMPLETED -> PENDING`, `COMPLETED -> IN_PROGRESS`, `CANCELLED -> IN_PROGRESS`) are strictly rejected.
+- **Atomic ID Generation**: Work order IDs (`WO-0001`, `WO-0002`, ...) are allocated atomically using PostgreSQL sequence `work_order_id_seq`, eliminating race conditions across concurrent dispatchers.
+- **Source Domain & Order Type Compatibility**:
+  - `ROAD_REPAIR` &rarr; `issues`
+  - `FIELD_INSPECTION` &rarr; `issues`
+  - `EMERGENCY_RESPONSE` &rarr; `emergency_alerts`
+  - `TRAFFIC_DIVERSION` &rarr; `traffic`
+  Incompatible pairings are rejected with HTTP 422.
+- **Duplicate Active Dispatch Prevention**: Multiple active work orders (`PENDING`, `DISPATCHED`, `IN_PROGRESS`) cannot exist simultaneously for the same `(source_domain, source_id)`. Once an existing dispatch reaches `COMPLETED` or `CANCELLED`, future legitimate operational cycles for that entity are permitted.
+
+### 2. Deterministic SLA Engine
+
+- **SLA Deadline**: Calculated deterministically on creation as `sla_deadline = created_at + target_sla_hours` (supported targets: 2h immediate, 4h urgent, 12h high, 24h standard, 48h routine, 72h planned).
+- **Runtime SLA Status**:
+  - `ON_TRACK`: More than 2 hours remaining before SLA deadline.
+  - `EXPIRING_SOON`: Less than 2 hours remaining before SLA deadline.
+  - `BREACHED`: Current time exceeds `sla_deadline` while the order remains active.
+  - Completed orders are permanently classified as resolved and never remain operationally marked as `BREACHED`.
+
+### 3. Server-Side Closed-Loop Auto-Resolution
+
+When an active work order transitions to `COMPLETED`:
+1. `completed_by` is extracted authoritatively from the authenticated JWT user identity.
+2. `resolution_notes` (minimum 5 characters) are mandatory.
+3. Optional `actual_cost` (non-negative numeric expenditure) is validated and recorded.
+4. If linked to `issues`, the associated `Issue.status` is updated to `"Resolved"`.
+5. If linked to `emergency_alerts`, the associated `EmergencyAlert.status` is updated to `"Resolved"`.
+6. Both the work order completion and linked source resolution are executed atomically within the same database transaction.
+
+> **Risk Integrity**: No separate or fabricated risk reduction formula was added. The existing Phase 10 `RiskService` remains the sole authoritative source of risk scoring, naturally reflecting resolved hazards in subsequent evaluation runs.
+
+### 4. Role-Based Access Control (RBAC)
+
+Mutations are enforced using the authenticated operator's JWT identity and project role:
+- `ADMIN`: Universal management across all work order types and lifecycles.
+- `ROAD_INSPECTOR`: Authorized exclusively for `ROAD_REPAIR` and `FIELD_INSPECTION` work orders.
+- `EMERGENCY_OPERATOR`: Authorized exclusively for `EMERGENCY_RESPONSE` work orders.
+- `TRAFFIC_OPERATOR`: Authorized exclusively for `TRAFFIC_DIVERSION` work orders.
+- Unauthorized cross-role operations return HTTP 403 Forbidden; unauthenticated requests return HTTP 401 Unauthorized.
+
+### 5. GIS & Notification Integrations
+
+- **GIS Operations Map Layer**: Active work orders (`DISPATCHED`, `IN_PROGRESS`) are exposed via `GET /api/map/work-orders` and plotted on the Leaflet operations map with custom crew markers and tactical inspection drawer data.
+- **Phase 13 In-System Notification Dispatch**: New dispatches trigger role-routed operational notifications (`WORK_ORDER_DISPATCHED`); completed orders trigger audit notifications (`WORK_ORDER_COMPLETED`) via `NotificationService`.
+- **Pre-populated Dispatch Flow**: Clicking "Dispatch Work Order" on acknowledged notification cards automatically pre-populates the Work Order creation form with the linked entity identity, domain, and incident title.
+
+### 6. API Reference
+
+- `GET /api/work-orders`: List work orders with filtering by `status`, `priority`, `order_type`, `area`, and pagination.
+- `GET /api/work-orders/summary`: High-level operational metrics (total, active, completed, SLA breached, total expenditure).
+- `GET /api/work-orders/{id}`: Single work order details with evaluated runtime SLA status.
+- `POST /api/work-orders`: Dispatch a new field work order (atomic sequence ID, role check, duplicate check).
+- `PATCH /api/work-orders/{id}/status`: Transition work order lifecycle status (enforces state machine and closed-loop resolution).
+- `GET /api/work-orders/by-source/{domain}/{source_id}`: Trace work orders linked to a specific operational entity.
+- `GET /api/map/work-orders`: Fetch active field work orders formatted as GeoJSON-compatible GIS features.
+
+### 7. Automated Verification Testing
+
+Run the dedicated Phase 14 test suite covering 18 end-to-end verification tests:
+```bash
+cd backend
+python test_phase14.py
+```
+
+Run the complete 127-test regression suite across all implemented phases:
+```bash
+python test_phase4.py; python test_phase6.py; python test_phase7.py; python test_phase8.py; python test_phase9.py; python test_phase10.py; python test_phase11.py; python test_phase12.py; python test_phase13.py; python test_phase14.py
+```
+
+---
+
 ## 📌 Important Limitations & Scope Boundary
 - **No Backend Image Storage**: Photo selection currently operates as a client-side session preview. Binary file uploads to cloud/disk storage will be introduced in future phases.
 - **Explainable Rules-Based Model**: Phase 10 deliberately uses a transparent mathematical scoring model rather than black-box ML to guarantee zero hallucinated predictions on small datasets.
-- **Guarded Polling**: Telemetry, broadcasts, violations, intelligence analytics, risk assessments, GIS map layers, and operational notifications auto-refresh every 30 seconds via active-request guards when viewing their respective tabs.
+- **Guarded Polling**: Telemetry, broadcasts, violations, intelligence analytics, risk assessments, GIS map layers, operational notifications, and work orders auto-refresh every 30 seconds via active-request guards when viewing their respective tabs.
 - **Honest Spatial Coordinates**: Features without live onboard GPS use deterministic municipal reference coordinates tagged explicitly with their provenance source.
 - **In-System Notifications Only**: Phase 13 notifications operate strictly within the municipal control center interface and PostgreSQL database without third-party external SMS or push messaging integrations.
-- **Sequence Concurrency Model**: Atomic ID generation depends on PostgreSQL `notification_id_seq`. In non-sequence environments (such as pure in-memory SQLite mocks), ID generation falls back to max-ID table scans which may experience race conditions under high concurrent insertion volumes.
+- **Sequence Concurrency Model**: Atomic ID generation depends on PostgreSQL `work_order_id_seq` and `notification_id_seq`. In non-sequence environments (such as pure in-memory SQLite mocks), ID generation falls back to max-ID table scans which may experience race conditions under high concurrent insertion volumes.
+- **Field Telemetry & Costs**: Remediation expenditure and resolution notes are entered manually by authorized operators upon verification rather than via automated third-party accounting or ERP integrations.
 
 ---
 
@@ -685,4 +796,4 @@ python test_phase4.py; python test_phase6.py; python test_phase7.py; python test
 
 ## Status
 
-🚧 Under Development — Phase 13 Completed
+🚧 Under Development — Phase 14 Completed

@@ -69,6 +69,30 @@ def ensure_notification_schema():
     except Exception as e:
         print(f"Notification schema verification check: {e}")
 
+def ensure_work_order_schema():
+    """
+    Idempotently verifies and provisions the work_order_id_seq sequence and
+    performance indexes for the work_orders table in PostgreSQL.
+    Synchronizes sequence value with max existing WO-XXXX identifier.
+    """
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("CREATE SEQUENCE IF NOT EXISTS work_order_id_seq START WITH 1;"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_work_orders_status ON work_orders (status);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_work_orders_assigned_role ON work_orders (assigned_role);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_work_orders_source_id ON work_orders (source_id);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_work_orders_area ON work_orders (area);"))
+            max_id = conn.execute(text(
+                "SELECT COALESCE(MAX(CAST(SUBSTRING(id FROM 4) AS INTEGER)), 0) "
+                "FROM work_orders WHERE id ~ '^WO-[0-9]+$'"
+            )).scalar()
+            if max_id and max_id > 0:
+                conn.execute(text(f"SELECT setval('work_order_id_seq', {max_id}, true);"))
+            conn.commit()
+    except Exception as e:
+        print(f"Work order schema verification check: {e}")
+
+
 
 def get_db():
     """

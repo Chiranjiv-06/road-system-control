@@ -7,6 +7,7 @@ import models.emergency_alert  # Ensure Base knows about 'emergency_alerts' tabl
 import models.traffic_violation  # Ensure Base knows about 'traffic_violations' table
 import models.user  # Ensure Base knows about 'users' table
 import models.notification  # Ensure Base knows about 'notifications' table
+import models.work_order  # Ensure Base knows about 'work_orders' table
 from routes.issues import router as issues_router
 from routes.traffic import router as traffic_router
 from routes.emergency_alerts import router as emergency_alerts_router
@@ -16,7 +17,8 @@ from routes.risk import router as risk_router
 from routes.auth import router as auth_router
 from routes.map import router as map_router
 from routes.notifications import router as notifications_router
-from database import SessionLocal, ensure_spatial_columns, ensure_notification_schema
+from routes.work_orders import router as work_orders_router
+from database import SessionLocal, ensure_spatial_columns, ensure_notification_schema, ensure_work_order_schema
 from services.auth_service import AuthService
 
 # Automatically create tables in PostgreSQL on application startup
@@ -27,6 +29,9 @@ ensure_spatial_columns()
 
 # Ensure notification schema and atomic sequence exist (Phase 13)
 ensure_notification_schema()
+
+# Ensure work orders schema and atomic sequence exist (Phase 14)
+ensure_work_order_schema()
 
 # Auto-provision baseline operators if users table is uninitialized
 try:
@@ -74,6 +79,7 @@ app.include_router(risk_router)
 app.include_router(auth_router)
 app.include_router(map_router)
 app.include_router(notifications_router)
+app.include_router(work_orders_router)
 
 @app.get(
     "/api/health",
