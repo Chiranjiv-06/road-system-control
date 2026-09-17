@@ -777,12 +777,79 @@ python test_phase4.py; python test_phase6.py; python test_phase7.py; python test
 
 ---
 
+## 🛠️ Phase 16: Operational Work Order Management UI
+
+### 1. Objective
+Provide a unified, production-grade operations interface for municipal operators to manage the entire lifecycle of field work orders backed by the Phase 14 backend engine, seamlessly integrating with Phase 12 GIS Leaflet mapping and Phase 13 operational notifications.
+
+### 2. Frontend Operational Capabilities
+- **Operational KPI Cards**: Real-time summary displaying Total Work Orders, Active Dispatches (`PENDING`, `DISPATCHED`, `IN_PROGRESS`), Successfully Completed remediation orders, and SLA Breached orders.
+- **Multi-Parameter Filter Toolbar**: Instant client- and server-side filtering by:
+  - **Lifecycle Status**: `ALL`, `PENDING`, `DISPATCHED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`
+  - **Priority**: `ALL`, `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`
+  - **Order Type**: `ALL`, `ROAD_REPAIR`, `FIELD_INSPECTION`, `EMERGENCY_RESPONSE`, `TRAFFIC_DIVERSION`
+  - **Operational Area**: City sectors (e.g., Downtown, North Sector, Industrial Area, West Sector, Highway 101)
+  - **SLA State**: Authoritative filter by `ALL`, `ON_TRACK`, `EXPIRING_SOON`, `BREACHED`
+- **Work Orders Data Table**: Tabular view with columns for Work Order ID, Order Type, Title, Source Entity, Area & Location, Assigned Crew, Priority badge, SLA Deadline with live countdown indicators, SLA Status badge, Lifecycle Status badge, Created At, and Action controls.
+- **Work Order Details Modal**: Comprehensive modal drawer displaying:
+  - Header with ID, title, and badges for status, priority, and SLA state
+  - SLA status callout with authoritative backend status, absolute deadline, and calculated time remaining/overdue
+  - Core Metadata Grid: Order Type, Source Domain & Source ID, Area, Location, Coordinate Provenance, Assigned Crew, Target SLA duration, and Created By
+  - Lifecycle Audit Timestamps: Created At, Dispatched At, Completed At
+  - Post-Remediation Verification Data: Resolution Notes and Actual Expenditure Cost (when completed)
+  - Direct contextual "Update Lifecycle Status" trigger button for authorized operators
+- **Role-Aware Work Order Creation Modal**:
+  - Automatically filters available Order Types based on the authenticated operator's role:
+    - `ROAD_INSPECTOR` &rarr; `ROAD_REPAIR`, `FIELD_INSPECTION` (linked to `issues`)
+    - `EMERGENCY_OPERATOR` &rarr; `EMERGENCY_RESPONSE` (linked to `emergency_alerts`)
+    - `TRAFFIC_OPERATOR` &rarr; `TRAFFIC_DIVERSION` (linked to `traffic`)
+    - `ADMIN` &rarr; All 4 order types
+  - Pre-populates source domain and source ID when launched from notification cards or tactical map popups.
+- **Lifecycle Transition Modal**:
+  - Enforces forward state machine transitions (`PENDING` &rarr; `DISPATCHED` &rarr; `IN_PROGRESS` &rarr; `COMPLETED`, with `CANCELLED` permitted from active states).
+  - Dynamically requires `resolution_notes` and optional `actual_cost` only when transitioning to `COMPLETED`.
+  - Cascades complete refresh across work orders table, KPI metrics, GIS map layers, and operational notifications.
+
+### 3. API Integration
+The frontend utilizes existing RESTful endpoints without architecture redesign or table mutations:
+- `GET /api/work-orders`: Paginated list retrieval with query parameters (`status`, `priority`, `order_type`, `area`).
+- `GET /api/work-orders/summary`: Live aggregate KPI metrics.
+- `GET /api/work-orders/{id}`: Single work order retrieval with fully calculated runtime SLA metadata.
+- `POST /api/work-orders`: Role-validated work order dispatch.
+- `PATCH /api/work-orders/{id}/status`: Lifecycle transitions with closed-loop auto-resolution of linked issues or emergency alerts.
+- `GET /api/map/work-orders`: GeoJSON-compatible field work orders layer with resolved coordinates.
+
+### 4. Role-Based Access Control (RBAC)
+- **Frontend Guidance, Backend Authority**: Frontend UI dynamically adapts controls and dropdowns according to authenticated JWT roles (`ADMIN`, `ROAD_INSPECTOR`, `EMERGENCY_OPERATOR`, `TRAFFIC_OPERATOR`), while backend endpoints strictly enforce HTTP 401/403 authorization checks.
+- Unauthorized actions display clear, human-readable alert notifications without page crashes.
+
+### 5. SLA Visibility & Countdown Indicators
+- SLA states (`ON_TRACK`, `EXPIRING_SOON`, `BREACHED`) are computed authoritatively by the backend.
+- The UI renders color-coded badges and human-readable countdowns (`"Xh Ym remaining"` or `"Breached by Xh Ym"`), adhering strictly to backend deadline timestamps without client-side formula duplication.
+
+### 6. Operations Map (GIS) Integration
+- Active work orders (`DISPATCHED`, `IN_PROGRESS`) are integrated into the Phase 12 Leaflet operations map via dedicated violet/purple pin markers (`pin-workorder`).
+- Filter toolbar includes an interactive "Work Orders" domain toggle pill.
+- Clicking any work order marker displays tactical popup telemetry with an "Inspect Work Order" button that transitions navigation directly into the Work Orders section and opens its detailed inspection modal.
+- All existing map layers (Emergency, Traffic, Road Issues, Violations, Risk) remain completely intact and functional.
+
+### 7. Notification Integration
+- Reuses Phase 13 operational escalation channels.
+- When an operator receives a work order notification (`WORK_ORDER_DISPATCHED`, `WORK_ORDER_COMPLETED`), clicking "View Entity" seamlessly navigates to the Work Orders view and opens the respective work order details modal.
+
+### 8. Automated Verification & Regression Testing
+- **Phase 16 Frontend & Integration Suite** (`test_phase16.py`): 12/12 passed (work-order listing, filtering, details schema, lifecycle transitions, invalid transition rejections, cross-role RBAC enforcement, role-based creation, incompatible pairing rejections, SLA calculations, GIS work-order layer, map overview integrity, notifications feed).
+- **Phase 14 Work Order Suite** (`test_phase14.py`): 18/18 passed.
+- **Full Regression Suite across Phases 4–16**: 139/139 passed across 11 test suites (`test_phase4`, `test_phase6`, `test_phase7`, `test_phase8`, `test_phase9`, `test_phase10`, `test_phase11`, `test_phase12`, `test_phase13`, `test_phase14`, `test_phase16`).
+
+---
+
 ## 📌 Important Limitations & Scope Boundary
 - **No Backend Image Storage**: Photo selection currently operates as a client-side session preview. Binary file uploads to cloud/disk storage will be introduced in future phases.
 - **Explainable Rules-Based Model**: Phase 10 deliberately uses a transparent mathematical scoring model rather than black-box ML to guarantee zero hallucinated predictions on small datasets.
 - **Guarded Polling**: Telemetry, broadcasts, violations, intelligence analytics, risk assessments, GIS map layers, operational notifications, and work orders auto-refresh every 30 seconds via active-request guards when viewing their respective tabs.
 - **Honest Spatial Coordinates**: Features without live onboard GPS use deterministic municipal reference coordinates tagged explicitly with their provenance source.
-- **In-System Notifications Only**: Phase 13 notifications operate strictly within the municipal control center interface and PostgreSQL database without third-party external SMS or push messaging integrations.
+- **In-System Operations Only**: Work orders and notifications operate strictly within the municipal control center interface and PostgreSQL database without third-party external SMS, WhatsApp, push messaging, or mobile crew GPS tracking integrations.
 - **Sequence Concurrency Model**: Atomic ID generation depends on PostgreSQL `work_order_id_seq` and `notification_id_seq`. In non-sequence environments (such as pure in-memory SQLite mocks), ID generation falls back to max-ID table scans which may experience race conditions under high concurrent insertion volumes.
 - **Field Telemetry & Costs**: Remediation expenditure and resolution notes are entered manually by authorized operators upon verification rather than via automated third-party accounting or ERP integrations.
 
@@ -796,4 +863,4 @@ python test_phase4.py; python test_phase6.py; python test_phase7.py; python test
 
 ## Status
 
-🚧 Under Development — Phase 14 Completed
+🚧 Under Development — Phase 16 Completed

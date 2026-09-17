@@ -3100,3 +3100,55 @@ textarea.form-control {
     font-weight: 600;
     border-radius: 4px;
 }
+
+/* Phase 16: Work Order Operational UI & Map Integrations */
+.domain-pill-btn.pill-workorder.active {
+    background-color: #ea580c;
+    border-color: #ea580c;
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(234, 88, 12, 0.25);
+}
+
+.pin-workorder {
+    background-color: #f97316;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 1px #ea580c;
+}
+
+.marker-workorder {
+    background: linear-gradient(135deg, #f97316, #c2410c);
+}
+
+.header-work_order {
+    background: linear-gradient(135deg, #ea580c, #9a3412);
+    color: #ffffff;
+}
+
+.wo-btn-view {
+    border-color: var(--border-color, #cbd5e1);
+    color: var(--text-primary, #1e293b);
+    background-color: #ffffff;
+}
+
+.wo-btn-view:hover {
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+.wo-details-headline-card {
+    border-left: 4px solid var(--primary-color, #2563eb);
+}
+
+.sla-pill.sla-countdown {
+    font-family: monospace;
+    font-size: 0.75rem;
+}
+
+.table-row-clickable {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.table-row-clickable:hover {
+    background-color: var(--bg-hover, #f8fafc);
+}
