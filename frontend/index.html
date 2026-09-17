@@ -1376,6 +1376,7 @@
                                 <button type="button" class="domain-pill-btn pill-issue" data-domain="issue">🟠 Road Hazards</button>
                                 <button type="button" class="domain-pill-btn pill-violation" data-domain="violation">🟣 Violations</button>
                                 <button type="button" class="domain-pill-btn pill-risk" data-domain="risk">🟡 Risk Intelligence</button>
+                                <button type="button" class="domain-pill-btn pill-workorder" data-domain="work_order">👷 Work Orders</button>
                             </div>
                         </div>
 
@@ -1430,6 +1431,7 @@
                                     <div class="legend-item"><span class="legend-pin pin-issue"></span> Road Hazard / Defect</div>
                                     <div class="legend-item"><span class="legend-pin pin-violation"></span> Radar Infringement</div>
                                     <div class="legend-item"><span class="legend-pin pin-risk"></span> Risk Sector Centroid</div>
+                                    <div class="legend-item"><span class="legend-pin pin-workorder"></span> Field Dispatch Crew</div>
                                 </div>
                             </div>
 
@@ -1511,9 +1513,12 @@
                                     </p>
                                 </div>
 
-                                <div class="drawer-actions">
+                                <div class="drawer-actions" style="display: flex; gap: 0.5rem;">
                                     <button class="btn btn-outline btn-sm" id="drawerCenterBtn" style="flex: 1;">
                                         Center in Map
+                                    </button>
+                                    <button class="btn btn-primary btn-sm" id="drawerInspectWoBtn" style="display: none; flex: 1;">
+                                        View Work Order &rarr;
                                     </button>
                                 </div>
                             </div>
@@ -1829,6 +1834,12 @@
                                     <option value="EMERGENCY_RESPONSE">Emergency Response</option>
                                     <option value="TRAFFIC_DIVERSION">Traffic Diversion</option>
                                 </select>
+                                <select id="woSlaFilter" class="form-control form-control-sm" style="width: auto;">
+                                    <option value="">All SLA States</option>
+                                    <option value="ON_TRACK">On Track</option>
+                                    <option value="EXPIRING_SOON">Expiring Soon</option>
+                                    <option value="BREACHED">SLA Breached</option>
+                                </select>
                                 <input type="text" id="woAreaSearch" class="form-control form-control-sm" placeholder="Search area/location..." style="width: 180px;">
                                 <button type="button" class="btn btn-outline btn-sm" id="resetWoFiltersBtn">Reset</button>
                             </div>
@@ -1842,16 +1853,18 @@
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Order ID</th>
+                                        <th>Work Order ID</th>
                                         <th>Order Type</th>
-                                        <th>Title & Scope</th>
-                                        <th>Source Entity</th>
+                                        <th>Title</th>
+                                        <th>Source</th>
                                         <th>Area & Location</th>
                                         <th>Assigned Crew</th>
                                         <th>Priority</th>
+                                        <th>SLA Deadline</th>
                                         <th>SLA Status</th>
                                         <th>Status</th>
-                                        <th class="text-right">Action</th>
+                                        <th>Created At</th>
+                                        <th class="text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="workOrdersTableBody">
@@ -2416,6 +2429,133 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- WORK ORDER DETAILS MODAL (Phase 16) -->
+    <div class="modal-backdrop" id="workOrderDetailsModal" role="dialog" aria-modal="true" aria-labelledby="woDetailsModalTitle" style="display: none;">
+        <div class="modal-card" style="max-width: 680px;">
+            <div class="modal-header">
+                <div class="modal-header-info">
+                    <span class="badge badge-info" id="woDetailIdBadge">WO-0000</span>
+                    <span class="badge badge-neutral" id="woDetailStatusBadge">PENDING</span>
+                    <h3 class="modal-title" id="woDetailsModalTitle">Work Order Details</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="closeWoDetailsModalBtn" aria-label="Close details">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+                <div class="auth-alert-banner" id="woDetailErrorBanner" style="display: none;"></div>
+
+                <div class="wo-details-headline-card" style="padding: 0.85rem; background: var(--bg-card-alt, #f8fafc); border-radius: 6px; border-left: 4px solid var(--primary-color, #2563eb); margin-bottom: 1rem;">
+                    <h4 id="woDetailTitle" style="font-size: 1.05rem; font-weight: 700; margin: 0 0 0.35rem 0; color: var(--text-primary);"></h4>
+                    <p id="woDetailDescription" style="font-size: 0.84rem; color: var(--text-secondary); margin: 0; line-height: 1.45; white-space: pre-line;"></p>
+                </div>
+
+                <!-- SLA & TELEMETRY PANEL -->
+                <div class="wo-sla-banner" id="woDetailSlaBanner" style="margin-bottom: 1rem; padding: 0.75rem 1rem; background: #fafafa; border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                        <div>
+                            <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--text-muted); display: block;">SLA State:</span>
+                            <div id="woDetailSlaStatus" style="margin-top: 0.2rem;"></div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--text-muted); display: block;">SLA Countdown:</span>
+                            <div id="woDetailSlaCountdown" style="font-size: 0.88rem; font-weight: 700; margin-top: 0.2rem;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2-COLUMN METADATA GRID -->
+                <div class="wo-meta-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
+                    <div class="wo-meta-item">
+                        <span class="info-label" style="font-size: 0.75rem; color: var(--text-muted); display: block;">Order Type:</span>
+                        <span class="info-value" id="woDetailOrderType" style="font-size: 0.85rem; font-weight: 600;">-</span>
+                    </div>
+                    <div class="wo-meta-item">
+                        <span class="info-label" style="font-size: 0.75rem; color: var(--text-muted); display: block;">Assigned Role:</span>
+                        <span class="info-value" id="woDetailAssignedRole" style="font-size: 0.85rem; font-weight: 600;">-</span>
+                    </div>
+                    <div class="wo-meta-item">
+                        <span class="info-label" style="font-size: 0.75rem; color: var(--text-muted); display: block;">Assigned Field Crew:</span>
+                        <span class="info-value" id="woDetailCrew" style="font-size: 0.85rem; font-weight: 600;">-</span>
+                    </div>
+                    <div class="wo-meta-item">
+                        <span class="info-label" style="font-size: 0.75rem; color: var(--text-muted); display: block;">Priority:</span>
+                        <span class="info-value" id="woDetailPriority" style="font-size: 0.85rem;">-</span>
+                    </div>
+                    <div class="wo-meta-item">
+                        <span class="info-label" style="font-size: 0.75rem; color: var(--text-muted); display: block;">Source Entity:</span>
+                        <span class="info-value" id="woDetailSource" style="font-size: 0.85rem;">-</span>
+                    </div>
+                    <div class="wo-meta-item">
+                        <span class="info-label" style="font-size: 0.75rem; color: var(--text-muted); display: block;">Municipal Sector / Area:</span>
+                        <span class="info-value" id="woDetailArea" style="font-size: 0.85rem; font-weight: 500;">-</span>
+                    </div>
+                    <div class="wo-meta-item">
+                        <span class="info-label" style="font-size: 0.75rem; color: var(--text-muted); display: block;">Location / Street:</span>
+                        <span class="info-value" id="woDetailLocation" style="font-size: 0.85rem; font-weight: 500;">-</span>
+                    </div>
+                    <div class="wo-meta-item">
+                        <span class="info-label" style="font-size: 0.75rem; color: var(--text-muted); display: block;">Target SLA Window:</span>
+                        <span class="info-value" id="woDetailTargetSla" style="font-size: 0.85rem;">-</span>
+                    </div>
+                    <div class="wo-meta-item">
+                        <span class="info-label" style="font-size: 0.75rem; color: var(--text-muted); display: block;">SLA Deadline:</span>
+                        <span class="info-value" id="woDetailSlaDeadline" style="font-size: 0.85rem; font-weight: 500;">-</span>
+                    </div>
+                    <div class="wo-meta-item">
+                        <span class="info-label" style="font-size: 0.75rem; color: var(--text-muted); display: block;">Coordinates Provenance:</span>
+                        <span class="info-value" id="woDetailCoordSource" style="font-size: 0.85rem;">-</span>
+                    </div>
+                    <div class="wo-meta-item" style="grid-column: 1 / -1;">
+                        <span class="info-label" style="font-size: 0.75rem; color: var(--text-muted); display: block;">GIS Latitude & Longitude:</span>
+                        <span class="info-value" id="woDetailCoords" style="font-size: 0.85rem; font-family: monospace;">-</span>
+                    </div>
+                </div>
+
+                <!-- AUDIT TRAIL & RESOLUTION SECTION -->
+                <div class="wo-audit-section" style="padding: 0.85rem; background: var(--bg-card-alt, #f8fafc); border-radius: 6px; border: 1px solid var(--border-color, #e2e8f0);">
+                    <h5 style="margin: 0 0 0.6rem 0; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted);">Audit Trail & Lifecycle Timestamps</h5>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; font-size: 0.8rem;">
+                        <div>
+                            <span class="text-muted text-xs" style="display: block;">Created By:</span>
+                            <div id="woDetailCreatedBy" style="font-weight: 500;">-</div>
+                        </div>
+                        <div>
+                            <span class="text-muted text-xs" style="display: block;">Created At:</span>
+                            <div id="woDetailCreatedAt" style="font-weight: 500;">-</div>
+                        </div>
+                        <div>
+                            <span class="text-muted text-xs" style="display: block;">Dispatched At:</span>
+                            <div id="woDetailDispatchedAt" style="font-weight: 500;">-</div>
+                        </div>
+                        <div>
+                            <span class="text-muted text-xs" style="display: block;">Completed At:</span>
+                            <div id="woDetailCompletedAt" style="font-weight: 500;">-</div>
+                        </div>
+                        <div>
+                            <span class="text-muted text-xs" style="display: block;">Completed By:</span>
+                            <div id="woDetailCompletedBy" style="font-weight: 500;">-</div>
+                        </div>
+                        <div>
+                            <span class="text-muted text-xs" style="display: block;">Actual Expenditure:</span>
+                            <div id="woDetailActualCost" style="font-weight: 600; color: var(--primary-color, #2563eb);">-</div>
+                        </div>
+                    </div>
+
+                    <div id="woDetailResolutionBox" style="margin-top: 0.75rem; padding-top: 0.6rem; border-top: 1px dashed var(--border-color, #cbd5e1); display: none;">
+                        <span class="text-muted text-xs" style="font-weight: 600;">Resolution & Remediation Report:</span>
+                        <p id="woDetailResolutionNotes" style="margin: 0.3rem 0 0 0; font-size: 0.83rem; line-height: 1.45; color: var(--text-primary);"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between;">
+                <button type="button" class="btn btn-outline" id="closeWoDetailsModalFooterBtn">Close</button>
+                <button type="button" class="btn btn-primary" id="woDetailUpdateStatusBtn">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Update Lifecycle Status
+                </button>
+            </div>
         </div>
     </div>
 

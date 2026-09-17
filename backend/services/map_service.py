@@ -429,10 +429,12 @@ class MapService:
 
         for wo in orders:
             lat, lon, src = cls.resolve_coordinates(
-                explicit_lat=wo.latitude,
-                explicit_lon=wo.longitude,
-                location=wo.location,
-                area=wo.area
+                getattr(wo, "latitude", None),
+                getattr(wo, "longitude", None),
+                wo.area,
+                wo.location,
+                "work_order",
+                wo.id,
             )
             features.append(
                 MapFeatureRecord(

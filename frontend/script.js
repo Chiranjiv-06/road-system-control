@@ -379,6 +379,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateWoCostGroup = document.getElementById('updateWoCostGroup');
     const updateWoIdHidden = document.getElementById('updateWoIdHidden');
 
+    // Phase 16: Work Order Operational UI Elements
+    const woSlaFilter = document.getElementById('woSlaFilter');
+    const workOrderDetailsModal = document.getElementById('workOrderDetailsModal');
+    const closeWoDetailsModalBtn = document.getElementById('closeWoDetailsModalBtn');
+    const closeWoDetailsModalFooterBtn = document.getElementById('closeWoDetailsModalFooterBtn');
+    const woDetailIdBadge = document.getElementById('woDetailIdBadge');
+    const woDetailStatusBadge = document.getElementById('woDetailStatusBadge');
+    const woDetailErrorBanner = document.getElementById('woDetailErrorBanner');
+    const woDetailTitle = document.getElementById('woDetailTitle');
+    const woDetailDescription = document.getElementById('woDetailDescription');
+    const woDetailSlaBanner = document.getElementById('woDetailSlaBanner');
+    const woDetailSlaStatus = document.getElementById('woDetailSlaStatus');
+    const woDetailSlaCountdown = document.getElementById('woDetailSlaCountdown');
+    const woDetailOrderType = document.getElementById('woDetailOrderType');
+    const woDetailAssignedRole = document.getElementById('woDetailAssignedRole');
+    const woDetailCrew = document.getElementById('woDetailCrew');
+    const woDetailPriority = document.getElementById('woDetailPriority');
+    const woDetailSource = document.getElementById('woDetailSource');
+    const woDetailArea = document.getElementById('woDetailArea');
+    const woDetailLocation = document.getElementById('woDetailLocation');
+    const woDetailTargetSla = document.getElementById('woDetailTargetSla');
+    const woDetailSlaDeadline = document.getElementById('woDetailSlaDeadline');
+    const woDetailCoordSource = document.getElementById('woDetailCoordSource');
+    const woDetailCoords = document.getElementById('woDetailCoords');
+    const woDetailCreatedBy = document.getElementById('woDetailCreatedBy');
+    const woDetailCreatedAt = document.getElementById('woDetailCreatedAt');
+    const woDetailDispatchedAt = document.getElementById('woDetailDispatchedAt');
+    const woDetailCompletedAt = document.getElementById('woDetailCompletedAt');
+    const woDetailCompletedBy = document.getElementById('woDetailCompletedBy');
+    const woDetailActualCost = document.getElementById('woDetailActualCost');
+    const woDetailResolutionBox = document.getElementById('woDetailResolutionBox');
+    const woDetailResolutionNotes = document.getElementById('woDetailResolutionNotes');
+    const woDetailUpdateStatusBtn = document.getElementById('woDetailUpdateStatusBtn');
+    const drawerInspectWoBtn = document.getElementById('drawerInspectWoBtn');
+
     // In-memory holder for selected image in current form session
     let currentImageSessionDataUrl = null;
 
@@ -2968,6 +3003,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sourceLabel = feature.coordinate_source === 'exact_gps'
             ? 'Live GPS'
             : (feature.coordinate_source === 'area_centroid' ? 'Area Centroid' : 'Configured Reference');
+        const isWo = feature.domain === 'work_order';
 
         return `
             <div class="map-popup-card">
@@ -2983,6 +3019,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span>📍 ${sourceLabel}</span>
                         <span>${escapeHtml(feature.id)}</span>
                     </div>
+                    ${isWo ? `
+                        <div style="margin-top: 0.5rem; text-align: right;">
+                            <button type="button" class="btn btn-primary btn-xs map-popup-wo-btn" data-wo-id="${escapeHtml(feature.id)}">
+                                Inspect Work Order &rarr;
+                            </button>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -2992,12 +3035,14 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedMapFeature = feature;
         if (!mapDrawerSelectedState || !mapDrawerEmptyState) return;
 
+        const meta = feature.metadata || {};
+
         mapDrawerEmptyState.style.display = 'none';
         mapDrawerSelectedState.style.display = 'flex';
 
         if (drawerDomainBadge) {
             drawerDomainBadge.textContent = (feature.domain || '').toUpperCase();
-            drawerDomainBadge.className = `badge ${feature.domain === 'emergency' ? 'badge-danger' : (feature.domain === 'traffic' ? 'badge-info' : (feature.domain === 'violation' ? 'badge-purple' : 'badge-warning'))}`;
+            drawerDomainBadge.className = `badge ${feature.domain === 'emergency' ? 'badge-danger' : (feature.domain === 'traffic' ? 'badge-info' : (feature.domain === 'violation' ? 'badge-purple' : (feature.domain === 'work_order' ? 'badge-warning' : 'badge-warning')))}`;
         }
 
         const sev = feature.severity || feature.risk_level || 'Normal';
@@ -3037,8 +3082,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 drawerMetricTitle.textContent = 'AI Risk Intelligence Score';
                 drawerMetricVal.textContent = feature.metric_label || 'Evaluated';
             } else if (feature.domain === 'work_order') {
-                drawerMetricTitle.textContent = 'Crew & SLA Target';
-                drawerMetricVal.textContent = `${meta.assigned_crew || 'Crew'} (${meta.sla_status || 'ON_TRACK'})`;
+                drawerMetricTitle.textContent = 'Crew & Target SLA';
+                drawerMetricVal.textContent = `${meta.assigned_crew || 'Crew'} (${feature.metric_label || 'Active'})`;
             } else {
                 drawerMetricTitle.textContent = 'Operational Metric';
                 drawerMetricVal.textContent = feature.metric_label || 'Incident Active';
@@ -3046,7 +3091,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (drawerTacticalText) {
-            const meta = feature.metadata || {};
             if (meta.recommended_action) {
                 drawerTacticalText.textContent = meta.recommended_action;
             } else if (feature.domain === 'emergency') {
@@ -3058,9 +3102,19 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (feature.domain === 'violation') {
                 drawerTacticalText.textContent = `Automated radar logged ${meta.violation_type || 'infringement'}. Proceed with notice adjudication.`;
             } else if (feature.domain === 'work_order') {
-                drawerTacticalText.textContent = `Field crew "${meta.assigned_crew || 'Unit'}" actively mobilized. Priority: ${feature.severity}. SLA status: ${meta.sla_status || 'ON_TRACK'}.`;
+                drawerTacticalText.textContent = `Field crew "${meta.assigned_crew || 'Crew'}" deployed for ${meta.order_type || 'task'}. Priority: ${feature.severity}. Target SLA: ${meta.target_sla_hours || 24} hours.`;
             } else {
                 drawerTacticalText.textContent = 'Verify road hazard severity during municipal field maintenance shift.';
+            }
+        }
+
+        if (drawerInspectWoBtn) {
+            if (feature.domain === 'work_order') {
+                drawerInspectWoBtn.style.display = 'inline-flex';
+                drawerInspectWoBtn.onclick = () => openWorkOrderDetailsModal(feature.id);
+            } else {
+                drawerInspectWoBtn.style.display = 'none';
+                drawerInspectWoBtn.onclick = null;
             }
         }
     }
@@ -3107,7 +3161,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             marker.bindPopup(buildPopupHtml(feature));
-            marker.on('click', () => selectMapFeature(feature));
+            marker.on('click', () => {
+                selectMapFeature(feature);
+                if (feature.domain === 'work_order') {
+                    openWorkOrderDetailsModal(feature.id);
+                }
+            });
             marker.addTo(layerGroup);
         };
 
@@ -3171,7 +3230,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data.violations.forEach(f => addFeatureMarker(f, mapLayers.violation));
         }
 
-        // 6. Render Active Field Work Orders (Phase 14)
+        // 6. Render Active Field Work Orders (Phase 14 & 16)
         if (data.work_orders && (activeMapDomain === 'all' || activeMapDomain === 'work_order')) {
             data.work_orders.forEach(f => addFeatureMarker(f, mapLayers.workOrder));
         }
@@ -3191,7 +3250,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mapErrorOverlay) mapErrorOverlay.style.display = 'none';
 
         const params = new URLSearchParams();
-        if (activeMapDomain && activeMapDomain !== 'all') {
+        if (activeMapDomain && activeMapDomain !== 'all' && activeMapDomain !== 'work_order') {
             params.append('data_type', activeMapDomain);
         }
         if (mapAreaFilter && mapAreaFilter.value) {
@@ -3204,27 +3263,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const qs = params.toString() ? `?${params.toString()}` : '';
 
         try {
-            const res = await fetch(`${API_BASE_URL}/map/overview${qs}`, {
-                headers: getAuthHeaders()
-            });
+            let data = { summary: {}, issues: [], traffic: [], emergencies: [], violations: [], risk: [], work_orders: [] };
 
-            if (!res.ok) {
-                throw new Error(`Map overview returned HTTP ${res.status}`);
+            if (activeMapDomain !== 'work_order') {
+                const res = await fetch(`${API_BASE_URL}/map/overview${qs}`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Map overview returned HTTP ${res.status}`);
+                }
+
+                data = await res.json();
             }
 
-            const data = await res.json();
-
-            // Fetch active work orders layer
+            // Fetch active work orders layer (Phase 16)
             try {
-                const woRes = await fetch(`${API_BASE_URL}/map/work-orders`, {
+                const woParams = new URLSearchParams();
+                if (mapAreaFilter && mapAreaFilter.value) {
+                    woParams.append('area', mapAreaFilter.value);
+                }
+                const woQs = woParams.toString() ? `?${woParams.toString()}` : '';
+                const woRes = await fetch(`${API_BASE_URL}/map/work-orders${woQs}`, {
                     headers: getAuthHeaders()
                 });
                 if (woRes.ok) {
                     const woJson = await woRes.json();
-                    data.work_orders = woJson.features || [];
+                    data.work_orders = Array.isArray(woJson) ? woJson : (woJson.features || []);
                 }
             } catch (woErr) {
-                // Non-blocking spatial layer
+                console.warn("Could not fetch active work orders for map:", woErr);
             }
 
             renderMapData(data);
@@ -3687,8 +3755,20 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'risk':
                 switchSection('risk');
                 break;
+            case 'work_order':
+            case 'work_orders':
+                switchSection('work-orders');
+                if (sourceId) {
+                    openWorkOrderDetailsModal(sourceId);
+                }
+                break;
             default:
-                switchSection('dashboard');
+                if (sourceId && sourceId.startsWith('WO-')) {
+                    switchSection('work-orders');
+                    openWorkOrderDetailsModal(sourceId);
+                } else {
+                    switchSection('dashboard');
+                }
         }
     }
 
@@ -3803,6 +3883,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wo.status === 'COMPLETED') {
             return '<span class="sla-pill sla-ontrack"><span class="sla-dot"></span> Resolved</span>';
         }
+        if (wo.status === 'CANCELLED') {
+            return '<span class="sla-pill" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;"><span class="sla-dot" style="background:#94a3b8;"></span> Cancelled</span>';
+        }
         if (slaStatus === 'BREACHED') {
             return '<span class="sla-pill sla-breached"><span class="sla-dot"></span> BREACHED</span>';
         }
@@ -3810,6 +3893,59 @@ document.addEventListener('DOMContentLoaded', () => {
             return '<span class="sla-pill sla-expiring"><span class="sla-dot"></span> Expiring Soon</span>';
         }
         return '<span class="sla-pill sla-ontrack"><span class="sla-dot"></span> On Track</span>';
+    }
+
+    function formatWoTimestamp(dateStr) {
+        if (!dateStr) return '-';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return String(dateStr);
+        return `${d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}, ${d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    function calculateRemainingTime(deadlineStr) {
+        if (!deadlineStr) return '-';
+        const deadline = new Date(deadlineStr);
+        const now = new Date();
+        const diffMs = deadline.getTime() - now.getTime();
+
+        if (isNaN(diffMs)) return '-';
+        if (diffMs <= 0) {
+            const overdueMins = Math.abs(Math.floor(diffMs / (1000 * 60)));
+            const overdueHours = Math.floor(overdueMins / 60);
+            const remMins = overdueMins % 60;
+            return overdueHours > 0 ? `${overdueHours}h ${remMins}m Overdue` : `${overdueMins}m Overdue`;
+        }
+
+        const totalMins = Math.floor(diffMs / (1000 * 60));
+        const hours = Math.floor(totalMins / 60);
+        const mins = totalMins % 60;
+        if (hours > 24) {
+            const days = Math.floor(hours / 24);
+            const remH = hours % 24;
+            return `${days}d ${remH}h remaining`;
+        }
+        return `${hours}h ${mins}m remaining`;
+    }
+
+    function formatSlaDeadline(dateStr, slaStatus, isTerminal) {
+        if (!dateStr) return '-';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return String(dateStr);
+
+        const formattedDate = `${d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}, ${d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+
+        if (isTerminal) {
+            return `<div>${formattedDate}</div><span class="text-muted text-xs">Lifecycle Closed</span>`;
+        }
+
+        const remainingText = calculateRemainingTime(dateStr);
+        if (slaStatus === 'BREACHED' || remainingText.includes('Overdue')) {
+            return `<div>${formattedDate}</div><span class="text-danger text-xs font-medium">${remainingText}</span>`;
+        }
+        if (slaStatus === 'EXPIRING_SOON') {
+            return `<div>${formattedDate}</div><span class="text-warning text-xs font-medium">${remainingText}</span>`;
+        }
+        return `<div>${formattedDate}</div><span class="text-muted text-xs">${remainingText}</span>`;
     }
 
     function getCompatibleSourceDomain(orderType) {
@@ -3833,7 +3969,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (showSpinner && workOrdersTableBody) {
             workOrdersTableBody.innerHTML = `
                 <tr>
-                    <td colspan="10" class="table-loading-cell">
+                    <td colspan="12" class="table-loading-cell">
                         <span class="spinner-inline"></span> Loading work orders from PostgreSQL...
                     </td>
                 </tr>
@@ -3855,7 +3991,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.status === 200) {
                 const data = await res.json();
                 workOrdersState = data.items || [];
-                renderWorkOrdersTable(workOrdersState);
+
+                // Client-side SLA state filter based on authoritative backend calculated sla_status
+                let filteredItems = workOrdersState;
+                if (woSlaFilter && woSlaFilter.value) {
+                    filteredItems = filteredItems.filter(item => item.sla_status === woSlaFilter.value);
+                }
+
+                renderWorkOrdersTable(filteredItems);
             } else if (res.status === 401) {
                 handleSessionExpired();
             } else {
@@ -3863,7 +4006,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (workOrdersTableBody) {
                     workOrdersTableBody.innerHTML = `
                         <tr>
-                            <td colspan="10" class="table-loading-cell text-danger">
+                            <td colspan="12" class="table-loading-cell text-danger">
                                 Failed to load work orders from backend (Status: ${res.status}).
                             </td>
                         </tr>
@@ -3875,7 +4018,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (workOrdersTableBody) {
                 workOrdersTableBody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="table-loading-cell text-danger">
+                        <td colspan="12" class="table-loading-cell text-danger">
                             Network error connecting to work orders service.
                         </td>
                     </tr>
@@ -3893,16 +4036,21 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (res.status === 200) {
                 const s = await res.json();
-                if (woKpiTotal) woKpiTotal.textContent = s.total_work_orders || 0;
-                if (woKpiActive) woKpiActive.textContent = s.active_work_orders || 0;
-                if (woKpiBreached) woKpiBreached.textContent = s.sla_breached_count || 0;
-                if (woKpiCompleted) woKpiCompleted.textContent = s.completed_work_orders || 0;
+                const total = s.total_orders ?? s.total_work_orders ?? 0;
+                const active = (s.pending_count || 0) + (s.dispatched_count || 0) + (s.in_progress_count || 0);
+                const breached = s.sla_breached_count ?? 0;
+                const completed = s.completed_count ?? s.completed_work_orders ?? 0;
+                const totalCost = s.total_cost ?? s.total_expenditure ?? 0;
+
+                if (woKpiTotal) woKpiTotal.textContent = total;
+                if (woKpiActive) woKpiActive.textContent = active;
+                if (woKpiBreached) woKpiBreached.textContent = breached;
+                if (woKpiCompleted) woKpiCompleted.textContent = completed;
                 if (woKpiCostSubtext) {
-                    const cost = Number(s.total_expenditure || 0).toLocaleString('en-IN');
-                    woKpiCostSubtext.textContent = `₹${cost} total remediation cost`;
+                    const costFormatted = Number(totalCost).toLocaleString('en-IN');
+                    woKpiCostSubtext.textContent = `₹${costFormatted} total expenditure`;
                 }
                 if (sidebarWorkOrdersBadge) {
-                    const active = s.active_work_orders || 0;
                     if (active > 0) {
                         sidebarWorkOrdersBadge.textContent = active > 99 ? '99+' : active;
                         sidebarWorkOrdersBadge.style.display = 'inline-block';
@@ -3925,7 +4073,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (items.length === 0) {
             workOrdersTableBody.innerHTML = `
                 <tr>
-                    <td colspan="10" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+                    <td colspan="12" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
                         <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
                         <strong>No Work Orders Found</strong>
                         <p style="margin: 0.25rem 0 0 0; font-size: 0.82rem;">Adjust filter parameters or create a new dispatch order.</p>
@@ -3939,12 +4087,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const isTerminal = wo.status === 'COMPLETED' || wo.status === 'CANCELLED';
             const readableType = (wo.order_type || '').replace(/_/g, ' ');
             return `
-                <tr>
+                <tr class="table-row-clickable" data-wo-id="${escapeHtml(wo.id)}">
                     <td><strong>${escapeHtml(wo.id)}</strong></td>
                     <td><span style="font-weight: 600; font-size: 0.78rem;">${escapeHtml(readableType)}</span></td>
                     <td>
                         <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(wo.title)}</div>
-                        <div class="text-muted text-xs" style="max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(wo.description)}">
+                        <div class="text-muted text-xs" style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(wo.description)}">
                             ${escapeHtml(wo.description)}
                         </div>
                     </td>
@@ -3965,26 +4113,228 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </td>
                     <td>${getWorkOrderPriorityBadge(wo.priority)}</td>
+                    <td>${formatSlaDeadline(wo.sla_deadline, wo.sla_status, isTerminal)}</td>
                     <td>${getWorkOrderSlaBadge(wo)}</td>
                     <td>${getWorkOrderStatusBadge(wo.status)}</td>
-                    <td class="text-right">
-                        ${!isTerminal ? `
-                            <button type="button" class="btn btn-outline btn-sm btn-wo-action wo-btn-update" data-id="${escapeHtml(wo.id)}">
-                                Update Status &rarr;
+                    <td><span class="text-muted text-xs">${formatWoTimestamp(wo.created_at)}</span></td>
+                    <td class="text-right" style="white-space: nowrap;">
+                        <div style="display: inline-flex; gap: 0.35rem; justify-content: flex-end; align-items: center;">
+                            <button type="button" class="btn btn-outline btn-sm btn-wo-action wo-btn-view" data-id="${escapeHtml(wo.id)}" title="Inspect work order details">
+                                Details
                             </button>
-                        ` : `
-                            <span class="text-muted text-xs" style="padding-right: 0.5rem;">Archived</span>
-                        `}
+                            ${!isTerminal ? `
+                                <button type="button" class="btn btn-primary btn-sm btn-wo-action wo-btn-update" data-id="${escapeHtml(wo.id)}" title="Transition lifecycle state">
+                                    Update
+                                </button>
+                            ` : `
+                                <span class="text-muted text-xs" style="padding-right: 0.3rem;">Closed</span>
+                            `}
+                        </div>
                     </td>
                 </tr>
             `;
         }).join('');
 
+        // Wire up Row and Button Click Listeners
+        workOrdersTableBody.querySelectorAll('tr').forEach(row => {
+            row.addEventListener('click', (e) => {
+                // If clicked an action button, do not trigger row selection
+                if (e.target.closest('.wo-btn-update') || e.target.closest('.wo-btn-view')) return;
+                const woId = row.dataset.woId;
+                if (woId) openWorkOrderDetailsModal(woId);
+            });
+        });
+
+        workOrdersTableBody.querySelectorAll('.wo-btn-view').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openWorkOrderDetailsModal(btn.dataset.id);
+            });
+        });
+
         workOrdersTableBody.querySelectorAll('.wo-btn-update').forEach(btn => {
-            btn.addEventListener('click', () => openUpdateWorkOrderModal(btn.dataset.id));
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openUpdateWorkOrderModal(btn.dataset.id);
+            });
         });
     }
 
+    // ==========================================================================
+    // WORK ORDER DETAILS MODAL (Phase 16 Operational Inspector)
+    // ==========================================================================
+    async function openWorkOrderDetailsModal(woId) {
+        if (!workOrderDetailsModal) return;
+        if (woDetailErrorBanner) {
+            woDetailErrorBanner.textContent = '';
+            woDetailErrorBanner.style.display = 'none';
+        }
+
+        // Show placeholder loading state
+        if (woDetailIdBadge) woDetailIdBadge.textContent = woId;
+        if (woDetailTitle) woDetailTitle.textContent = `Loading Work Order ${woId}...`;
+        if (woDetailDescription) woDetailDescription.textContent = 'Connecting to backend work-orders service...';
+        if (woDetailUpdateStatusBtn) woDetailUpdateStatusBtn.style.display = 'none';
+        workOrderDetailsModal.style.display = 'flex';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/work-orders/${encodeURIComponent(woId.trim())}`, {
+                headers: getAuthHeaders()
+            });
+
+            if (res.status === 200) {
+                const wo = await res.json();
+                populateWorkOrderDetails(wo);
+            } else if (res.status === 403) {
+                const err = await res.json().catch(() => ({}));
+                const msg = err.detail || `Access Forbidden: Your operator role is not authorized to view work order ${woId}.`;
+                if (woDetailErrorBanner) {
+                    woDetailErrorBanner.textContent = msg;
+                    woDetailErrorBanner.style.display = 'block';
+                }
+                if (woDetailTitle) woDetailTitle.textContent = 'Access Restricted';
+                if (woDetailDescription) woDetailDescription.textContent = msg;
+                if (woDetailStatusBadge) woDetailStatusBadge.textContent = 'RESTRICTED';
+                if (woDetailUpdateStatusBtn) woDetailUpdateStatusBtn.style.display = 'none';
+            } else if (res.status === 404) {
+                showToast(`Work order '${woId}' not found.`, 'error');
+                closeWorkOrderDetailsModal();
+            } else if (res.status === 401) {
+                handleSessionExpired();
+                closeWorkOrderDetailsModal();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showToast(err.detail || `Error loading work order (${res.status})`, 'error');
+                closeWorkOrderDetailsModal();
+            }
+        } catch (err) {
+            console.error("Failed to load work order details:", err);
+            showToast('Network error loading work order details.', 'error');
+            closeWorkOrderDetailsModal();
+        }
+    }
+
+    function populateWorkOrderDetails(wo) {
+        if (woDetailIdBadge) woDetailIdBadge.textContent = wo.id;
+        if (woDetailStatusBadge) {
+            woDetailStatusBadge.textContent = wo.status;
+            woDetailStatusBadge.className = `badge ${wo.status === 'COMPLETED' ? 'badge-completed' : (wo.status === 'CANCELLED' ? 'badge-cancelled' : (wo.status === 'IN_PROGRESS' ? 'badge-inprogress' : (wo.status === 'DISPATCHED' ? 'badge-dispatched' : 'badge-pending')))}`;
+        }
+        if (woDetailTitle) woDetailTitle.textContent = wo.title;
+        if (woDetailDescription) woDetailDescription.textContent = wo.description || 'No operational description provided.';
+
+        // Order Type & Assigned Crew
+        const readableType = (wo.order_type || '').replace(/_/g, ' ');
+        if (woDetailOrderType) woDetailOrderType.textContent = readableType;
+        if (woDetailAssignedRole) woDetailAssignedRole.textContent = wo.assigned_role || 'ADMIN';
+        if (woDetailCrew) woDetailCrew.textContent = wo.assigned_crew || 'Unassigned';
+        if (woDetailPriority) woDetailPriority.innerHTML = getWorkOrderPriorityBadge(wo.priority);
+
+        // Source Entity
+        if (woDetailSource) {
+            if (wo.source_id) {
+                woDetailSource.innerHTML = `
+                    <span class="wo-source-chip" style="cursor: pointer;" title="Navigate to source ${escapeHtml(wo.source_domain)}">
+                        🔗 ${escapeHtml(wo.source_id)} (${escapeHtml(wo.source_domain)})
+                    </span>
+                `;
+                const chip = woDetailSource.querySelector('.wo-source-chip');
+                if (chip) {
+                    chip.onclick = () => {
+                        closeWorkOrderDetailsModal();
+                        navigateToSource(wo.source_domain, wo.source_id);
+                    };
+                }
+            } else {
+                woDetailSource.innerHTML = '<span class="text-muted text-xs">Direct Operational Dispatch</span>';
+            }
+        }
+
+        // Location & Municipal Area
+        if (woDetailArea) woDetailArea.textContent = wo.area || '-';
+        if (woDetailLocation) woDetailLocation.textContent = wo.location || '-';
+
+        // SLA Information
+        const isTerminal = wo.status === 'COMPLETED' || wo.status === 'CANCELLED';
+        if (woDetailTargetSla) woDetailTargetSla.textContent = `${wo.target_sla_hours || 24} Hours`;
+        if (woDetailSlaDeadline) woDetailSlaDeadline.textContent = formatWoTimestamp(wo.sla_deadline);
+        if (woDetailSlaStatus) woDetailSlaStatus.innerHTML = getWorkOrderSlaBadge(wo);
+
+        if (woDetailSlaCountdown) {
+            if (isTerminal) {
+                woDetailSlaCountdown.innerHTML = '<span class="text-success">Work Order Closed</span>';
+            } else if (wo.sla_status === 'BREACHED') {
+                const rem = calculateRemainingTime(wo.sla_deadline);
+                woDetailSlaCountdown.innerHTML = `<span class="text-danger font-bold">⚠️ Breached (${rem})</span>`;
+            } else if (wo.sla_status === 'EXPIRING_SOON') {
+                const rem = calculateRemainingTime(wo.sla_deadline);
+                woDetailSlaCountdown.innerHTML = `<span class="text-warning font-bold">⏳ Expiring Soon (${rem})</span>`;
+            } else {
+                const rem = calculateRemainingTime(wo.sla_deadline);
+                woDetailSlaCountdown.innerHTML = `<span class="text-primary font-bold">⏱️ On Track (${rem})</span>`;
+            }
+        }
+
+        // Coordinates & Provenance
+        if (woDetailCoords) {
+            if (wo.latitude != null && wo.longitude != null) {
+                woDetailCoords.textContent = `${Number(wo.latitude).toFixed(4)}° N, ${Number(wo.longitude).toFixed(4)}° E`;
+            } else {
+                woDetailCoords.textContent = 'Derived from Sector Centroid Anchor';
+            }
+        }
+        if (woDetailCoordSource) {
+            woDetailCoordSource.textContent = (wo.latitude != null && wo.longitude != null)
+                ? 'Explicit Field Coordinates'
+                : 'Municipal Spatial Registry (Phase 12)';
+        }
+
+        // Audit Trail Timestamps
+        if (woDetailCreatedBy) woDetailCreatedBy.textContent = wo.created_by || 'System Operator';
+        if (woDetailCreatedAt) woDetailCreatedAt.textContent = formatWoTimestamp(wo.created_at);
+        if (woDetailDispatchedAt) woDetailDispatchedAt.textContent = wo.dispatched_at ? formatWoTimestamp(wo.dispatched_at) : 'Not dispatched yet';
+        if (woDetailCompletedAt) woDetailCompletedAt.textContent = wo.completed_at ? formatWoTimestamp(wo.completed_at) : (isTerminal ? 'Cancelled' : 'Pending completion');
+        if (woDetailCompletedBy) woDetailCompletedBy.textContent = wo.completed_by || '-';
+        if (woDetailActualCost) {
+            woDetailActualCost.textContent = wo.actual_cost != null ? `₹${Number(wo.actual_cost).toLocaleString('en-IN')}` : '₹0 (Pending completion)';
+        }
+
+        // Resolution Notes
+        if (woDetailResolutionBox && woDetailResolutionNotes) {
+            if (wo.resolution_notes) {
+                woDetailResolutionNotes.textContent = wo.resolution_notes;
+                woDetailResolutionBox.style.display = 'block';
+            } else {
+                woDetailResolutionBox.style.display = 'none';
+            }
+        }
+
+        // Update Status Action Button in Modal Footer
+        if (woDetailUpdateStatusBtn) {
+            if (isTerminal) {
+                woDetailUpdateStatusBtn.style.display = 'none';
+            } else {
+                woDetailUpdateStatusBtn.style.display = 'inline-flex';
+                woDetailUpdateStatusBtn.onclick = () => {
+                    closeWorkOrderDetailsModal();
+                    openUpdateWorkOrderModal(wo.id);
+                };
+            }
+        }
+    }
+
+    function closeWorkOrderDetailsModal() {
+        if (!workOrderDetailsModal) return;
+        workOrderDetailsModal.style.display = 'none';
+        if (woDetailErrorBanner) {
+            woDetailErrorBanner.textContent = '';
+            woDetailErrorBanner.style.display = 'none';
+        }
+    }
+
+    // ==========================================================================
+    // WORK ORDER CREATION (Phase 16 Role-Enforced Creation Modal)
+    // ==========================================================================
     function openCreateWorkOrderModal(prefill = {}) {
         if (!createWorkOrderModal) return;
         if (createWoErrorBanner) {
@@ -3993,14 +4343,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (createWorkOrderForm) createWorkOrderForm.reset();
 
-        if (prefill.orderType && woOrderTypeInput) {
-            woOrderTypeInput.value = prefill.orderType;
+        // Check authentication & RBAC
+        if (!authState.token || !authState.user) {
+            showToast('Operator authentication required to dispatch work orders.', 'warning');
+            openLoginModal();
+            return;
         }
-        if (prefill.sourceDomain && woSourceDomainHidden) {
-            woSourceDomainHidden.value = prefill.sourceDomain;
-        } else if (woOrderTypeInput && woSourceDomainHidden) {
+
+        const userRole = authState.user.role;
+
+        // Role-based allowed order types and descriptions
+        const roleOrderTypes = {
+            'ROAD_INSPECTOR': [
+                { value: 'ROAD_REPAIR', label: 'Road Repair (Issues)' },
+                { value: 'FIELD_INSPECTION', label: 'Field Inspection (Issues)' }
+            ],
+            'EMERGENCY_OPERATOR': [
+                { value: 'EMERGENCY_RESPONSE', label: 'Emergency Response (Alerts)' }
+            ],
+            'TRAFFIC_OPERATOR': [
+                { value: 'TRAFFIC_DIVERSION', label: 'Traffic Diversion (Traffic)' }
+            ],
+            'ADMIN': [
+                { value: 'ROAD_REPAIR', label: 'Road Repair (Issues)' },
+                { value: 'FIELD_INSPECTION', label: 'Field Inspection (Issues)' },
+                { value: 'EMERGENCY_RESPONSE', label: 'Emergency Response (Alerts)' },
+                { value: 'TRAFFIC_DIVERSION', label: 'Traffic Diversion (Traffic)' }
+            ]
+        };
+
+        const allowedOptions = roleOrderTypes[userRole] || [];
+
+        if (allowedOptions.length === 0) {
+            showToast(`Role '${userRole}' is not authorized to dispatch work orders.`, 'error');
+            return;
+        }
+
+        if (woOrderTypeInput) {
+            woOrderTypeInput.innerHTML = allowedOptions.map(opt =>
+                `<option value="${opt.value}">${opt.label}</option>`
+            ).join('');
+
+            if (prefill.orderType && allowedOptions.some(o => o.value === prefill.orderType)) {
+                woOrderTypeInput.value = prefill.orderType;
+            } else {
+                woOrderTypeInput.value = allowedOptions[0].value;
+            }
+        }
+
+        if (woSourceDomainHidden && woOrderTypeInput) {
             woSourceDomainHidden.value = getCompatibleSourceDomain(woOrderTypeInput.value);
         }
+
         if (prefill.sourceId && woSourceIdInput) {
             woSourceIdInput.value = prefill.sourceId;
         }
@@ -4077,14 +4471,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 closeCreateWorkOrderModal();
                 loadWorkOrders(true);
                 loadWorkOrdersSummary();
-            } else if (res.status === 400 || res.status === 409) {
+                loadMapData(false);
+                loadNotifications(false);
+                loadNotificationsSummary();
+            } else if (res.status === 400 || res.status === 409 || res.status === 422) {
                 const err = await res.json();
                 const msg = err.detail || 'Dispatch failed: Duplicate active order or invalid pairing.';
                 if (createWoErrorBanner) {
-                    createWoErrorBanner.textContent = msg;
+                    createWoErrorBanner.textContent = typeof msg === 'object' ? JSON.stringify(msg) : msg;
                     createWoErrorBanner.style.display = 'block';
                 }
-                showToast(msg, 'error');
+                showToast(typeof msg === 'string' ? msg : 'Creation validation error', 'error');
             } else if (res.status === 403) {
                 const err = await res.json();
                 const msg = err.detail || 'Forbidden: Insufficient role permissions for this order type.';
@@ -4106,14 +4503,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // ==========================================================================
+    // WORK ORDER STATUS LIFECYCLE UPDATE (Phase 16)
+    // ==========================================================================
     function openUpdateWorkOrderModal(woId) {
         if (!updateWorkOrderModal) return;
         const wo = workOrdersState.find(w => w.id === woId);
         if (!wo) {
-            showToast(`Work order ${woId} not found in state.`, 'error');
+            // If not found in state cache, fetch from backend
+            fetch(`${API_BASE_URL}/work-orders/${encodeURIComponent(woId.trim())}`, {
+                headers: getAuthHeaders()
+            }).then(r => r.json()).then(remoteWo => {
+                if (remoteWo && remoteWo.id) {
+                    populateUpdateWorkOrderForm(remoteWo);
+                }
+            }).catch(() => {
+                showToast(`Work order ${woId} not found.`, 'error');
+            });
             return;
         }
 
+        populateUpdateWorkOrderForm(wo);
+    }
+
+    function populateUpdateWorkOrderForm(wo) {
         if (updateWoIdHidden) updateWoIdHidden.value = wo.id;
         if (updateWoBadgeId) updateWoBadgeId.textContent = wo.id;
         if (updateWoTitleDisplay) updateWoTitleDisplay.textContent = wo.title;
@@ -4125,12 +4538,13 @@ document.addEventListener('DOMContentLoaded', () => {
             updateWoErrorBanner.style.display = 'none';
         }
 
-        // Populate valid target transitions according to lifecycle rules
+        // Populate valid target transitions according to strict lifecycle rules
         if (updateWoStatusSelect) {
             updateWoStatusSelect.innerHTML = '';
             if (wo.status === 'PENDING') {
                 updateWoStatusSelect.innerHTML = `
                     <option value="DISPATCHED" selected>DISPATCHED (Mobilize Crew to Site)</option>
+                    <option value="IN_PROGRESS">IN_PROGRESS (Crew on Site)</option>
                     <option value="CANCELLED">CANCELLED (Abort Order)</option>
                 `;
             } else if (wo.status === 'DISPATCHED') {
@@ -4197,7 +4611,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (status === 'COMPLETED' && (!notes || notes.length < 5)) {
             showToast('Resolution notes (min 5 chars) are required to complete a work order.', 'error');
             if (updateWoErrorBanner) {
-                updateWoErrorBanner.textContent = 'Resolution notes are required when marking an order as COMPLETED.';
+                updateWoErrorBanner.textContent = 'Resolution notes (min 5 characters) are required when marking an order as COMPLETED.';
                 updateWoErrorBanner.style.display = 'block';
             }
             return;
@@ -4229,22 +4643,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     : `Work Order ${woId} transitioned to ${status}.`;
                 showToast(msg, 'success');
                 closeUpdateWorkOrderModal();
+
+                // 1. Refresh the selected work order details if open
+                if (workOrderDetailsModal && workOrderDetailsModal.style.display !== 'none') {
+                    openWorkOrderDetailsModal(woId);
+                }
+
+                // 2. Refresh the work-order list
                 loadWorkOrders(false);
+
+                // 3. Refresh summary/KPI values
                 loadWorkOrdersSummary();
+
+                // 4. Refresh relevant map data
+                loadMapData(false);
+
+                // 5. Refresh notifications if applicable
+                loadNotifications(false);
+                loadNotificationsSummary();
+
+                // Closed-loop operational entity refresh
                 if (status === 'COMPLETED') {
                     loadIssues(false);
                     loadAlerts(false);
-                    loadNotifications(false);
-                    loadNotificationsSummary();
                 }
-            } else if (res.status === 400 || res.status === 409) {
+            } else if (res.status === 400 || res.status === 409 || res.status === 422) {
                 const err = await res.json();
                 const msg = err.detail || 'Invalid transition or completion validation failed.';
                 if (updateWoErrorBanner) {
-                    updateWoErrorBanner.textContent = msg;
+                    updateWoErrorBanner.textContent = typeof msg === 'object' ? JSON.stringify(msg) : msg;
                     updateWoErrorBanner.style.display = 'block';
                 }
-                showToast(msg, 'error');
+                showToast(typeof msg === 'string' ? msg : 'Validation error updating status', 'error');
             } else if (res.status === 403) {
                 const err = await res.json();
                 const msg = err.detail || 'Forbidden: Insufficient role permissions for this operation.';
@@ -4266,7 +4696,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Work Orders Filter and Modal Listeners (Phase 14)
+    // Work Orders Filter and Modal Listeners (Phase 16)
     if (woOrderTypeInput && woSourceDomainHidden) {
         woOrderTypeInput.addEventListener('change', () => {
             woSourceDomainHidden.value = getCompatibleSourceDomain(woOrderTypeInput.value);
@@ -4302,9 +4732,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (updateWorkOrderForm) updateWorkOrderForm.addEventListener('submit', handleUpdateWorkOrderSubmit);
 
+    // Details Modal Event Listeners
+    if (closeWoDetailsModalBtn) closeWoDetailsModalBtn.addEventListener('click', closeWorkOrderDetailsModal);
+    if (closeWoDetailsModalFooterBtn) closeWoDetailsModalFooterBtn.addEventListener('click', closeWorkOrderDetailsModal);
+    if (workOrderDetailsModal) {
+        workOrderDetailsModal.addEventListener('click', (e) => {
+            if (e.target === workOrderDetailsModal) closeWorkOrderDetailsModal();
+        });
+    }
+
+    // Work Order Filters Event Listeners
     if (woStatusFilter) woStatusFilter.addEventListener('change', () => loadWorkOrders(false));
     if (woPriorityFilter) woPriorityFilter.addEventListener('change', () => loadWorkOrders(false));
     if (woTypeFilter) woTypeFilter.addEventListener('change', () => loadWorkOrders(false));
+    if (woSlaFilter) woSlaFilter.addEventListener('change', () => loadWorkOrders(false));
     if (woAreaSearch) {
         let searchDebounce = null;
         woAreaSearch.addEventListener('input', () => {
@@ -4317,11 +4758,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (woStatusFilter) woStatusFilter.value = '';
             if (woPriorityFilter) woPriorityFilter.value = '';
             if (woTypeFilter) woTypeFilter.value = '';
+            if (woSlaFilter) woSlaFilter.value = '';
             if (woAreaSearch) woAreaSearch.value = '';
             showToast('Work order filters reset.', 'default');
             loadWorkOrders(false);
         });
     }
+
+    // Delegate map popup work order inspection button click
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.map-popup-wo-btn');
+        if (btn && btn.dataset.woId) {
+            openWorkOrderDetailsModal(btn.dataset.woId);
+        }
+    });
 
     // ==========================================================================
     // 6. ISSUE DETAILS MODAL
