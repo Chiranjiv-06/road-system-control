@@ -5,12 +5,12 @@ Provides consolidated spatial endpoints for live operations map visualization,
 multi-layer spatial filtering, and tactical risk overview.
 """
 
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from database import get_db
-from schemas.map import MapOverviewResponse
+from schemas.map import MapOverviewResponse, MapFeatureRecord
 from services.map_service import MapService
 
 router = APIRouter(prefix="/api/map", tags=["Operations Map"])
@@ -61,4 +61,23 @@ def get_map_overview(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate map operational overview: {str(e)}",
+        )
+
+
+@router.get(
+    "/work-orders",
+    response_model=List[MapFeatureRecord],
+    summary="Get active work orders as GIS map features",
+    description="Returns active field dispatches (DISPATCHED, IN_PROGRESS) formatted as spatial features with coordinate provenance."
+)
+def get_map_work_orders(
+    area: Optional[str] = Query(None, description="Filter features by city area"),
+    db: Session = Depends(get_db),
+):
+    try:
+        return MapService.get_active_work_orders_features(db=db, area=area)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve map work orders: {str(e)}",
         )

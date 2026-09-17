@@ -408,3 +408,57 @@ class MapService:
             violations=mapped_violations,
             risk=mapped_risk,
         )
+
+    @classmethod
+    def get_active_work_orders_features(
+        cls,
+        db: Session,
+        area: Optional[str] = None
+    ) -> List[MapFeatureRecord]:
+        """
+        Extracts active field work orders (DISPATCHED, IN_PROGRESS) as spatial map features
+        with coordinates resolved from explicit values or municipal reference registry.
+        """
+        from models.work_order import WorkOrder
+        query = db.query(WorkOrder).filter(WorkOrder.status.in_(["DISPATCHED", "IN_PROGRESS"]))
+        if area:
+            query = query.filter(WorkOrder.area.ilike(f"%{area.strip()}%"))
+
+        orders = query.all()
+        features: List[MapFeatureRecord] = []
+
+        for wo in orders:
+            lat, lon, src = cls.resolve_coordinates(
+                explicit_lat=wo.latitude,
+                explicit_lon=wo.longitude,
+                location=wo.location,
+                area=wo.area
+            )
+            features.append(
+                MapFeatureRecord(
+                    id=wo.id,
+                    domain="work_order",
+                    title=f"Field Dispatch: {wo.title}",
+                    location=wo.location,
+                    area=wo.area,
+                    latitude=lat,
+                    longitude=lon,
+                    coordinate_source=src,
+                    severity=wo.priority,
+                    status=wo.status,
+                    risk_level=wo.priority,
+                    metric_label=f"Crew: {wo.assigned_crew} (SLA: {wo.target_sla_hours}h)",
+                    timestamp=wo.created_at.isoformat() if wo.created_at else None,
+                    metadata={
+                        "order_type": wo.order_type,
+                        "assigned_crew": wo.assigned_crew,
+                        "assigned_role": wo.assigned_role,
+                        "source_domain": wo.source_domain,
+                        "source_id": wo.source_id,
+                        "created_by": wo.created_by,
+                        "target_sla_hours": wo.target_sla_hours
+                    }
+                )
+            )
+
+        return features
