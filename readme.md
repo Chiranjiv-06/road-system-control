@@ -844,12 +844,36 @@ The frontend utilizes existing RESTful endpoints without architecture redesign o
 
 ---
 
+## 🔐 Phase 17: System Administration & Configuration
+
+### 1. Objective
+Establish an administrative security module strictly restricted to the `ADMIN` role for provisioning and managing platform users, roles, and lifecycle statuses while preserving account integrity and enforcing last-administrator safeguards.
+
+### 2. Capabilities
+- **User Listing & Details**: Retrieve all registered operators with filtering by role and active status, ensuring credentials (`password_hash`) are never leaked.
+- **Operator Provisioning**: Provision accounts with unique username/email validation, bcrypt password hashing, and role assignment (`ADMIN`, `TRAFFIC_OPERATOR`, `EMERGENCY_OPERATOR`, `ROAD_INSPECTOR`).
+- **Role Management**: Reassign roles among authorized system roles while rejecting arbitrary/invalid roles (HTTP 422).
+- **Status Lifecycle & Deactivation**: Toggle account active state (`ACTIVE`/`INACTIVE`). Deactivated accounts are immediately blocked from logging in (HTTP 403) and existing bearer tokens are rejected.
+- **Administrator Safety Guards**:
+  - Prevents an administrator from deactivating their own account (HTTP 400).
+  - Prevents an administrator from demoting their own account (HTTP 400).
+  - Prevents deactivating or demoting the last remaining active administrator in the system (HTTP 400).
+
+### 3. API Endpoints
+- `GET /api/admin/users`: List all platform users with optional role, status, and search filters (ADMIN only).
+- `GET /api/admin/users/{id}`: Fetch detailed user profile (ADMIN only).
+- `POST /api/admin/users`: Create a new user with unique username, email, and valid role (ADMIN only).
+- `PATCH /api/admin/users/{id}/role`: Update user role with last-admin guard (ADMIN only).
+- `PATCH /api/admin/users/{id}/status`: Activate or deactivate user with self-deactivation and last-admin guards (ADMIN only).
+
+---
+
 ## 📌 Important Limitations & Scope Boundary
 - **No Backend Image Storage**: Photo selection currently operates as a client-side session preview. Binary file uploads to cloud/disk storage will be introduced in future phases.
 - **Explainable Rules-Based Model**: Phase 10 deliberately uses a transparent mathematical scoring model rather than black-box ML to guarantee zero hallucinated predictions on small datasets.
 - **Guarded Polling**: Telemetry, broadcasts, violations, intelligence analytics, risk assessments, GIS map layers, operational notifications, and work orders auto-refresh every 30 seconds via active-request guards when viewing their respective tabs.
 - **Honest Spatial Coordinates**: Features without live onboard GPS use deterministic municipal reference coordinates tagged explicitly with their provenance source.
-- **In-System Operations Only**: Work orders and notifications operate strictly within the municipal control center interface and PostgreSQL database without third-party external SMS, WhatsApp, push messaging, or mobile crew GPS tracking integrations.
+- **In-System Operations Only**: Work orders, administration, and notifications operate strictly within the municipal control center interface and PostgreSQL database without third-party external SMS, WhatsApp, push messaging, or mobile crew GPS tracking integrations.
 - **Sequence Concurrency Model**: Atomic ID generation depends on PostgreSQL `work_order_id_seq` and `notification_id_seq`. In non-sequence environments (such as pure in-memory SQLite mocks), ID generation falls back to max-ID table scans which may experience race conditions under high concurrent insertion volumes.
 - **Field Telemetry & Costs**: Remediation expenditure and resolution notes are entered manually by authorized operators upon verification rather than via automated third-party accounting or ERP integrations.
 
@@ -863,4 +887,4 @@ The frontend utilizes existing RESTful endpoints without architecture redesign o
 
 ## Status
 
-🚧 Under Development — Phase 16 Completed
+🚧 Under Development — Phase 17 Completed

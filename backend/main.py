@@ -18,6 +18,7 @@ from routes.auth import router as auth_router
 from routes.map import router as map_router
 from routes.notifications import router as notifications_router
 from routes.work_orders import router as work_orders_router
+from routes.admin import router as admin_router
 from database import SessionLocal, ensure_spatial_columns, ensure_notification_schema, ensure_work_order_schema
 from services.auth_service import AuthService
 
@@ -80,6 +81,7 @@ app.include_router(auth_router)
 app.include_router(map_router)
 app.include_router(notifications_router)
 app.include_router(work_orders_router)
+app.include_router(admin_router)
 
 @app.get(
     "/api/health",

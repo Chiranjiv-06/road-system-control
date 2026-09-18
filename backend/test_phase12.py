@@ -343,12 +343,21 @@ def run_tests():
     # TEST 16: Geospatial Perimeter Sanity (Nagpur Region)
     # ----------------------------------------------------
     try:
-        # Bounding box for greater Nagpur municipal region: ~21.0 to 21.3 N, ~78.9 to 79.3 E
-        for f in all_features:
+        # Separate mapped features from unmapped features per spatial provenance contract
+        mapped_features = [f for f in all_features if f["coordinate_source"] != "unmapped"]
+        unmapped_features = [f for f in all_features if f["coordinate_source"] == "unmapped"]
+
+        # 1. Verify unmapped records legitimately have None coordinates (honest provenance contract)
+        for f in unmapped_features:
+            assert f["latitude"] is None and f["longitude"] is None, f"Unmapped feature {f['title']} has non-null coordinates"
+
+        # 2. Bounding box for greater Nagpur municipal region: ~21.0 to 21.3 N, ~78.9 to 79.3 E
+        assert len(mapped_features) > 0, "Expected at least one mapped feature in Nagpur"
+        for f in mapped_features:
             lat = f["latitude"]
             lng = f["longitude"]
-            assert 21.0 <= lat <= 21.3, f"Latitude out of bounds ({lat}) for {f['title']}"
-            assert 78.9 <= lng <= 79.3, f"Longitude out of bounds ({lng}) for {f['title']}"
+            assert lat is not None and 21.0 <= lat <= 21.3, f"Latitude out of bounds ({lat}) for {f['title']}"
+            assert lng is not None and 78.9 <= lng <= 79.3, f"Longitude out of bounds ({lng}) for {f['title']}"
         print("PASS - Test 16: All mapped feature coordinates lie safely within the Nagpur metropolitan perimeter")
         passed += 1
     except AssertionError as e:
