@@ -1,41 +1,54 @@
-# 🚦 Road System Control
+# 🚦 Road System Control — Municipal Operations Platform
 
-An AI-powered Road System Control platform developed for a Hackathon.
+[![Status](https://img.shields.io/badge/Status-Phase%2017%20Completed-success.svg)]()
+[![Branch](https://img.shields.io/badge/Branch-develop-blue.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-151%2F151%20Passed-brightgreen.svg)]()
+[![Python](https://img.shields.io/badge/Python-3.13-blue.svg)]()
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-teal.svg)]()
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-ACID-blue.svg)]()
+[![Leaflet](https://img.shields.io/badge/GIS-Offline%20Leaflet%201.9.4-green.svg)]()
 
-## 📌 Problem Statement
+Road System Control is a production-grade municipal traffic intelligence, hazard response, and field operations platform. Built with Python 3.13, FastAPI, PostgreSQL, and an offline-first Leaflet GIS engine, the platform unifies real-time traffic monitoring, road hazard reporting, automated radar camera violations, explainable multi-domain risk evaluation, role-routed operational notifications, closed-loop work order dispatching, and administrative governance under strict Role-Based Access Control (RBAC).
 
-Current road management systems are mostly reactive. Authorities receive complaints after accidents, potholes, or traffic congestion occur. This project aims to provide a centralized platform for reporting road issues and improving traffic management.
+> 📖 **Comprehensive Technical Documentation**: For the exhaustive 22-section architecture manual, API specifications, mathematical risk formulation, and database schemas, see [docs/PROJECT_DOCUMENTATION.md](file:///E:/road-system-control/docs/PROJECT_DOCUMENTATION.md).
 
 ---
 
-## 🚀 Features
+## 📌 Problem Statement & Core Value
 
-- Road issue reporting (Full-stack integrated with PostgreSQL)
-- Real-time traffic monitoring dashboard
-- Emergency alert dispatch
-- Traffic violation and rule enforcement management
-- Cross-domain traffic analytics & intelligence center
-- Explainable AI risk & incident intelligence (0–100 composite risk scoring, tactical recommendations)
-- Interactive map integration (Offline-first Leaflet GIS operations map)
-- Role-routed operational notifications & escalation
-- Field work orders & incident dispatch operations (Municipal crew mobilization, SLA tracking, closed-loop resolution)
-- Admin dashboard & RBAC
+Traditional municipal roadway management is fragmented and reactive:
+- Civic road hazards (potholes, structural damage) remain unaddressed until citizen complaints escalate.
+- Traffic congestion sensors, police speed cameras, and emergency dispatch centers operate on isolated software without unified identifiers.
+- Hazard remediation lacks accountability: field work orders lack deterministic Service Level Agreements (SLAs), and closed-loop verification between repairs and hazard resolution is missing.
+- Spatial visualization often relies on hallucinated or ungrounded coordinates.
+
+**Road System Control** eliminates cross-department latency by providing an authoritative, ACID-compliant relational command center connecting field inspectors, emergency dispatchers, traffic desk operators, and administrators in real time.
+
+---
+
+## 🚀 Key Platform Capabilities
+
+- **Road Hazard Reporting**: End-to-end civic defect logging with status lifecycles and PostgreSQL persistence.
+- **Traffic Telemetry & Flow Monitoring**: Live highway corridor speeds, vehicle throughput, and congestion ratings.
+- **Emergency Alert Dispatch**: Multi-severity broadcast management with status progressions (`Active` &rarr; `Investigating` &rarr; `Resolved`).
+- **Traffic Violation Management**: Automated radar camera infraction logging, fine calculation, and review workflows.
+- **Cross-Domain Analytics**: Correlation between congestion, road hazards, camera infractions, and emergencies.
+- **Explainable AI Risk & Incident Intelligence**: Transparent 0–100 risk scoring synthesizing 4 operational domains without black-box ML hallucination.
+- **Interactive GIS Operations Map**: 100% offline-capable Leaflet GIS canvas plotting incidents with honest spatial provenance tracking.
+- **Role-Routed Notifications**: Operational escalation alerts with duplicate suppression and acknowledgement lifecycles.
+- **Field Work Orders & Incident Dispatch**: SLA deadline tracking, crew mobilization, and atomic closed-loop hazard auto-resolution.
+- **System Administration & Governance**: Operator provisioning, role reassignment, and administrative safety guards against self-deactivation or last-admin demotion.
 
 ---
 
 ## 🛠 Tech Stack
 
-### Frontend
-- HTML5 & CSS3
-- Vanilla JavaScript (`fetch()` API, Zero external frameworks)
-
-### Backend
-- Python 3.13
-- FastAPI REST API
-- SQLAlchemy ORM
-
-### Database
-- PostgreSQL
+- **Backend**: Python 3.13, FastAPI (ASGI via Uvicorn), SQLAlchemy 2.0 ORM, Pydantic V2
+- **Database**: PostgreSQL (ACID relational storage, raw SQL sequence migration helpers)
+- **Frontend**: Vanilla HTML5, Modern CSS3 (Dark mode, glassmorphism), Vanilla JavaScript (ES6+, Zero framework bloat)
+- **GIS Engine**: Leaflet 1.9.4 (100% offline vendored in `frontend/vendor/leaflet/`, zero CDN dependency)
+- **Security**: JWT Bearer Tokens (HMAC-SHA256), Passlib Bcrypt password hashing, Granular RBAC
+- **Testing**: Starlette TestClient, 12 modular automated regression suites (151 / 151 tests passing)
 
 ---
 
@@ -43,83 +56,76 @@ Current road management systems are mostly reactive. Authorities receive complai
 
 ```
 road-system-control/
-│
-├── frontend/
-│   ├── index.html       # Dynamic dashboard, modal & reporting form
-│   ├── style.css        # Responsive styling & status indicators
-│   ├── script.js        # API integration, state management & validation
-│   └── vendor/leaflet/  # Offline Leaflet 1.9.4 GIS bundle (CSS, JS, images)
-│
 ├── backend/
-│   ├── main.py          # FastAPI app, CORS & startup table creation
-│   ├── database.py      # SQLAlchemy engine & session dependency
-│   ├── seed_traffic.py  # Manual demo seed script for traffic corridors
-│   ├── seed_emergency_alerts.py # Manual demo seed script for emergency alerts
-│   ├── seed_traffic_violations.py # Manual demo seed script for traffic violations
-│   ├── seed_users.py    # Manual demo seed script for operator accounts
-│   ├── requirements.txt # Minimal Python dependencies
+│   ├── dependencies/
+│   │   └── auth.py                  # JWT decoding, get_current_user, require_roles, require_admin
 │   ├── models/
-│   │   ├── __init__.py  # Model exports (Issue, TrafficRecord, EmergencyAlert, TrafficViolation, User, Notification, WorkOrder)
-│   │   ├── issue.py     # SQLAlchemy Issue model (with latitude/longitude)
-│   │   ├── traffic.py   # SQLAlchemy TrafficRecord model (with latitude/longitude)
-│   │   ├── emergency_alert.py # SQLAlchemy EmergencyAlert model (with latitude/longitude)
-│   │   ├── traffic_violation.py # SQLAlchemy TrafficViolation model (with latitude/longitude)
-│   │   ├── user.py      # SQLAlchemy User model ('users' table)
-│   │   ├── notification.py # SQLAlchemy Notification model ('notifications' table)
-│   │   └── work_order.py # SQLAlchemy WorkOrder model ('work_orders' table)
+│   │   ├── __init__.py              # ORM entity exports
+│   │   ├── user.py                  # 'users' table
+│   │   ├── issue.py                 # 'issues' table
+│   │   ├── traffic.py               # 'traffic_records' table
+│   │   ├── emergency_alert.py       # 'emergency_alerts' table
+│   │   ├── traffic_violation.py     # 'traffic_violations' table
+│   │   ├── notification.py          # 'notifications' table
+│   │   └── work_order.py            # 'work_orders' table
 │   ├── routes/
-│   │   ├── issues.py    # REST API endpoints (/api/issues)
-│   │   ├── traffic.py   # REST API endpoints (/api/traffic)
-│   │   ├── emergency_alerts.py # REST API endpoints (/api/emergency-alerts)
-│   │   ├── traffic_violations.py # REST API endpoints (/api/traffic-violations)
-│   │   ├── analytics.py # REST API endpoints (/api/analytics)
-│   │   ├── risk.py      # REST API endpoints (/api/risk)
-│   │   ├── auth.py      # REST API endpoints (/api/auth)
-│   │   ├── map.py       # REST API endpoints (/api/map/overview, /api/map/work-orders)
-│   │   ├── notifications.py # REST API endpoints (/api/notifications)
-│   │   └── work_orders.py # REST API endpoints (/api/work-orders)
+│   │   ├── auth.py                  # /api/auth (Login, session profile, RBAC checks)
+│   │   ├── admin.py                 # /api/admin/users (System administration, roles, status)
+│   │   ├── issues.py                # /api/issues
+│   │   ├── traffic.py               # /api/traffic
+│   │   ├── emergency_alerts.py      # /api/emergency-alerts
+│   │   ├── traffic_violations.py    # /api/traffic-violations
+│   │   ├── analytics.py             # /api/analytics
+│   │   ├── risk.py                  # /api/risk
+│   │   ├── map.py                   # /api/map
+│   │   ├── notifications.py         # /api/notifications
+│   │   └── work_orders.py           # /api/work-orders
 │   ├── schemas/
-│   │   ├── issue.py     # Pydantic validation for issues
-│   │   ├── traffic.py   # Pydantic validation for traffic records & summary
-│   │   ├── emergency_alert.py # Pydantic validation for emergency alerts & status updates
-│   │   ├── traffic_violation.py # Pydantic validation for traffic violations & status updates
-│   │   ├── analytics.py # Pydantic validation for analytics responses
-│   │   ├── risk.py      # Pydantic validation for risk scores & explainability
-│   │   ├── user.py      # Pydantic validation for authentication & users
-│   │   ├── map.py       # Pydantic validation for GIS map features & overview
-│   │   ├── notification.py # Pydantic validation for operational notifications
-│   │   └── work_order.py # Pydantic validation for field work orders
+│   │   ├── user.py                  # Login, UserResponse, AdminUserCreate, UserRoleUpdate
+│   │   ├── issue.py                 # IssueCreate, IssueResponse
+│   │   ├── traffic.py               # TrafficCreate, TrafficResponse, TrafficSummary
+│   │   ├── emergency_alert.py       # EmergencyAlertCreate, EmergencyAlertResponse
+│   │   ├── traffic_violation.py     # TrafficViolationCreate, TrafficViolationResponse
+│   │   ├── analytics.py             # AnalyticsOverview, TrendAnalytics
+│   │   ├── risk.py                  # RiskOverview, AreaRiskEvaluation
+│   │   ├── map.py                   # MapFeatureRecord, MapOverviewResponse, MapSummary
+│   │   ├── notification.py          # NotificationCreate, NotificationResponse
+│   │   └── work_order.py            # WorkOrderCreate, WorkOrderStatusUpdate, WorkOrderResponse
 │   ├── services/
-│   │   ├── issue_service.py   # Issue persistence & sequential ISS-XXXX generator
-│   │   ├── traffic_service.py # Traffic persistence & sequential TRF-XXXX generator
-│   │   ├── emergency_alert_service.py # Alert persistence & sequential EMG-XXXX generator
-│   │   ├── traffic_violation_service.py # Violation persistence & sequential VIO-XXXX generator
-│   │   ├── analytics_service.py # Cross-domain analytics calculation engine
-│   │   ├── risk_service.py    # Explainable multi-domain risk evaluation engine
-│   │   ├── auth_service.py    # Authentication, password hashing, and JWT engine
-│   │   ├── map_service.py     # Multi-domain GIS resolver & spatial provenance engine
-│   │   ├── notification_service.py # Role routing, duplicate prevention & operational sync
-│   │   └── work_order_service.py # Lifecycle enforcement, SLA engine & closed-loop resolution
-│   ├── test_phase4.py   # Automated tests for Phase 4 (issues persistence)
-│   ├── test_phase6.py   # Automated tests for Phase 6 (traffic monitoring)
-│   ├── test_phase7.py   # Automated tests for Phase 7 (emergency alert management)
-│   ├── test_phase8.py   # Automated tests for Phase 8 (traffic violation management)
-│   ├── test_phase9.py   # Automated tests for Phase 9 (analytics & intelligence)
-│   ├── test_phase10.py  # Automated tests for Phase 10 (risk intelligence & scoring)
-│   ├── test_phase11.py  # Automated tests for Phase 11 (authentication & RBAC)
-│   ├── test_phase12.py  # Automated tests for Phase 12 (interactive GIS map)
-│   ├── test_phase13.py  # Automated tests for Phase 13 (notifications & escalation)
-│   └── test_phase14.py  # Automated tests for Phase 14 (field work orders & dispatch)
-│
+│   │   ├── auth_service.py          # Bcrypt hashing, JWT generation, baseline user seeding
+│   │   ├── issue_service.py         # Issue persistence & sequential ID generator
+│   │   ├── traffic_service.py       # Traffic flow telemetry persistence & summary engine
+│   │   ├── emergency_alert_service.py # Alert persistence & status transitions
+│   │   ├── traffic_violation_service.py # Violation logging & fine calculations
+│   │   ├── analytics_service.py     # Cross-domain aggregation & statistical metrics
+│   │   ├── risk_service.py          # Deterministic multi-domain risk evaluation engine
+│   │   ├── map_service.py           # Coordinate resolution, GIS spatial layers & provenance
+│   │   ├── notification_service.py  # Role routing, deduplication & operational sync
+│   │   └── work_order_service.py    # SLA engine, state transitions & closed-loop resolution
+│   ├── database.py                  # SQLAlchemy engine, session maker & schema migration helpers
+│   ├── main.py                      # FastAPI application, CORS, router registrations, health check
+│   ├── requirements.txt             # Minimal Python dependencies
+│   ├── seed_users.py                # Baseline operator seed script
+│   ├── seed_traffic.py              # Baseline traffic records seed script
+│   ├── seed_emergency_alerts.py     # Baseline emergency alerts seed script
+│   ├── seed_traffic_violations.py   # Baseline traffic violations seed script
+│   ├── test_phase4.py ... test_phase17.py # 12 automated verification suites (151 tests)
+├── frontend/
+│   ├── index.html                   # Municipal SPA layout, dashboards, tables, modal drawers
+│   ├── script.js                    # Complete Vanilla JS controller, API integration, Leaflet controller
+│   ├── style.css                    # Custom responsive styling, dark mode, design tokens
+│   └── vendor/
+│       └── leaflet/                 # Offline vendored Leaflet 1.9.4 CSS, JS, and image assets
 ├── docs/
-├── .env.example         # Environment template
-├── .gitignore
-└── README.md
+│   └── PROJECT_DOCUMENTATION.md     # Exhaustive 22-section project documentation manual
+├── .env.example                     # Environment template
+├── readme.md                        # Project root README
+└── .gitignore
 ```
 
 ---
 
-## 🔄 Project Development Roadmap
+## 🔄 Completed Development Roadmap (Phases 1–17)
 
 - **Phase 1**: Frontend Foundation (UI, layout, responsive design) — *Completed*
 - **Phase 2**: Road Issue Reporting (Frontend validation, form, localStorage) — *Completed*
@@ -134,7 +140,10 @@ road-system-control/
 - **Phase 11**: Authentication & Role-Based Access Control (Operator accounts, bcrypt hashing, JWT Bearer tokens, Admin management) — *Completed*
 - **Phase 12**: Interactive GIS / Live Operations Map (Offline-first Leaflet GIS, 5 cross-domain spatial layers, honest coordinate provenance, tactical drawer) — *Completed*
 - **Phase 13**: Notifications & Operational Escalation (Role-routed escalation, duplicate suppression, acknowledgement lifecycle, cross-domain operational sync) — *Completed*
-- **Phase 14**: Field Work Orders & Incident Dispatch Operations (SLA tracking, crew mobilization, closed-loop resolution, RBAC) — **Completed**
+- **Phase 14**: Field Work Orders & Incident Dispatch Operations (SLA tracking, crew mobilization, closed-loop resolution, RBAC) — *Completed*
+- **Phase 15**: Architectural Inspection & Stabilization (Audit, zero-duplication enforcement) — *Completed*
+- **Phase 16**: Operational Work Order Management UI (Complete Work Orders frontend, KPI summary, multi-parameter filters, modal inspection, GIS layer) — *Completed*
+- **Phase 17**: System Administration & User Governance (ADMIN-only user management, role modification, status toggles, last-admin & self-safety guards) — **Completed**
 
 ---
 
@@ -837,10 +846,12 @@ The frontend utilizes existing RESTful endpoints without architecture redesign o
 - Reuses Phase 13 operational escalation channels.
 - When an operator receives a work order notification (`WORK_ORDER_DISPATCHED`, `WORK_ORDER_COMPLETED`), clicking "View Entity" seamlessly navigates to the Work Orders view and opens the respective work order details modal.
 
-### 8. Automated Verification & Regression Testing
-- **Phase 16 Frontend & Integration Suite** (`test_phase16.py`): 12/12 passed (work-order listing, filtering, details schema, lifecycle transitions, invalid transition rejections, cross-role RBAC enforcement, role-based creation, incompatible pairing rejections, SLA calculations, GIS work-order layer, map overview integrity, notifications feed).
-- **Phase 14 Work Order Suite** (`test_phase14.py`): 18/18 passed.
-- **Full Regression Suite across Phases 4–16**: 139/139 passed across 11 test suites (`test_phase4`, `test_phase6`, `test_phase7`, `test_phase8`, `test_phase9`, `test_phase10`, `test_phase11`, `test_phase12`, `test_phase13`, `test_phase14`, `test_phase16`).
+### 8. Automated Verification & Full Regression Testing
+- **Phase 17 System Administration Suite** (`test_phase17.py`): 12/12 passed (user management, roles, status, self/last-admin safety).
+- **Phase 16 Work Order Operations UI Suite** (`test_phase16.py`): 12/12 passed.
+- **Phase 14 Field Work Orders Suite** (`test_phase14.py`): 18/18 passed.
+- **Full Platform Regression Suite across Phases 4–17**: **151 / 151 PASSED (100% Passing across all 12 test suites)**:
+  `test_phase4.py` (9/9), `test_phase6.py` (10/10), `test_phase7.py` (12/12), `test_phase8.py` (10/10), `test_phase9.py` (10/10), `test_phase10.py` (10/10), `test_phase11.py` (14/14), `test_phase12.py` (17/17), `test_phase13.py` (17/17), `test_phase14.py` (18/18), `test_phase16.py` (12/12), `test_phase17.py` (12/12).
 
 ---
 
