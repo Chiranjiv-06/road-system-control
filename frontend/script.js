@@ -1233,14 +1233,22 @@ document.addEventListener('DOMContentLoaded', () => {
             emergencyAlertsTableBody.appendChild(row);
         });
 
-        // Attach event listeners to status update buttons
+        // Attach event listeners to status update buttons with immediate loading feedback
         emergencyAlertsTableBody.querySelectorAll('.patch-status-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const alertId = btn.dataset.id;
                 const newStatus = btn.dataset.status;
                 if (alertId && newStatus) {
-                    await updateAlertStatus(alertId, newStatus);
+                    btn.disabled = true;
+                    const originalHtml = btn.innerHTML;
+                    btn.innerHTML = `<span class="spinner-inline"></span> ${newStatus === 'Resolved' ? 'Resolving...' : 'Updating...'}`;
+                    try {
+                        await updateAlertStatus(alertId, newStatus);
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    }
                 }
             });
         });
@@ -1343,7 +1351,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const updated = await res.json();
-            showToast(`Alert ${alertId} marked as ${newStatus}.`, 'success');
+            if (newStatus === 'Resolved') {
+                showToast(`Emergency Alert ${alertId} resolved successfully.`, 'success');
+            } else if (newStatus === 'Investigating') {
+                showToast(`Emergency Alert ${alertId} status updated to Investigating.`, 'success');
+            } else {
+                showToast(`Emergency Alert ${alertId} status updated to ${newStatus}.`, 'success');
+            }
 
             // Update in-memory state
             const index = alertsState.findIndex(a => a.id === alertId);
@@ -1359,6 +1373,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             renderEmergencyBanner(alertsState);
             renderEmergencyAlertsTable(alertsState);
+
+            // Sync notification counter if available
+            if (typeof loadNotificationsSummary === 'function') {
+                loadNotificationsSummary();
+            }
         } catch (err) {
             console.error("Failed to patch alert status:", err);
             showToast("Failed to update alert status. Check server connection.", "error");
@@ -1435,10 +1454,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     const createdAlert = await response.json();
                     alertsState.unshift(createdAlert);
                     closeCreateAlertModal();
-                    showToast(`Emergency Alert ${createdAlert.id} broadcast successfully!`, 'success');
+                    const titleSnippet = createdAlert.title ? ` ("${createdAlert.title}")` : '';
+                    showToast(`Emergency Alert ${createdAlert.id}${titleSnippet} broadcast successfully!`, 'success');
 
                     // Refresh summary and render
                     loadAlerts(false);
+
+                    // Sync notification counter if available
+                    if (typeof loadNotificationsSummary === 'function') {
+                        loadNotificationsSummary();
+                    }
                 } else if (response.status === 401) {
                     showToast("Authentication required: Please sign in as an Operator.", "error");
                     openLoginModal('EMERGENCY_OPERATOR');
