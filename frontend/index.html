@@ -1355,6 +1355,17 @@
 
                         <div class="metric-card">
                             <div class="metric-header">
+                                <span class="metric-title">Traffic Violations</span>
+                                <span class="metric-icon-box purple">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                </span>
+                            </div>
+                            <div class="metric-value text-purple" id="mapKpiViolations">0</div>
+                            <div class="metric-subtext">Automated Enforcements</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
                                 <span class="metric-title">High Risk Sectors</span>
                                 <span class="metric-icon-box purple">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
@@ -1524,6 +1535,8 @@
                             </div>
                         </div>
                     </div>
+                </section>
+
                 <!-- SECTION 7: NOTIFICATIONS & OPERATIONAL ESCALATION (PHASE 13) -->
                 <section class="view-section" id="section-notifications">
                     <!-- HEADER BAR -->
@@ -1730,6 +1743,7 @@
                                 </table>
                             </div>
                         </div>
+                    </div>
                 </section>
 
                 <!-- ============================================== -->
@@ -2564,6 +2578,27 @@
 
     <!-- Leaflet JS (Phase 12 Operations Map) -->
     <script src="vendor/leaflet/leaflet.js"></script>
-    <script src="script.js"></script>
+
+    <!-- Core Application Layer -->
+    <script src="js/core/state.js"></script>
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/api.js"></script>
+    <script src="js/core/auth.js"></script>
+
+    <!-- Domain Feature Modules -->
+    <script src="js/modules/dashboard.js"></script>
+    <script src="js/modules/issues.js"></script>
+    <script src="js/modules/traffic.js"></script>
+    <script src="js/modules/emergencies.js"></script>
+    <script src="js/modules/violations.js"></script>
+    <script src="js/modules/analytics.js"></script>
+    <script src="js/modules/risk.js"></script>
+    <script src="js/modules/map.js"></script>
+    <script src="js/modules/notifications.js"></script>
+    <script src="js/modules/work-orders.js"></script>
+    <script src="js/modules/admin.js"></script>
+
+    <!-- Application Orchestrator & Bootstrap -->
+    <script src="script.js?v=20260925"></script>
 </body>
 </html>
