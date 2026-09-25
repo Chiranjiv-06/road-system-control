@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road System Control — Smart Road Monitoring &amp; Traffic Management System</title>
+    <meta name="description" content="Road System Control brings road issue management, traffic monitoring, emergency response, risk intelligence, geographic operations, notifications and field work orders into one connected operational platform.">
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="landing.css">
+</head>
+<body class="landing-body">
+
+    <!-- ====================================================================
+         HEADER NAVIGATION (Matching Dashboard Enterprise Header Style)
+         ==================================================================== -->
+    <header class="landing-top-header" id="landingHeader">
+        <div class="container header-inner">
+            <a href="landing.html" class="brand-area" aria-label="Road System Control Home">
+                <div class="brand-icon-badge">🚦</div>
+                <div class="brand-info">
+                    <span class="brand-main">ROAD SYSTEM<br>CONTROL</span>
+                    <span class="brand-sub">Municipal Operations Platform</span>
+                </div>
+            </a>
+
+            <nav aria-label="Main Navigation">
+                <ul class="nav-links">
+                    <li><a href="#connected-ops" class="nav-link">Connected Ops</a></li>
+                    <li><a href="#capabilities" class="nav-link">Capabilities</a></li>
+                    <li><a href="#system-process" class="nav-link">Process</a></li>
+                    <li><a href="#interface-preview" class="nav-link">Interface Preview</a></li>
+                    <li><a href="#intelligence" class="nav-link">Risk Logic</a></li>
+                    <li><a href="#gis-operations" class="nav-link">GIS Operations</a></li>
+                    <li><a href="#field-operations" class="nav-link">Field Ops</a></li>
+                    <li><a href="#roles" class="nav-link">Roles</a></li>
+                    <li><a href="#architecture" class="nav-link">Architecture</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-actions">
+                <button type="button" class="btn btn-outline btn-sm" id="navLoginBtn" aria-label="Operator Login">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                    Operator Login
+                </button>
+                <a href="index.html" class="btn btn-primary btn-sm" id="navEnterCta">
+                    Go to Dashboard &rarr;
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ================================================================
+             SECTION 1: HERO SECTION
+             ================================================================ -->
+        <section class="hero-section" id="hero">
+            <div class="container">
+                <div class="hero-grid">
+                    <!-- Left Column: Core Product Introduction (45%) -->
+                    <div class="hero-left">
+                        <div class="hero-eyebrow">ROAD SYSTEM CONTROL</div>
+                        <div class="hero-product-label">
+                            <span class="status-dot"></span>
+                            Smart Road Monitoring &amp; Traffic Management System
+                        </div>
+
+                        <h1 class="hero-headline">
+                            From Road Intelligence to Operational Action.
+                        </h1>
+
+                        <p class="hero-text">
+                            Road System Control connects road issues, traffic monitoring, emergency response, risk intelligence, GIS operations, notifications and field work orders in one centralized operational platform.
+                        </p>
+
+                        <div class="hero-buttons">
+                            <a href="index.html" class="btn btn-primary btn-lg" id="heroEnterBtn">
+                                Enter Control Center &rarr;
+                            </a>
+                            <a href="#connected-ops" class="btn btn-outline btn-lg">
+                                Explore Platform &darr;
+                            </a>
+                        </div>
+
+                        <!-- Product Fact Row (Dashboard-style statistics) -->
+                        <div class="hero-facts-grid">
+                            <div class="hero-fact-card">
+                                <span class="hero-fact-num">10</span>
+                                <span class="hero-fact-label">Connected Domains</span>
+                            </div>
+                            <div class="hero-fact-card">
+                                <span class="hero-fact-num">9</span>
+                                <span class="hero-fact-label">Operational Stages</span>
+                            </div>
+                            <div class="hero-fact-card">
+                                <span class="hero-fact-num">4</span>
+                                <span class="hero-fact-label">Operational Roles</span>
+                            </div>
+                            <div class="hero-fact-card">
+                                <span class="hero-fact-num">1</span>
+                                <span class="hero-fact-label">Centralized Control Center</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Dashboard-style Platform Overview Preview (55%) -->
+                    <div class="hero-right">
+                        <div class="hero-preview-window">
+                            <!-- Window Header -->
+                            <div class="preview-window-header">
+                                <span class="preview-header-title">Platform Overview</span>
+                                <span class="badge badge-neutral">Illustrative Preview</span>
+                            </div>
+
+                            <div class="preview-body-content">
+                                <!-- 4 KPI Cards -->
+                                <div class="preview-kpi-grid">
+                                    <div class="mini-kpi-card">
+                                        <span class="mini-kpi-label">Total Road Issues</span>
+                                        <span class="mini-kpi-val">24</span>
+                                        <span class="mini-kpi-sub">16 Verified &bull; 8 Open</span>
+                                    </div>
+                                    <div class="mini-kpi-card">
+                                        <span class="mini-kpi-label">Critical Issues</span>
+                                        <span class="mini-kpi-val" style="color: var(--danger-base);">3</span>
+                                        <span class="mini-kpi-sub">Immediate Triage</span>
+                                    </div>
+                                    <div class="mini-kpi-card">
+                                        <span class="mini-kpi-label">Active Alerts</span>
+                                        <span class="mini-kpi-val" style="color: var(--danger-base);">2</span>
+                                        <span class="mini-kpi-sub">Priority Alert</span>
+                                    </div>
+                                    <div class="mini-kpi-card">
+                                        <span class="mini-kpi-label">Traffic Violations</span>
+                                        <span class="mini-kpi-val" style="color: var(--warning-base);">58</span>
+                                        <span class="mini-kpi-sub">Example Records</span>
+                                    </div>
+                                </div>
+
+                                <!-- Compact Emergency Alert Banner -->
+                                <div class="mini-emergency-banner">
+                                    <div class="mini-emergency-left">
+                                        <span class="mini-alert-icon">⚠️</span>
+                                        <div class="mini-alert-content">
+                                            <div class="mini-alert-title">EMERGENCY ALERT: Collision on Wardha Road Corridor</div>
+                                            <div class="mini-alert-desc">Sector 4 &bull; Response Status: Dispatched &bull; Corridor Slowdown Detected</div>
+                                        </div>
+                                    </div>
+                                    <span class="badge badge-danger">CRITICAL</span>
+                                </div>
+
+                                <!-- Recent Road Issues Table -->
+                                <div class="mini-table-box">
+                                    <div class="mini-table-header">
+                                        <span>Recent Road Issues Queue</span>
+                                        <span class="badge badge-neutral">Example Data</span>
+                                    </div>
+                                    <table class="mini-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Issue ID</th>
+                                                <th>Type</th>
+                                                <th>Corridor / Location</th>
+                                                <th>Severity</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>#ISS-1049</strong></td>
+                                                <td>Deep Pothole</td>
+                                                <td>Central Market Flyover</td>
+                                                <td><span class="badge badge-danger">High</span></td>
+                                                <td><span class="badge badge-warning">Work Order Dispatched</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>#ISS-1048</strong></td>
+                                                <td>Pavement Crack</td>
+                                                <td>North Ring Road Km 14</td>
+                                                <td><span class="badge badge-warning">Medium</span></td>
+                                                <td><span class="badge badge-info">In Progress</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Status Split: Traffic Status Card + Risk Status Indicator -->
+                                <div class="preview-status-split">
+                                    <div class="preview-subcard">
+                                        <div class="preview-subcard-header">
+                                            <span>Traffic Monitoring Preview</span>
+                                            <span class="badge badge-info">Example Corridors</span>
+                                        </div>
+                                        <div class="preview-subcard-line">
+                                            <strong>18 Corridors Monitored</strong> &bull; Avg: 41.8 km/h
+                                        </div>
+                                        <div class="preview-subcard-line" style="color: var(--warning-text); font-weight: 600;">
+                                            Slowdown: Wardha Rd (21.4 km/h) &bull; Delay: Moderate
+                                        </div>
+                                    </div>
+
+                                    <div class="preview-subcard">
+                                        <div class="preview-subcard-header">
+                                            <span>Risk Status</span>
+                                            <span class="badge badge-danger">Score: 72.3/100</span>
+                                        </div>
+                                        <div class="preview-subcard-line">
+                                            <strong>High Risk: Wardha Rd &times; South Ring</strong>
+                                        </div>
+                                        <div class="preview-subcard-line" style="font-size: 0.65rem; color: var(--text-muted);">
+                                            EMG 35% &bull; TRF 25% &bull; ISS 20% &bull; VIO 20%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION 2: CONNECTED OPERATIONS
+             ================================================================ -->
+        <section class="connected-section" id="connected-ops">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-badge">Connected Architecture</span>
+                    <h2 class="section-title">One system for connected road operations</h2>
+                    <p class="section-subtitle">
+                        Road operations are not isolated activities. Incidents, traffic flow disruptions, safety hazards, risk indices, and field repairs exist in a continuous operational chain.
+                    </p>
+                </div>
+
+                <div class="operational-flow-card">
+                    <div class="flow-steps-grid">
+                        <div class="flow-step-item">
+                            <span class="flow-step-icon">🚧</span>
+                            <div class="flow-step-title">Road Issues</div>
+                            <div class="flow-step-desc">Defects, potholes, surface damage &amp; hazards</div>
+                        </div>
+                        <div class="flow-arrow-divider">&rarr;</div>
+                        
+                        <div class="flow-step-item">
+                            <span class="flow-step-icon">🚦</span>
+                            <div class="flow-step-title">Traffic Conditions</div>
+                            <div class="flow-step-desc">Corridor speeds, vehicle counts &amp; congestion</div>
+                        </div>
+                        <div class="flow-arrow-divider">&rarr;</div>
+
+                        <div class="flow-step-item">
+                            <span class="flow-step-icon">🚨</span>
+                            <div class="flow-step-title">Emergency Events</div>
+                            <div class="flow-step-desc">Accidents, road blockages &amp; medical alerts</div>
+                        </div>
+                        <div class="flow-arrow-divider">&rarr;</div>
+
+                        <div class="flow-step-item">
+                            <span class="flow-step-icon">⚖️</span>
+                            <div class="flow-step-title">Risk Assessment</div>
+                            <div class="flow-step-desc">Multi-factor deterministic score calculation</div>
+                        </div>
+                        <div class="flow-arrow-divider">&rarr;</div>
+
+                        <div class="flow-step-item">
+                            <span class="flow-step-icon">🔔</span>
+                            <div class="flow-step-title">Notifications</div>
+                            <div class="flow-step-desc">Targeted alerts dispatched across roles</div>
+                        </div>
+                        <div class="flow-arrow-divider">&rarr;</div>
+
+                        <div class="flow-step-item">
+                            <span class="flow-step-icon">🛠️</span>
+                            <div class="flow-step-title">Work Orders</div>
+                            <div class="flow-step-desc">Field remediation assignment with SLA tracking</div>
+                        </div>
+                        <div class="flow-arrow-divider">&rarr;</div>
+
+                        <div class="flow-step-item">
+                            <span class="flow-step-icon">✅</span>
+                            <div class="flow-step-title">Resolution Tracking</div>
+                            <div class="flow-step-desc">Verification, SLA compliance &amp; audit trail</div>
+                        </div>
+                    </div>
+
+                    <div class="flow-supporting-box">
+                        <div>
+                            <strong>Operational Closed Loop:</strong> Every event enters the workflow with coordinate provenance, progresses through formal triage, and terminates in verified physical field resolution.
+                        </div>
+                        <span class="badge badge-info">Deterministic &bull; Audited</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION 3: PLATFORM CAPABILITIES
+             ================================================================ -->
+        <section class="capabilities-section" id="capabilities">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-badge">Core Domains</span>
+                    <h2 class="section-title">Platform Capabilities</h2>
+                    <p class="section-subtitle">
+                        Ten integrated operational modules built around concrete municipal workflows, structured relational schemas, and role-based permissions.
+                    </p>
+                </div>
+
+                <div class="capabilities-grid">
+                    <!-- 1. Road Issue Management -->
+                    <div class="capability-card">
+                        <div class="capability-header">
+                            <div class="capability-icon-box" style="background-color: var(--warning-soft); color: var(--warning-text);">🚧</div>
+                            <h3 class="capability-title">Road Issue Management</h3>
+                        </div>
+                        <p class="capability-body">
+                            Capture, classify and track reported road conditions through structured operational workflows.
+                        </p>
+                        <ul class="capability-tags">
+                            <li>Severity Triage</li>
+                            <li>Defect Categories</li>
+                            <li>GPS Provenance</li>
+                            <li>Status Tracking</li>
+                        </ul>
+                    </div>
+
+                    <!-- 2. Traffic Monitoring -->
+                    <div class="capability-card">
+                        <div class="capability-header">
+                            <div class="capability-icon-box" style="background-color: var(--info-soft); color: var(--info-text);">🚗</div>
+                            <h3 class="capability-title">Traffic Monitoring</h3>
+                        </div>
+                        <p class="capability-body">
+                            Track traffic records, vehicle volume, average speed and congestion conditions across key arterial corridors.
+                        </p>
+                        <ul class="capability-tags">
+                            <li>Corridor Speeds</li>
+                            <li>Volume Counts</li>
+                            <li>Congestion Index</li>
+                            <li>Peak Hour Tracking</li>
+                        </ul>
+                    </div>
+
+                    <!-- 3. Emergency Alerts -->
+                    <div class="capability-card">
+                        <div class="capability-header">
+                            <div class="capability-icon-box" style="background-color: var(--danger-soft); color: var(--danger-text);">🚨</div>
+                            <h3 class="capability-title">Emergency Alerts</h3>
+                        </div>
+                        <p class="capability-body">
+                            Record and manage emergency incidents with severity, status and operational response coordination.
+                        </p>
+                        <ul class="capability-tags">
+                            <li>Incident Logging</li>
+                            <li>Active Broadcast</li>
+                            <li>Severity Levels</li>
+                            <li>Dispatch Coordination</li>
+                        </ul>
+                    </div>
+
+                    <!-- 4. Traffic Violations -->
+                    <div class="capability-card">
+                        <div class="capability-header">
+                            <div class="capability-icon-box" style="background-color: var(--danger-soft); color: var(--danger-text);">⚠️</div>
+                            <h3 class="capability-title">Traffic Violations</h3>
+                        </div>
+                        <p class="capability-body">
+                            Record and analyze traffic infractions including speeding, signal violations, and lane deviations.
+                        </p>
+                        <ul class="capability-tags">
+                            <li>Infraction Records</li>
+                            <li>Vehicle Identification</li>
+                            <li>Fine Attribution</li>
+                            <li>Corridor Compliance</li>
+                        </ul>
+                    </div>
+
+                    <!-- 5. Analytics -->
+                    <div class="capability-card">
+                        <div class="capability-header">
+                            <div class="capability-icon-box" style="background-color: var(--purple-soft); color: var(--purple-text);">📊</div>
+                            <h3 class="capability-title">Analytics</h3>
+                        </div>
+                        <p class="capability-body">
+                            Aggregate operational records into historical metrics, corridor congestion trends, and resolution statistics.
+                        </p>
+                        <ul class="capability-tags">
+                            <li>Hourly Volume</li>
+                            <li>Corridor Bottlenecks</li>
+                            <li>Resolution Rates</li>
+                            <li>Audit Reports</li>
+                        </ul>
+                    </div>
+
+                    <!-- 6. Risk Intelligence -->
+                    <div class="capability-card">
+                        <div class="capability-header">
+                            <div class="capability-icon-box" style="background-color: var(--purple-soft); color: var(--purple-text);">⚖️</div>
+                            <h3 class="capability-title">Risk Intelligence</h3>
+                        </div>
+                        <p class="capability-body">
+                            Apply deterministic and explainable risk scoring across emergency, traffic, issue and violation signals.
+                        </p>
+                        <ul class="capability-tags">
+                            <li>Weighted Formulas</li>
+                            <li>Zero Black-Box Logic</li>
+                            <li>Corridor Indices</li>
+                            <li>Attention Thresholds</li>
+                        </ul>
+                    </div>
+
+                    <!-- 7. Operations Map -->
+                    <div class="capability-card">
+                        <div class="capability-header">
+                            <div class="capability-icon-box" style="background-color: var(--success-soft); color: var(--success-text);">🗺️</div>
+                            <h3 class="capability-title">Operations Map</h3>
+                        </div>
+                        <p class="capability-body">
+                            Visualize spatial data layers covering road incidents, traffic density, emergencies, and active field crews.
+                        </p>
+                        <ul class="capability-tags">
+                            <li>Interactive GIS</li>
+                            <li>Multi-Layer Toggles</li>
+                            <li>Coordinate Filtering</li>
+                            <li>Incident Markers</li>
+                        </ul>
+                    </div>
+
+                    <!-- 8. Notifications -->
+                    <div class="capability-card">
+                        <div class="capability-header">
+                            <div class="capability-icon-box" style="background-color: var(--info-soft); color: var(--info-text);">🔔</div>
+                            <h3 class="capability-title">Notifications</h3>
+                        </div>
+                        <p class="capability-body">
+                            Deliver targeted notifications and operational escalations based on role, sector, and incident severity.
+                        </p>
+                        <ul class="capability-tags">
+                            <li>Role-Based Routing</li>
+                            <li>Priority Escalation</li>
+                            <li>Acknowledge Tracking</li>
+                            <li>Audit History</li>
+                        </ul>
+                    </div>
+
+                    <!-- 9. Work Orders -->
+                    <div class="capability-card">
+                        <div class="capability-header">
+                            <div class="capability-icon-box" style="background-color: var(--warning-soft); color: var(--warning-text);">🛠️</div>
+                            <h3 class="capability-title">Work Orders</h3>
+                        </div>
+                        <p class="capability-body">
+                            Dispatch and track field remediation activities through defined operational lifecycles and SLA tracking.
+                        </p>
+                        <ul class="capability-tags">
+                            <li>Field Assignment</li>
+                            <li>SLA Deadlines</li>
+                            <li>Status Lifecycle</li>
+                            <li>Remediation Verification</li>
+                        </ul>
+                    </div>
+
+                    <!-- 10. System Administration -->
+                    <div class="capability-card">
+                        <div class="capability-header">
+                            <div class="capability-icon-box" style="background-color: var(--bg-hover); color: var(--text-primary);">⚙️</div>
+                            <h3 class="capability-title">System Administration</h3>
+                        </div>
+                        <p class="capability-body">
+                            Manage user accounts, RBAC permission profiles, system parameters, and comprehensive audit logs.
+                        </p>
+                        <ul class="capability-tags">
+                            <li>RBAC Security</li>
+                            <li>Account Provisioning</li>
+                            <li>Audit Trail</li>
+                            <li>System Configuration</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION 4: HOW THE SYSTEM WORKS (01 - 09 Process)
+             ================================================================ -->
+        <section class="process-section" id="system-process">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-badge">Standard Operating Procedure</span>
+                    <h2 class="section-title">From detection to resolution</h2>
+                    <p class="section-subtitle">
+                        A disciplined, nine-stage operational progression that ensures every road event is captured, analyzed, remediated, and tracked to closure.
+                    </p>
+                </div>
+
+                <div class="process-grid">
+                    <div class="process-card">
+                        <div class="process-num-row">
+                            <span class="process-num">STAGE 01</span>
+                            <span class="badge badge-info">Intake</span>
+                        </div>
+                        <h4 class="process-name">Detect</h4>
+                        <p class="process-desc">
+                            Field inspections, operator observations, or citizen reports record defects and road hazards with GPS coordinates and classification.
+                        </p>
+                    </div>
+
+                    <div class="process-card">
+                        <div class="process-num-row">
+                            <span class="process-num">STAGE 02</span>
+                            <span class="badge badge-info">Telemetry</span>
+                        </div>
+                        <h4 class="process-name">Monitor</h4>
+                        <p class="process-desc">
+                            Corridor telemetry captures vehicle volume, average velocities, slowdown patterns, and traffic flow changes in the affected vicinity.
+                        </p>
+                    </div>
+
+                    <div class="process-card">
+                        <div class="process-num-row">
+                            <span class="process-num">STAGE 03</span>
+                            <span class="badge badge-info">Evaluation</span>
+                        </div>
+                        <h4 class="process-name">Analyze</h4>
+                        <p class="process-desc">
+                            System correlates the reported defect with traffic density and violation occurrences to understand corridor impact.
+                        </p>
+                    </div>
+
+                    <div class="process-card">
+                        <div class="process-num-row">
+                            <span class="process-num">STAGE 04</span>
+                            <span class="badge badge-purple">Calculation</span>
+                        </div>
+                        <h4 class="process-name">Assess Risk</h4>
+                        <p class="process-desc">
+                            Deterministic weighting algorithm computes a standardized risk index (0–100) based on emergency signals, road damage, and congestion.
+                        </p>
+                    </div>
+
+                    <div class="process-card">
+                        <div class="process-num-row">
+                            <span class="process-num">STAGE 05</span>
+                            <span class="badge badge-warning">Escalation</span>
+                        </div>
+                        <h4 class="process-name">Notify</h4>
+                        <p class="process-desc">
+                            Operational alerts are routed to responsible duty operators, road inspectors, or emergency coordinators based on role privileges.
+                        </p>
+                    </div>
+
+                    <div class="process-card">
+                        <div class="process-num-row">
+                            <span class="process-num">STAGE 06</span>
+                            <span class="badge badge-warning">Tasking</span>
+                        </div>
+                        <h4 class="process-name">Dispatch</h4>
+                        <p class="process-desc">
+                            A formal Work Order is generated with priority level, assigned crew, target location, and strict SLA target.
+                        </p>
+                    </div>
+
+                    <div class="process-card">
+                        <div class="process-num-row">
+                            <span class="process-num">STAGE 07</span>
+                            <span class="badge badge-neutral">Field Work</span>
+                        </div>
+                        <h4 class="process-name">Execute</h4>
+                        <p class="process-desc">
+                            Field crews deploy to the scene, conduct repairs (patching, barrier repair, debris clearance), and update operational status to In Progress.
+                        </p>
+                    </div>
+
+                    <div class="process-card">
+                        <div class="process-num-row">
+                            <span class="process-num">STAGE 08</span>
+                            <span class="badge badge-success">Completion</span>
+                        </div>
+                        <h4 class="process-name">Resolve</h4>
+                        <p class="process-desc">
+                            Work is verified on site by the designated road inspector, completing the work order and clearing associated incident flags.
+                        </p>
+                    </div>
+
+                    <div class="process-card">
+                        <div class="process-num-row">
+                            <span class="process-num">STAGE 09</span>
+                            <span class="badge badge-success">Audit</span>
+                        </div>
+                        <h4 class="process-name">Track</h4>
+                        <p class="process-desc">
+                            Resolution timestamps, assigned crew performance metrics, SLA compliance rates, and operational records are archived into permanent system audit logs.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION 5: PRODUCT PREVIEW (Interactive Tabbed UI Preview)
+             ================================================================ -->
+        <section class="interface-section" id="interface-preview">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-badge">Dashboard Inspection</span>
+                    <h2 class="section-title">Platform Interface Preview</h2>
+                    <p class="section-subtitle">
+                        Inspect functional views from the active control center. Each panel is constructed directly from the dashboard visual components and schema.
+                    </p>
+                </div>
+
+                <div class="preview-tabs-bar" role="tablist">
+                    <button type="button" class="preview-tab-btn active" data-tab="overview" role="tab" aria-selected="true">Dashboard Overview</button>
+                    <button type="button" class="preview-tab-btn" data-tab="emergency" role="tab" aria-selected="false">Emergency Alerts</button>
+                    <button type="button" class="preview-tab-btn" data-tab="traffic" role="tab" aria-selected="false">Traffic Monitoring</button>
+                    <button type="button" class="preview-tab-btn" data-tab="risk" role="tab" aria-selected="false">Risk Intelligence</button>
+                    <button type="button" class="preview-tab-btn" data-tab="map" role="tab" aria-selected="false">Operations Map</button>
+                    <button type="button" class="preview-tab-btn" data-tab="workorders" role="tab" aria-selected="false">Work Orders</button>
+                </div>
+
+                <div class="preview-display-card">
+                    <div class="preview-card-header">
+                        <span class="preview-card-title" id="previewTabTitle">Dashboard Overview — Unified Operations Status</span>
+                        <span class="preview-tag">Interface Preview</span>
+                    </div>
+
+                    <!-- Panel 1: Overview -->
+                    <div class="preview-panel-view active" id="tab-overview" role="tabpanel">
+                        <div class="mini-kpi-grid" style="margin-bottom: 1.25rem;">
+                            <div class="mini-kpi-card">
+                                <span class="mini-kpi-label">Active Emergencies</span>
+                                <span class="mini-kpi-val" style="color: var(--danger-base);">3</span>
+                                <span class="mini-kpi-sub">Priority 1 Active</span>
+                            </div>
+                            <div class="mini-kpi-card">
+                                <span class="mini-kpi-label">Corridors Monitored</span>
+                                <span class="mini-kpi-val">18</span>
+                                <span class="mini-kpi-sub">Avg Speed: 42 km/h</span>
+                            </div>
+                            <div class="mini-kpi-card">
+                                <span class="mini-kpi-label">Pending Issues</span>
+                                <span class="mini-kpi-val">24</span>
+                                <span class="mini-kpi-sub">8 In Progress</span>
+                            </div>
+                            <div class="mini-kpi-card">
+                                <span class="mini-kpi-label">Active Work Orders</span>
+                                <span class="mini-kpi-val">12</span>
+                                <span class="mini-kpi-sub">98% SLA Compliance</span>
+                            </div>
+                        </div>
+
+                        <div class="mini-table-box">
+                            <div class="mini-table-header">
+                                <span>Recent High-Priority Events</span>
+                                <span class="badge badge-neutral">Illustrative Preview &bull; Example Data</span>
+                            </div>
+                            <table class="mini-table">
+                                <thead>
+                                    <tr>
+                                        <th>Domain</th>
+                                        <th>Reference</th>
+                                        <th>Corridor / Location</th>
+                                        <th>Impact Level</th>
+                                        <th>Assigned Crew</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span class="badge badge-danger">Emergency</span></td>
+                                        <td>#EMG-409</td>
+                                        <td>Ring Road Junction West</td>
+                                        <td>Critical Collision</td>
+                                        <td>Unit 04 (Dispatched)</td>
+                                        <td><span class="badge badge-danger">Active</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge badge-warning">Road Defect</span></td>
+                                        <td>#ISS-1049</td>
+                                        <td>Central Market Flyover</td>
+                                        <td>Deep Expansion Joint Void</td>
+                                        <td>Paving Crew Beta</td>
+                                        <td><span class="badge badge-warning">Work Order Dispatched</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge badge-info">Traffic</span></td>
+                                        <td>#TRF-218</td>
+                                        <td>Wardha Road Sector 2</td>
+                                        <td>Heavy Congestion (21 km/h)</td>
+                                        <td>Traffic Signal Timing Adjust</td>
+                                        <td><span class="badge badge-info">Monitoring</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Panel 2: Emergency -->
+                    <div class="preview-panel-view" id="tab-emergency" role="tabpanel">
+                        <div class="mini-emergency-banner" style="margin-bottom: 1.25rem;">
+                            <div class="mini-emergency-left">
+                                <span class="mini-alert-icon">🚨</span>
+                                <div>
+                                    <div class="mini-alert-title">CRITICAL INCIDENT: Fuel Spill Following Truck Breakdown</div>
+                                    <div class="mini-alert-desc">East Arterial Km 8 &bull; Hazardous Materials Clean-up Team Dispatched &bull; Diversion Active</div>
+                                </div>
+                            </div>
+                            <span class="badge badge-danger">SEVERITY 1</span>
+                        </div>
+
+                        <div class="mini-table-box">
+                            <div class="mini-table-header">
+                                <span>Emergency Incident Registry</span>
+                                <span class="badge badge-neutral">Illustrative Preview &bull; Example Data</span>
+                            </div>
+                            <table class="mini-table">
+                                <thead>
+                                    <tr>
+                                        <th>Alert ID</th>
+                                        <th>Type</th>
+                                        <th>Location</th>
+                                        <th>Severity</th>
+                                        <th>Reported</th>
+                                        <th>Response Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>#EMG-409</strong></td>
+                                        <td>Vehicle Collision</td>
+                                        <td>Ring Road Junction West</td>
+                                        <td><span class="badge badge-danger">Critical</span></td>
+                                        <td>14 mins ago</td>
+                                        <td><span class="badge badge-warning">En Route</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>#EMG-408</strong></td>
+                                        <td>Downed Power Line</td>
+                                        <td>Airport Approach Rd</td>
+                                        <td><span class="badge badge-danger">High</span></td>
+                                        <td>42 mins ago</td>
+                                        <td><span class="badge badge-info">Secured</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>#EMG-407</strong></td>
+                                        <td>Fallen Tree Obstruction</td>
+                                        <td>South Ring Road Km 3</td>
+                                        <td><span class="badge badge-warning">Medium</span></td>
+                                        <td>1h 10m ago</td>
+                                        <td><span class="badge badge-success">Resolved</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Panel 3: Traffic -->
+                    <div class="preview-panel-view" id="tab-traffic" role="tabpanel">
+                        <div class="mini-kpi-grid" style="margin-bottom: 1.25rem;">
+                            <div class="mini-kpi-card">
+                                <span class="mini-kpi-label">System Average Speed</span>
+                                <span class="mini-kpi-val">41.8 km/h</span>
+                                <span class="mini-kpi-sub">&minus;3.2% vs Baseline</span>
+                            </div>
+                            <div class="mini-kpi-card">
+                                <span class="mini-kpi-label">Hourly Vehicle Volume</span>
+                                <span class="mini-kpi-val">14,280</span>
+                                <span class="mini-kpi-sub">Peak Evening Inflow</span>
+                            </div>
+                            <div class="mini-kpi-card">
+                                <span class="mini-kpi-label">Congested Corridors</span>
+                                <span class="mini-kpi-val" style="color: var(--warning-base);">4 / 18</span>
+                                <span class="mini-kpi-sub">Speed &lt; 25 km/h</span>
+                            </div>
+                            <div class="mini-kpi-card">
+                                <span class="mini-kpi-label">Logged Violations Today</span>
+                                <span class="mini-kpi-val">58</span>
+                                <span class="mini-kpi-sub">34 Speeding / 24 Red Light</span>
+                            </div>
+                        </div>
+
+                        <div class="mini-table-box">
+                            <div class="mini-table-header">
+                                <span>Monitored Corridors Real-Time Telemetry</span>
+                                <span class="badge badge-neutral">Illustrative Preview &bull; Example Data</span>
+                            </div>
+                            <table class="mini-table">
+                                <thead>
+                                    <tr>
+                                        <th>Corridor Name</th>
+                                        <th>Sector</th>
+                                        <th>Avg Speed</th>
+                                        <th>Volume (veh/h)</th>
+                                        <th>Congestion Level</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Wardha Road Arterial</strong></td>
+                                        <td>Sector 02</td>
+                                        <td><span style="color: var(--danger-base); font-weight:700;">21.4 km/h</span></td>
+                                        <td>1,840</td>
+                                        <td><span class="badge badge-danger">Severe Congestion</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>North Ring Expressway</strong></td>
+                                        <td>Sector 05</td>
+                                        <td><span style="color: var(--warning-base); font-weight:700;">38.1 km/h</span></td>
+                                        <td>1,420</td>
+                                        <td><span class="badge badge-warning">Moderate Delay</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Airport Express Bypass</strong></td>
+                                        <td>Sector 08</td>
+                                        <td><span style="color: var(--success-base); font-weight:700;">64.5 km/h</span></td>
+                                        <td>980</td>
+                                        <td><span class="badge badge-success">Free Flow</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Panel 4: Risk Intelligence -->
+                    <div class="preview-panel-view" id="tab-risk" role="tabpanel">
+                        <div class="formula-explanation-box" style="margin-bottom: 1.25rem;">
+                            <strong>Deterministic and explainable composite risk scoring:</strong> Area risk is calculated from four operational components: Emergency Severity (35%), Traffic Conditions (25%), Road Issues (20%), and Traffic Violations (20%), totaling 100%. All calculations are deterministic and explainable without black-box estimation.
+                        </div>
+
+                        <div class="mini-table-box">
+                            <div class="mini-table-header">
+                                <span>Area Operational Risk Ranking</span>
+                                <span class="badge badge-neutral">Illustrative Preview &bull; Example Data</span>
+                            </div>
+                            <table class="mini-table">
+                                <thead>
+                                    <tr>
+                                        <th>Sector / Corridor</th>
+                                        <th>Emergency (35%)</th>
+                                        <th>Traffic (25%)</th>
+                                        <th>Road Issues (20%)</th>
+                                        <th>Violations (20%)</th>
+                                        <th>Composite Score</th>
+                                        <th>Classification</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Wardha Road &times; South Ring</strong></td>
+                                        <td>0.85 (Collision)</td>
+                                        <td>0.78 (Severe Queue)</td>
+                                        <td>0.60 (Pothole)</td>
+                                        <td>0.55 (Infractions)</td>
+                                        <td><strong>72.3 / 100</strong></td>
+                                        <td><span class="badge badge-danger">High Risk</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Central Market Transit Zone</strong></td>
+                                        <td>0.10 (Clear)</td>
+                                        <td>0.65 (Slow)</td>
+                                        <td>0.70 (Joint Void)</td>
+                                        <td>0.40 (Parking)</td>
+                                        <td><strong>41.8 / 100</strong></td>
+                                        <td><span class="badge badge-warning">Elevated Risk</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>North Bypass Km 12</strong></td>
+                                        <td>0.00 (Clear)</td>
+                                        <td>0.15 (Flowing)</td>
+                                        <td>0.10 (Minor)</td>
+                                        <td>0.10 (Clear)</td>
+                                        <td><strong>7.8 / 100</strong></td>
+                                        <td><span class="badge badge-success">Low Risk</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Panel 5: Operations Map -->
+                    <div class="preview-panel-view" id="tab-map" role="tabpanel">
+                        <div style="background-color: #f1f5f9; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1.5rem; text-align: center;">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">🗺️</div>
+                            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem;">GIS Spatial Layer Overview</h4>
+                            <p style="font-size: 0.82rem; color: var(--text-secondary); max-width: 500px; margin: 0 auto 0.85rem auto;">
+                                Interactive Leaflet/OpenStreetMap canvas displaying real coordinate positions for active road defects, emergencies, speed corridors, and work crews.
+                            </p>
+                            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 0.75rem;">
+                                <span class="badge badge-danger">🔴 3 Emergencies</span>
+                                <span class="badge badge-warning">🟠 24 Road Defects</span>
+                                <span class="badge badge-info">🔵 18 Monitored Corridors</span>
+                                <span class="badge badge-success">🟢 12 Field Crews</span>
+                            </div>
+                            <div>
+                                <span class="badge badge-neutral">Illustrative Preview &bull; Example Data</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel 6: Work Orders -->
+                    <div class="preview-panel-view" id="tab-workorders" role="tabpanel">
+                        <div class="mini-table-box">
+                            <div class="mini-table-header">
+                                <span>Work Order Dispatch Queue</span>
+                                <span class="badge badge-neutral">Illustrative Preview &bull; Example Data</span>
+                            </div>
+                            <table class="mini-table">
+                                <thead>
+                                    <tr>
+                                        <th>WO Number</th>
+                                        <th>Linked Incident</th>
+                                        <th>Remediation Task</th>
+                                        <th>Assigned Crew</th>
+                                        <th>Target SLA</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>#WO-2024-089</strong></td>
+                                        <td>#ISS-1049 (Pothole)</td>
+                                        <td>Hot Asphalt Pavement Patch</td>
+                                        <td>Municipal Works Crew A</td>
+                                        <td>4h Remaining</td>
+                                        <td><span class="badge badge-warning">In Progress</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>#WO-2024-088</strong></td>
+                                        <td>#EMG-408 (Power Line)</td>
+                                        <td>Utility Cable Reconnection</td>
+                                        <td>Electricity Board Unit 2</td>
+                                        <td>1h Remaining</td>
+                                        <td><span class="badge badge-info">Dispatched</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>#WO-2024-087</strong></td>
+                                        <td>#ISS-1046 (Drainage)</td>
+                                        <td>Stormwater Grate Unclogging</td>
+                                        <td>Sanitation Crew 3</td>
+                                        <td>Completed in SLA</td>
+                                        <td><span class="badge badge-success">Resolved</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION 6: OPERATIONAL INTELLIGENCE (Explainable Risk Scoring)
+             ================================================================ -->
+        <section class="intelligence-section" id="intelligence">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-badge">Deterministic Logic</span>
+                    <h2 class="section-title">Operational intelligence with context</h2>
+                    <p class="section-subtitle">
+                        Deterministic and explainable composite risk scoring combining operational signals from emergencies, traffic conditions, road defects, and traffic violations.
+                    </p>
+                </div>
+
+                <div class="formula-card-box">
+                    <div class="formula-flow-row">
+                        <div class="formula-node-pill">
+                            <span style="color: var(--danger-base);">🚨</span>
+                            <div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">WEIGHT: 0.35 (35%)</div>
+                                <div>Emergency Signals</div>
+                            </div>
+                        </div>
+
+                        <span class="formula-sign">+</span>
+
+                        <div class="formula-node-pill">
+                            <span style="color: var(--info-base);">🚗</span>
+                            <div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">WEIGHT: 0.25 (25%)</div>
+                                <div>Traffic Conditions</div>
+                            </div>
+                        </div>
+
+                        <span class="formula-sign">+</span>
+
+                        <div class="formula-node-pill">
+                            <span style="color: var(--warning-base);">🚧</span>
+                            <div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">WEIGHT: 0.20 (20%)</div>
+                                <div>Road Issues</div>
+                            </div>
+                        </div>
+
+                        <span class="formula-sign">+</span>
+
+                        <div class="formula-node-pill">
+                            <span style="color: var(--purple-base);">⚠️</span>
+                            <div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">WEIGHT: 0.20 (20%)</div>
+                                <div>Traffic Violations</div>
+                            </div>
+                        </div>
+
+                        <span class="formula-sign">&rarr;</span>
+
+                        <div class="formula-result-pill">
+                            <div class="val">0 &ndash; 100</div>
+                            <div class="lbl">Composite Risk Score</div>
+                        </div>
+                    </div>
+
+                    <div class="formula-explanation-box">
+                        <strong>Deterministic and explainable composite risk scoring:</strong> Area risk is calculated directly from four operational components: Emergency Severity (35%), Traffic Conditions (25%), Road Issues (20%), and Traffic Violations (20%), totaling 100%. Operators can inspect every component score, understand the exact factors driving an elevated risk status, and verify that operational decisions are supported by transparent, auditable evidence without black-box estimation.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION 7: GIS OPERATIONS
+             ================================================================ -->
+        <section class="gis-section" id="gis-operations">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-badge">Spatial Operations</span>
+                    <h2 class="section-title">Every operational event has geographic context</h2>
+                    <p class="section-subtitle">
+                        Correlate incidents, traffic congestion, defect clusters, and active work orders directly against municipal road coordinates.
+                    </p>
+                </div>
+
+                <div class="gis-container-box">
+                    <!-- Left: Realistic Map Canvas Representation -->
+                    <div class="gis-map-mock">
+                        <!-- Map Grid Layout (Clean Cartographic Styling) -->
+                        <div style="position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, #f8fafc 10%, #e2e8f0 100%);">
+                            <!-- Road lines -->
+                            <svg width="100%" height="100%" style="opacity: 0.6;" aria-hidden="true">
+                                <path d="M 0 180 Q 250 160 500 220 T 1000 200" stroke="#cbd5e1" stroke-width="12" fill="none"/>
+                                <path d="M 300 0 Q 320 200 280 420" stroke="#cbd5e1" stroke-width="10" fill="none"/>
+                                <path d="M 0 320 L 1000 300" stroke="#94a3b8" stroke-width="8" fill="none"/>
+                                <path d="M 600 0 L 640 420" stroke="#cbd5e1" stroke-width="8" fill="none"/>
+                                <!-- Active Congested segment -->
+                                <path d="M 220 170 Q 320 190 440 215" stroke="#ef4444" stroke-width="6" fill="none"/>
+                            </svg>
+
+                            <!-- Geographic Markers -->
+                            <div style="position: absolute; top: 165px; left: 320px; transform: translate(-50%, -50%); background: #ffffff; border: 2px solid var(--danger-base); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; box-shadow: var(--shadow-sm); cursor: default;" title="Emergency Alert #409">
+                                🚨
+                            </div>
+
+                            <div style="position: absolute; top: 290px; left: 450px; transform: translate(-50%, -50%); background: #ffffff; border: 2px solid var(--warning-base); border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; box-shadow: var(--shadow-sm);" title="Pothole Issue #1049">
+                                🚧
+                            </div>
+
+                            <div style="position: absolute; top: 120px; left: 240px; transform: translate(-50%, -50%); background: #ffffff; border: 2px solid var(--primary-base); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; box-shadow: var(--shadow-sm);" title="Traffic Sensor Corridor 2">
+                                🚗
+                            </div>
+
+                            <div style="position: absolute; top: 270px; left: 620px; transform: translate(-50%, -50%); background: #ffffff; border: 2px solid var(--success-base); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; box-shadow: var(--shadow-sm);" title="Crew A Dispatched">
+                                🛠️
+                            </div>
+
+                            <!-- Map Controls Simulation -->
+                            <div style="position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 4px;">
+                                <span style="background: #ffffff; border: 1px solid var(--border-color); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; border-radius: 4px; box-shadow: var(--shadow-subtle); font-size: 0.9rem; color: var(--text-primary); cursor: default;">+</span>
+                                <span style="background: #ffffff; border: 1px solid var(--border-color); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; border-radius: 4px; box-shadow: var(--shadow-subtle); font-size: 0.9rem; color: var(--text-primary); cursor: default;">&minus;</span>
+                            </div>
+
+                            <!-- Location Badge -->
+                            <div style="position: absolute; bottom: 12px; left: 12px; background: rgba(255,255,255,0.92); border: 1px solid var(--border-color); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.72rem; color: var(--text-secondary); font-weight: 600;">
+                                Nagpur Municipal Road Network &bull; 21.1458&deg; N, 79.0882&deg; E
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Layer Legend & Inspector -->
+                    <div class="gis-sidebar">
+                        <div>
+                            <h4 class="gis-sidebar-heading">Active Map Layers</h4>
+                            <ul class="gis-legend-list">
+                                <li class="gis-legend-item">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div class="legend-color-box" style="background-color: var(--danger-base);"></div>
+                                        <span>Emergency Incidents</span>
+                                    </div>
+                                    <span class="badge badge-danger">3 Active</span>
+                                </li>
+                                <li class="gis-legend-item">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div class="legend-color-box" style="background-color: var(--warning-base);"></div>
+                                        <span>Road Defects &amp; Hazards</span>
+                                    </div>
+                                    <span class="badge badge-warning">24 Pts</span>
+                                </li>
+                                <li class="gis-legend-item">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div class="legend-color-box" style="background-color: var(--primary-base);"></div>
+                                        <span>Traffic Monitoring Corridors</span>
+                                    </div>
+                                    <span class="badge badge-info">18 Corridors</span>
+                                </li>
+                                <li class="gis-legend-item">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div class="legend-color-box" style="background-color: var(--success-base);"></div>
+                                        <span>Active Work Orders / Crews</span>
+                                    </div>
+                                    <span class="badge badge-success">12 En Route</span>
+                                </li>
+                                <li class="gis-legend-item">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div class="legend-color-box" style="background-color: var(--purple-base);"></div>
+                                        <span>Risk Density Heatmap</span>
+                                    </div>
+                                    <span class="badge badge-purple">Layer On</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.78rem; color: var(--text-muted);">
+                            <strong>Spatial Verification:</strong> Coordinates are tied to relational models in PostgreSQL, enabling spatial proximity lookups and corridor boundary containment.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION 8: FIELD OPERATIONS (Work Orders Lifecycle)
+             ================================================================ -->
+        <section class="field-section" id="field-operations">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-badge">Physical Remediation</span>
+                    <h2 class="section-title">Information becomes action</h2>
+                    <p class="section-subtitle">
+                        Work orders bridge digital incident logging with physical field repair. Every assigned task carries explicit priority, assigned crew accountability, and SLA deadlines.
+                    </p>
+                </div>
+
+                <div class="table-preview-card">
+                    <div class="table-header-title">
+                        <div>
+                            <strong style="font-size: 0.95rem; color: var(--text-primary);">Active Field Work Orders</strong>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;"><span class="badge badge-neutral">Illustrative Preview &bull; Example Data</span></div>
+                        </div>
+                        <a href="index.html" class="btn btn-outline btn-sm">View in Control Center &rarr;</a>
+                    </div>
+
+                    <table class="ops-data-table">
+                        <thead>
+                            <tr>
+                                <th>Work Order #</th>
+                                <th>Linked Source Event</th>
+                                <th>Remediation Scope</th>
+                                <th>Assigned Crew</th>
+                                <th>SLA Deadline</th>
+                                <th>Operational State</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>#WO-2024-089</strong></td>
+                                <td>Road Defect #ISS-1049 (Deep Pothole)</td>
+                                <td>Asphalt Milling and Surface Compaction</td>
+                                <td>City Works Crew Alpha</td>
+                                <td>4h Remaining</td>
+                                <td><span class="badge badge-warning">In Progress</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>#WO-2024-088</strong></td>
+                                <td>Emergency #EMG-408 (Downed Power Cable)</td>
+                                <td>Electrical Isolation &amp; Cable Restringing</td>
+                                <td>Power Distribution Team 2</td>
+                                <td>1h Remaining</td>
+                                <td><span class="badge badge-danger">Dispatched</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>#WO-2024-087</strong></td>
+                                <td>Road Defect #ISS-1046 (Clogged Storm Drain)</td>
+                                <td>High-Pressure Vacuum Jetting</td>
+                                <td>Municipal Drainage Unit</td>
+                                <td>Target Met</td>
+                                <td><span class="badge badge-success">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>#WO-2024-086</strong></td>
+                                <td>Violation Hotspot #VIO-882 (Illegal Parking)</td>
+                                <td>Tow Truck Deployment &amp; Lane Clearance</td>
+                                <td>Traffic Enforcement Division</td>
+                                <td>Target Met</td>
+                                <td><span class="badge badge-success">Completed</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION 9: ROLE-BASED OPERATIONS
+             ================================================================ -->
+        <section class="roles-section" id="roles">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-badge">Access &amp; Permissions</span>
+                    <h2 class="section-title">Clear responsibilities across the operation</h2>
+                    <p class="section-subtitle">
+                        Road System Control enforces structured Role-Based Access Control (RBAC) to ensure operational authority matches municipal responsibilities.
+                    </p>
+                </div>
+
+                <div class="roles-grid">
+                    <div class="role-card">
+                        <span class="badge badge-neutral role-card-badge">ROLE: ADMIN</span>
+                        <h3 class="role-card-title">System Administrator</h3>
+                        <p class="role-card-text">
+                            System administration, user account management, role assignment, configuration parameters, and comprehensive audit trail inspection.
+                        </p>
+                    </div>
+
+                    <div class="role-card">
+                        <span class="badge badge-info role-card-badge">ROLE: TRAFFIC OPERATOR</span>
+                        <h3 class="role-card-title">Traffic Operator</h3>
+                        <p class="role-card-text">
+                            Corridor traffic monitoring, telemetry review, congestion threshold alerts, and traffic infraction recording.
+                        </p>
+                    </div>
+
+                    <div class="role-card">
+                        <span class="badge badge-danger role-card-badge">ROLE: EMERGENCY OPERATOR</span>
+                        <h3 class="role-card-title">Emergency Operator</h3>
+                        <p class="role-card-text">
+                            Emergency incident triage, immediate priority broadcast, incident lifecycle management, and emergency team dispatch.
+                        </p>
+                    </div>
+
+                    <div class="role-card">
+                        <span class="badge badge-warning role-card-badge">ROLE: ROAD INSPECTOR</span>
+                        <h3 class="role-card-title">Road Inspector</h3>
+                        <p class="role-card-text">
+                            Road issue field inspection, photographic defect logging, work order remediation tracking, and on-site repair verification.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION 10: SYSTEM ARCHITECTURE
+             ================================================================ -->
+        <section class="arch-section" id="architecture">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-badge">Technical Stack</span>
+                    <h2 class="section-title">Built as a connected system</h2>
+                    <p class="section-subtitle">
+                        An enterprise architecture separating client interface logic from secure backend API services, relational models, and spatial data.
+                    </p>
+                </div>
+
+                <div class="arch-flow-box">
+                    <div class="arch-node">
+                        <div>
+                            <div class="arch-node-name">Frontend Presentation Layer</div>
+                            <div class="arch-node-tech">Vanilla HTML5 / Modern CSS3 / Modular ES6 JavaScript (Zero Framework Overhead)</div>
+                        </div>
+                        <span class="badge badge-info">Client Side</span>
+                    </div>
+
+                    <div class="arch-arrow">&darr; REST API / Bearer Token Authentication</div>
+
+                    <div class="arch-node">
+                        <div>
+                            <div class="arch-node-name">FastAPI Application Server</div>
+                            <div class="arch-node-tech">Asynchronous Python, Pydantic Schemas, JWT Auth, RBAC Enforcement &amp; Operational Services</div>
+                        </div>
+                        <span class="badge badge-info">Backend Services</span>
+                    </div>
+
+                    <div class="arch-arrow">&darr; Object-Relational Mapping (ORM)</div>
+
+                    <div class="arch-node">
+                        <div>
+                            <div class="arch-node-name">SQLAlchemy Data Layer</div>
+                            <div class="arch-node-tech">Relational Model Mappings, Migrations, Structured Transactions &amp; Integrity Constraints</div>
+                        </div>
+                        <span class="badge badge-neutral">Data Access</span>
+                    </div>
+
+                    <div class="arch-arrow">&darr; Relational Persistence</div>
+
+                    <div class="arch-node">
+                        <div>
+                            <div class="arch-node-name">PostgreSQL Relational Database</div>
+                            <div class="arch-node-tech">ACID Relational Storage, Spatial Coordinate Indexes, Audit Logs &amp; SLA State History</div>
+                        </div>
+                        <span class="badge badge-neutral">Database</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION 11: FINAL CALL TO ACTION
+             ================================================================ -->
+        <section class="cta-section">
+            <div class="container">
+                <div class="cta-box">
+                    <h2 class="cta-headline">
+                        A road system is more than what happens on the road.
+                    </h2>
+                    <p class="cta-text">
+                        It is the information collected, the conditions understood, the risks identified, the people notified, the work coordinated, and the response tracked.
+                    </p>
+                    <div class="cta-buttons">
+                        <a href="index.html" class="btn btn-primary btn-lg" id="footerEnterCta">
+                            Enter Control Center &rarr;
+                        </a>
+                        <a href="#hero" class="btn btn-outline btn-lg">
+                            Back to Top &uarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ====================================================================
+         FOOTER (Municipal Operations Footer)
+         ==================================================================== -->
+    <footer class="landing-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-brand-title">🚦 ROAD SYSTEM CONTROL</div>
+                    <p class="footer-desc">
+                        A unified municipal operational platform connecting road defect inspection, arterial traffic monitoring, emergency incident management, explainable risk intelligence, and field remediation work orders.
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="footer-col-title">Operational Modules</h4>
+                    <ul class="footer-link-list">
+                        <li><a href="index.html">Dashboard Overview</a></li>
+                        <li><a href="index.html">Road Issues Queue</a></li>
+                        <li><a href="index.html">Traffic Telemetry</a></li>
+                        <li><a href="index.html">Emergency Operations</a></li>
+                        <li><a href="index.html">Operations Map</a></li>
+                        <li><a href="index.html">Work Order Dispatch</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="footer-col-title">System &amp; Roles</h4>
+                    <ul class="footer-link-list">
+                        <li><a href="#roles">Administrator</a></li>
+                        <li><a href="#roles">Traffic Operator</a></li>
+                        <li><a href="#roles">Emergency Operator</a></li>
+                        <li><a href="#roles">Road Inspector</a></li>
+                        <li><a href="#architecture">Architecture &amp; API</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div>&copy; 2026 Road System Control. Municipal Operations Division. All rights reserved.</div>
+                <div>Internal Municipal Platform &bull; Authorized Operator Access Only</div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ====================================================================
+         OPERATOR LOGIN MODAL (Directly Compatible with /api/auth/login)
+         ==================================================================== -->
+    <div class="modal-backdrop" id="operatorLoginModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Operator Sign In</h3>
+                <button type="button" class="modal-close-btn" id="modalCloseBtn" aria-label="Close modal">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="demo-selector-group">
+                    <span class="demo-selector-label">Select Demo Role to Fill:</span>
+                    <div class="demo-btn-row">
+                        <button type="button" class="demo-role-btn active" data-role="ADMIN">Admin</button>
+                        <button type="button" class="demo-role-btn" data-role="TRAFFIC_OPERATOR">Traffic</button>
+                        <button type="button" class="demo-role-btn" data-role="EMERGENCY_OPERATOR">Emergency</button>
+                        <button type="button" class="demo-role-btn" data-role="ROAD_INSPECTOR">Inspector</button>
+                    </div>
+                </div>
+
+                <div class="auth-error-banner" id="loginErrorBanner">
+                    Invalid credentials or connection error.
+                </div>
+
+                <form id="operatorLoginForm">
+                    <div class="form-group">
+                        <label for="loginUsername" class="form-label">Username</label>
+                        <input type="text" id="loginUsername" class="form-control" value="admin" required autocomplete="username">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="loginPassword" class="form-label">Password</label>
+                        <input type="password" id="loginPassword" class="form-control" value="AdminPassword@123" required autocomplete="current-password">
+                    </div>
+
+                    <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;" id="modalSubmitBtn">
+                            Sign In &amp; Launch &rarr;
+                        </button>
+                        <button type="button" class="btn btn-outline" id="modalCancelBtn">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="landing.js"></script>
+</body>
+</html>
